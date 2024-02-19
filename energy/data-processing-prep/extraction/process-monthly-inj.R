@@ -7,7 +7,7 @@
 
 data_dir     <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
 minj_fil    <- "well_inject_m.rds"
-wells_19_fil <- "wells_19.csv"
+wells_19_fil <- "wells_19.csv" 
 
 # ------------------------------------------- MAIN -----------------------------------
 
