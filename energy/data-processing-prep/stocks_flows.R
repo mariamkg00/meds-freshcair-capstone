@@ -10,7 +10,6 @@ setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on T
 getwd()
 
 
-
 ## attach libraries
 library(tidyverse)
 library(janitor)
@@ -18,13 +17,58 @@ library(rebus)
 library(readxl)
 library(countrycode)
 library(rJava)
-library(tabulizer)
-library(tabulizerjars)
+# library(tabulizer)
+# library(tabulizerjars)
 library(lubridate)
 library(scales)
 library(openxlsx)
 
 
+## Crude imports to CA ports by export country
+## ---------------------------------------------------------------------------------------
+
+## read in data
+port_imports <- read_csv(paste0(data_directory, "inputs/Imports_of_Heavy_Sour_to_Los_Angeles_CA.csv"), skip = 4) ## first four rows mess up data
+port_imports <- clean_names(port_imports)
+
+## get info from raw data
+port_imports_info <- read_csv(paste0(data_directory, "inputs/Imports_of_Heavy_Sour_to_Los_Angeles_CA.csv"))
+port_imports_info <- port_imports_info[1:3, 1]
+colnames(port_imports_info) <- c("info")
+
+## break out information
+oiltype <- c("Heavy Sweet", "Light Sour", "Light Sweet", "Medium", "Heavy Sour")
+
+port_imports_clean <- port_imports %>%
+  rename(cats = span_style_float_right_thousand_barrels_span) %>%
+  mutate(export_region = countrycode(cats, 'country.name', 'country.name'),
+         export_region = ifelse(cats == "World", "World", export_region),
+         port = str_detect(cats, pattern = ", CA" %R% END),
+         port = ifelse(port == TRUE, cats, NA),
+         oil = ifelse(cats %in% oiltype, cats, NA)) %>%
+  select(cats, export_region, port, oil, jan_2009:nov_2019) %>%
+  fill(export_region, .direction = 'down') %>%
+  fill(port, .direction = 'down') %>%
+  select(-cats) %>%
+  filter(!is.na(oil)) %>%
+  pivot_longer(jan_2009:nov_2019, names_to = "date", values_to = "barrels_thous") %>%
+  mutate(barrels_thous = as.numeric(ifelse(barrels_thous == "--", 0, barrels_thous)),
+         month_orig = str_extract(date, pattern = ANY_CHAR %R% ANY_CHAR %R% ANY_CHAR),
+         month2 = paste0(toupper(substr(month_orig, 1, 1)), substr(month_orig, 2, nchar(month_orig))),
+         month = match(month2, month.abb),
+         year = as.numeric(str_extract(date, pattern = DIGIT %R% DIGIT %R% DIGIT %R% DIGIT))) %>%
+  select(-month_orig, -month2) %>%
+  mutate(source = port_imports_info$info[3],
+         link = port_imports_info$info[1],
+         download_date = port_imports_info$info[2]) %>%
+  mutate(region_type = ifelse(export_region == "World", "world", "country")) %>%
+  select(export_region, region_type, port:download_date)
+
+## save clean file
+write_csv(port_imports_clean, path = paste0(data_directory, "processed/crude_imports_port.csv"))
+
+
+## WTI monthly prices of crude
 ## Crude imports to CA ports by export country -- NOT NEEDED IN UPDATED MODEL - MP
 ## ---------------------------------------------------------------------------------------
 # 
