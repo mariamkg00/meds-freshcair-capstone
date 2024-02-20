@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## August 7, 2020
 ## create initial year of production file
+# Updated 2/19/24 - MP
 
 ## libraries
 library(data.table)
@@ -8,15 +9,15 @@ library(tidyverse)
 library(lubridate)
 library(rebus)
 
-## directories
-data_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed/"
-save_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/"
+# ## directories
+# data_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed/"
+# save_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/"
+# 
+# ## files
+# prod_file       <- "well_prod_m_processed.csv"
 
-## files
-prod_file       <- "well_prod_m_processed.csv"
-
-## read in files
-well_prod <- fread(paste0(data_directory, prod_file), colClasses = c('api_ten_digit' = 'character',
+## read in files - UPDATED - MP
+well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
 ## top ten fields
@@ -101,9 +102,8 @@ well_prod_api10_sd <- left_join(well_prod_bal_all, init_yr_prod_api10_m2) %>%
          well_age = month_year - start_date) %>%
   filter(well_age >= 0)
 
-## save output
-write_csv(well_prod_api10_sd, path = paste0(save_directory, "stocks-flows/well_start_yr/well_start_prod_api10_revised.csv"))
-
+## save output - UPDATED - MP
+write_csv(well_prod_api10_sd, path = "data/processed/well_start_prod_api10_revised.csv")
 
 ## check annual production
 init_prod_a <- well_prod_api10_sd %>%
