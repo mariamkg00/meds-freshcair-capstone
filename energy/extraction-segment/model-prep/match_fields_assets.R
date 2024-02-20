@@ -3,8 +3,13 @@
 ## Match fields to assets
 
 ## revised: feb 16 2024 by haejin 
+## Updated 2/19/24 MP
 
 # ------------------------------------------- INPUTS -----------------------------------
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
+getwd()
+
 data_directory     <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
 rystad_path        <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
 sp_dir             <- "/capstone/freshcair/meds-freshcair-capstone/data/inputs/gis/"
@@ -16,16 +21,12 @@ match_out_path     <- "proprietery-data"
 
 
 ## files
-rystad_file  <- "field_rystad_match_apis_revised.csv"
-prod_file    <- "well_prod_m_processed.csv"
-field_b_file <- "DOGGR_Admin_Boundaries_Master.shp"
-raw_asset_loc_file <- "asset_latlon.csv"
-rystad_prod_file <- "ca_oil_production.csv"
 rystad_imputed_file <- "Rystad_cost_imputed_all_assets.csv"
 
 
 
 ## -------------------------- library
+library(dplyr)
 library(tidyverse)
 library(data.table)
 library(mapview)
@@ -38,12 +39,12 @@ library(rgeos) #nearest poly to each point
 ## ---------------------------------------------------------
 
 ## monthly well production
-well_prod <- fread(paste0(data_directory, prod_file), colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
 
 ## asset to field match using well APIs
-field_asset_match <- fread(paste0(rystad_path, rystad_file), colClasses = c('doc_field_code' = 'character'))
+field_asset_match <- fread("data/processed/field_rystad_match_apis_revised.csv", colClasses = c('doc_field_code' = 'character'))
 field_asset_match[, c("doc_fieldname", "bbl_prod", "n_wells_field", "field_prod", "rel_field", "rel_prod") := NULL]
 
 ## compute productive fields
@@ -63,7 +64,7 @@ fieldcodes <- well_prod %>%
 
 ## fields that get matched with assets
 field_asset_well_match <- well_match_df %>%
-  dpylr::select(doc_field_code, original_asset_name) %>%
+  dplyr::select(doc_field_code, original_asset_name) %>%
   raster::unique() %>%
   dplyr::filter(!is.na(original_asset_name))
 
@@ -114,9 +115,9 @@ na_asset2 <- na_asset %>%
 
 ## step 1: filter for relevant assets
 ## ---------------------------------------------------------
-field_assets <- read_csv(paste0(rystad_path, "raw/", raw_asset_loc_file))
+field_assets <- read_csv("data/proprietery-data/asset_latlon.csv")
 
-rystad_prod <- read_csv(paste0(rystad_path, "processed/", rystad_prod_file))
+rystad_prod <- read_csv("data/processed/ca_oil_production.csv")
 
 ## filter for assets with production in our time horizon
 rystad_prod_th <- rystad_prod %>%
@@ -147,7 +148,7 @@ cost_imputed <- rystad_cost_imputed %>%
   
 
 ## field location                     
-fields_loc <- st_read(paste0(sp_dir, field_b_file))
+fields_loc <- st_read("data/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp")
 
 asset_loc_sf <- st_as_sf(field_assets_adj, coords = c("Longitude", "Latitude"), 
                          crs = st_crs(fields_loc))
