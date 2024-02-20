@@ -1034,19 +1034,21 @@ ica <- inner_join(ica_emp,ica_comp,by=c("county","segment","industry"))
 ####################################################################################################################
 ####################################################################################################################
 ####################################################################################################################
+# UPDATED 2/20/2024
+
 
 #3. Separate the direct, indirect, and induced multipliers into different dfs, reshape each to wide format
 
 ## ICA 
 
 ica_emp_wide <- ica_emp %>% 
-  pivot_wider(id_cols = c("county","segment","industry"), names_from = industry, 
+  pivot_wider(id_cols = c("county","segment"), names_from = industry, 
               values_from = c("direct_emp","indirect_emp","induced_emp"))
 
 ica_emp_wide_direct <- ica_emp %>% 
   dplyr::select(-indirect_emp,-induced_emp) %>% 
   filter(direct_emp != 0) %>% 
-  arrange(county,segment,-direct_emp)
+  dplyr::arrange(county,segment,-direct_emp)
 pivot_wider(id_cols = c("county","segment","industry"), names_from = "industry", 
             values_from = c("direct_emp")) 
 
