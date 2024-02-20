@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## Septebmer 10, 2020
 ## Well exits exploration
+# Updated 2/20/24 - MP
 
 ## load libraries
 library(tidyverse)
@@ -58,10 +59,11 @@ calc_adj_val <- function(x, pval) {
   
 
 ## set directory
-data_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed/"
+setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
+getwd()
 
 ## well production
-well_prod <- fread(paste0(data_directory, "well_prod_m_processed.csv"), colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                                        'doc_field_code' = 'character'))
 
 
@@ -77,10 +79,10 @@ well_prod <- fread(paste0(data_directory, "well_prod_m_processed.csv"), colClass
 
 
 ## all wells
-all_wells <- fread("/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/raw/AllWells_table/AllWells_20210427.csv", colClasses = c('API' = 'character')) %>%
+all_wells <- fread("data/inputs/extraction/AllWells_20210427.csv", colClasses = c('API' = 'character')) %>%
   mutate(spud_date = as.Date(SpudDate, format = "%m/%d/%Y")) 
 
-old_all_wells <- read_xlsx("/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/raw/All_wells_20200417.xlsx")
+# old_all_wells <- read_xlsx("/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/raw/All_wells_20200417.xlsx")
 
 ## well field codes
 well_fields <- all_wells %>%
@@ -293,13 +295,14 @@ test3 <- plugged_prod_final_yr %>%
 #                                                                                                 "Cymric: Rank = 4", "Wilmington: Rank = 5", "Lost Hills: Rank = 6", "San Ardo: Rank = 7", 
 #                                                                                                 "Elk Hills: Rank = 8", "Coalinga: Rank = 9", "Poso Creek: Rank = 10", "Other"))
 
-ggplot(plugged_prod_final_yr, aes(x = adj_field_name, y = final_yr_prod)) + 
-  geom_boxplot(na.rm = TRUE, coef = 5) +  # remove NAs, and set the whisker length to all included points
-  ylab("Crude production in last month\n(thousand bbls)") +
-  scale_y_continuous(labels = comma) +
-  draft_theme +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90))
+# Clarify what draft_theme is meant to be
+# ggplot(plugged_prod_final_yr, aes(x = adj_field_name, y = final_yr_prod)) + 
+#   geom_boxplot(na.rm = TRUE, coef = 5) +  # remove NAs, and set the whisker length to all included points
+#   ylab("Crude production in last month\n(thousand bbls)") +
+#   scale_y_continuous(labels = comma) +
+#   draft_theme +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 90))
 
 ## summary of exit info
 exit_prod <- plugged_prod_final_yr %>%
@@ -328,200 +331,201 @@ exit_prod_output <- exit_prod %>%
 #          diff_adj = mean_final_yr_prod_adj - old_mean_final_yr_prod_adj,
 #          diff_wells = n_wells - old_n_wells)
 
-write_csv(exit_prod_output, file = "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/well_exit_volume_x_field_v1_revised.csv")
+# UPDATED - MP
+write_csv(exit_prod_output, file = "data/processed/well_exit_volume_x_field_v1_revised.csv")
 
 
 
 
-
-ggplot(exit_prod %>% filter(mean_final_yr_prod < 10000), aes(x = mean_final_yr_prod)) +
-  geom_histogram(bins = 100)
-
-
-# plugged_prod_final_yr$vintage <- factor(plugged_prod_final_yr$vintage, levels = c("pre 1978", "1978-1982", "1983-1987", "1988-1992", "1993-1997", "1998-2002", "2003-2007", "2008-2012", "2013-2019"))
-
-## figures
-final_prod_fig <- ggplot(plugged_prod_final_yr, aes(x = vintage, y = final_yr_prod)) +
-  geom_boxplot(outlier.shape = NA) +
-  facet_wrap(~adj_field_name, scales = "free_y") +
-  ylab("Crude production in last month\n(thousand bbls)") +
-  scale_y_continuous(labels = comma) +
-  draft_theme +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90))
-  
-
-plugged_prod_final_yr %>%
-  group_by(adj_field_name, vintage) %>%
-  mutate(final_yr_prod_adj = filter_lims(final_yr_prod)) %>%  # new variable (value2) so as not to displace first one)
-  ggplot(aes(x = vintage, y = final_yr_prod_adj)) + 
-  geom_boxplot(na.rm = TRUE, coef = 5) +  # remove NAs, and set the whisker length to all included points
-  facet_wrap( ~ adj_field_name, scales = "free_y") + 
-  ylab("Crude production in last month\n(thousand bbls)") +
-  scale_y_continuous(labels = comma) +
-  draft_theme +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90))
-
-## add the year before shutdown year
-plugged_prod_2fy <- plugged_prod %>%
-  left_join(plugged_last_prod) %>%
-  mutate(month_year = as.Date(month_year)) %>%
-  filter(month_year <= last_prod_date) %>%
-  mutate(count = 1) %>%
-  group_by(api_ten_digit, FieldCode, api_field) %>%
-  mutate(cumsum = cumsum(count),
-         max_count = max(cumsum),
-         max_sub = max_count - 24,
-         max_sub2 = max_count - 12) %>%
-  filter(cumsum <= max_sub2 & cumsum > max_sub) %>%
-  ungroup() %>%
-  group_by(api_ten_digit, FieldCode, n_field, api_field, vintage) %>%
-  summarise(prod = sum(api_prod, na.rm = T)) %>%
-  ungroup() %>%
-  left_join(field_names_df) %>%
-  rename(doc_field_code = FieldCode) %>%
-  left_join(top_fields_2019) %>%
-  mutate(field_rank = ifelse(is.na(field_rank), 11, field_rank)) %>%
-  mutate(adj_field_name = ifelse(doc_field_code %in% top_fields_2019$doc_field_code, paste0(FieldName, ": Rank = ", field_rank), "Other"),
-         year_grp = "second_to_last")
-  
-
-## add factors
-plugged_prod_2fy$adj_field_name <- factor(plugged_prod_2fy$adj_field_name, levels = c("Belridge  South: Rank = 1", "Midway-Sunset: Rank = 2", "Kern River: Rank = 3",
-                                                                                                "Cymric: Rank = 4", "Wilmington: Rank = 5", "Lost Hills: Rank = 6", "San Ardo: Rank = 7", 
-                                                                                                "Elk Hills: Rank = 8", "Coalinga: Rank = 9", "Poso Creek: Rank = 10", "Other"))
-plugged_prod_2fy$vintage <- factor(plugged_prod_2fy$vintage, levels = c("pre 1978", "1978-1982", "1983-1987", "1988-1992", "1993-1997", "1998-2002", "2003-2007", "2008-2012", "2013-2019"))
-
-## combine
-comp_df <- plugged_prod_final_yr %>%
-  rename(prod = final_yr_prod) %>%
-  mutate(year_grp = "final_year") %>%
-  rbind(plugged_prod_2fy) %>%
-  group_by(adj_field_name, vintage, year_grp) %>%
-  mutate(prod_adj = filter_lims(prod)) %>%
-  ungroup()
-
-comp_df$year_grp <- factor(comp_df$year_grp, levels = c("second_to_last", "final_year"))
-
-
-## plot
-ggplot(comp_df, aes(x = vintage, y = prod_adj, color = year_grp)) + 
-  geom_boxplot(na.rm = TRUE, coef = 5) +  # remove NAs, and set the whisker length to all included points
-  facet_wrap( ~ adj_field_name, scales = "free_y") + 
-  ylab("Crude production in last month\n(thousand bbls)") +
-  scale_y_continuous(labels = comma) +
-  draft_theme +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90))
-
-## do all plugged years, one estimate by field
-
-plugged_prod_final_yr_fl <- plugged_prod_12mo %>%
-  group_by(api_ten_digit, FieldCode, n_field, api_field, vintage) %>%
-  summarise(final_yr_prod = sum(api_prod, na.rm = T)) %>%
-  ungroup() %>%
-  left_join(field_names_df) %>%
-  rename(doc_field_code = FieldCode) %>%
-  left_join(top_fields_2019) %>%
-  mutate(field_rank = ifelse(is.na(field_rank), 11, field_rank)) %>%
-  mutate(adj_field_name = ifelse(doc_field_code %in% top_fields_2019$doc_field_code, paste0(FieldName, ": Rank = ", field_rank), "Other"))
-
-
-
-
-
-## do this again, well age
-## ------------------------------------
-
-## zero_production
-plugged_age_final_prod <- plugged_prod %>%
-  filter(api_prod > 0) %>%
-  mutate(month_year = as.Date(month_year)) %>%
-  group_by(api_ten_digit) %>%
-  filter(month_year == max(month_year)) %>%
-  ungroup() %>%
-  mutate(well_age_year = well_age / 365) %>%
-  left_join(field_names_df) %>%
-  rename(doc_field_code = FieldCode) %>%
-  left_join(top_fields_2019) %>%
-  mutate(field_rank = ifelse(is.na(field_rank), 11, field_rank)) %>%
-  mutate(adj_field_name = ifelse(doc_field_code %in% top_fields_2019$doc_field_code, paste0(FieldName, ": Rank = ", field_rank), "Other")) %>%
-  group_by(adj_field_name, vintage) %>%
-  mutate(well_age_year_adj = filter_lims(well_age_year)) %>%
-  ungroup() 
-
-
-## add factors
-plugged_age_final_prod$adj_field_name <- factor(plugged_age_final_prod$adj_field_name, levels = c("Belridge  South: Rank = 1", "Midway-Sunset: Rank = 2", "Kern River: Rank = 3",
-                                                                                        "Cymric: Rank = 4", "Wilmington: Rank = 5", "Lost Hills: Rank = 6", "San Ardo: Rank = 7", 
-                                                                                        "Elk Hills: Rank = 8", "Coalinga: Rank = 9", "Poso Creek: Rank = 10", "Other"))
-plugged_age_final_prod$vintage <- factor(plugged_age_final_prod$vintage, levels = c("pre 1978", "1978-1982", "1983-1987", "1988-1992", "1993-1997", "1998-2002", "2003-2007", "2008-2012", "2013-2019"))
-
-
-## plot
-ggplot(plugged_age_final_prod, aes(x = vintage, y = well_age_year_adj)) + 
-  geom_boxplot(na.rm = TRUE, coef = 5) +  # remove NAs, and set the whisker length to all included points
-  facet_wrap( ~ adj_field_name, scales = "free_y") + 
-  ylab("Well age at least time of production\n(years)") +
-  scale_y_continuous() +
-  draft_theme +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90))
-
-vintage_subset <- c("1978-1982", "1983-1987", "1988-1992")
-
-
-## histogram
-ggplot(plugged_age_final_prod %>% filter(vintage %in% vintage_subset), aes(x = round(well_age_year), fill = vintage)) +
-  geom_histogram(binwidth = 1) +
-  scale_fill_manual(values = rev(prim_calepa_pal[1:3]))
-
-## histogram
-ggplot(plugged_age_final_prod %>% filter(vintage %in% vintage_subset), aes(x = round(well_age_year), fill = adj_field_name)) +
-  geom_histogram(binwidth = 1) +
-  scale_fill_manual(values = calepa_pal)
-
-## cumulative production
-
-well_info <- plugged_prod %>%
-  select(api_ten_digit, start_year, FieldCode, vintage) %>%
-  unique() %>%
-  group_by(api_ten_digit) %>%
-  mutate(n = n()) %>%
-  ungroup() %>%
-  arrange(api_ten_digit, start_year) %>%
-  group_by(api_ten_digit) %>%
-  filter(start_year == min(start_year)) %>%
-  ungroup() %>%
-  select(-n)
-
-plugged_cumul_prod <- well_info %>%
-  left_join(plugged_prod) %>%
-  arrange(api_ten_digit, month_year) %>%
-  group_by(api_ten_digit) %>%
-  mutate(cumul_prod = cumsum(api_prod),
-         sum_well_prod = sum(api_prod)) %>%
-  ungroup() 
-
-
-plugged_cumul_prod2 <- plugged_cumul_prod %>%
-  group_by(vintage, FieldCode, well_age) %>%
-  summarise(sum_prod = sum(api_prod)) %>%
-  ungroup() %>%
-  group_by(vintage, FieldCode) %>%
-  mutate(cumul_prod = cumsum(sum_prod),
-         total_prod = sum(sum_prod)) %>%
-  ungroup() %>%
-  mutate(rel_prod = cumul_prod / total_prod) %>%
-  left_join(field_names_df) %>%
-  rename(doc_field_code = FieldCode) %>%
-  left_join(top_fields_2019) %>%
-  mutate(field_rank = ifelse(is.na(field_rank), 11, field_rank)) %>%
-  mutate(adj_field_name = ifelse(doc_field_code %in% top_fields_2019$doc_field_code, paste0(FieldName, ": Rank = ", field_rank), "Other"))
-
-test <- plugged_cumul_prod2 %>%
-  filter(field_rank == 1,
-         vintage == "pre_1987")
-
-
+# # Don't need to plot these for udpated model - MP
+# ggplot(exit_prod %>% filter(mean_final_yr_prod < 10000), aes(x = mean_final_yr_prod)) +
+#   geom_histogram(bins = 100)
+# 
+# 
+# # plugged_prod_final_yr$vintage <- factor(plugged_prod_final_yr$vintage, levels = c("pre 1978", "1978-1982", "1983-1987", "1988-1992", "1993-1997", "1998-2002", "2003-2007", "2008-2012", "2013-2019"))
+# 
+# ## figures
+# final_prod_fig <- ggplot(plugged_prod_final_yr, aes(x = vintage, y = final_yr_prod)) +
+#   geom_boxplot(outlier.shape = NA) +
+#   facet_wrap(~adj_field_name, scales = "free_y") +
+#   ylab("Crude production in last month\n(thousand bbls)") +
+#   scale_y_continuous(labels = comma) +
+#   draft_theme +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 90))
+#   
+# 
+# plugged_prod_final_yr %>%
+#   group_by(adj_field_name, vintage) %>%
+#   mutate(final_yr_prod_adj = filter_lims(final_yr_prod)) %>%  # new variable (value2) so as not to displace first one)
+#   ggplot(aes(x = vintage, y = final_yr_prod_adj)) + 
+#   geom_boxplot(na.rm = TRUE, coef = 5) +  # remove NAs, and set the whisker length to all included points
+#   facet_wrap( ~ adj_field_name, scales = "free_y") + 
+#   ylab("Crude production in last month\n(thousand bbls)") +
+#   scale_y_continuous(labels = comma) +
+#   draft_theme +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 90))
+# 
+# ## add the year before shutdown year
+# plugged_prod_2fy <- plugged_prod %>%
+#   left_join(plugged_last_prod) %>%
+#   mutate(month_year = as.Date(month_year)) %>%
+#   filter(month_year <= last_prod_date) %>%
+#   mutate(count = 1) %>%
+#   group_by(api_ten_digit, FieldCode, api_field) %>%
+#   mutate(cumsum = cumsum(count),
+#          max_count = max(cumsum),
+#          max_sub = max_count - 24,
+#          max_sub2 = max_count - 12) %>%
+#   filter(cumsum <= max_sub2 & cumsum > max_sub) %>%
+#   ungroup() %>%
+#   group_by(api_ten_digit, FieldCode, n_field, api_field, vintage) %>%
+#   summarise(prod = sum(api_prod, na.rm = T)) %>%
+#   ungroup() %>%
+#   left_join(field_names_df) %>%
+#   rename(doc_field_code = FieldCode) %>%
+#   left_join(top_fields_2019) %>%
+#   mutate(field_rank = ifelse(is.na(field_rank), 11, field_rank)) %>%
+#   mutate(adj_field_name = ifelse(doc_field_code %in% top_fields_2019$doc_field_code, paste0(FieldName, ": Rank = ", field_rank), "Other"),
+#          year_grp = "second_to_last")
+#   
+# 
+# ## add factors
+# plugged_prod_2fy$adj_field_name <- factor(plugged_prod_2fy$adj_field_name, levels = c("Belridge  South: Rank = 1", "Midway-Sunset: Rank = 2", "Kern River: Rank = 3",
+#                                                                                                 "Cymric: Rank = 4", "Wilmington: Rank = 5", "Lost Hills: Rank = 6", "San Ardo: Rank = 7", 
+#                                                                                                 "Elk Hills: Rank = 8", "Coalinga: Rank = 9", "Poso Creek: Rank = 10", "Other"))
+# plugged_prod_2fy$vintage <- factor(plugged_prod_2fy$vintage, levels = c("pre 1978", "1978-1982", "1983-1987", "1988-1992", "1993-1997", "1998-2002", "2003-2007", "2008-2012", "2013-2019"))
+# 
+# ## combine
+# comp_df <- plugged_prod_final_yr %>%
+#   rename(prod = final_yr_prod) %>%
+#   mutate(year_grp = "final_year") %>%
+#   rbind(plugged_prod_2fy) %>%
+#   group_by(adj_field_name, vintage, year_grp) %>%
+#   mutate(prod_adj = filter_lims(prod)) %>%
+#   ungroup()
+# 
+# comp_df$year_grp <- factor(comp_df$year_grp, levels = c("second_to_last", "final_year"))
+# 
+# 
+# ## plot
+# ggplot(comp_df, aes(x = vintage, y = prod_adj, color = year_grp)) + 
+#   geom_boxplot(na.rm = TRUE, coef = 5) +  # remove NAs, and set the whisker length to all included points
+#   facet_wrap( ~ adj_field_name, scales = "free_y") + 
+#   ylab("Crude production in last month\n(thousand bbls)") +
+#   scale_y_continuous(labels = comma) +
+#   draft_theme +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 90))
+# 
+# ## do all plugged years, one estimate by field
+# 
+# plugged_prod_final_yr_fl <- plugged_prod_12mo %>%
+#   group_by(api_ten_digit, FieldCode, n_field, api_field, vintage) %>%
+#   summarise(final_yr_prod = sum(api_prod, na.rm = T)) %>%
+#   ungroup() %>%
+#   left_join(field_names_df) %>%
+#   rename(doc_field_code = FieldCode) %>%
+#   left_join(top_fields_2019) %>%
+#   mutate(field_rank = ifelse(is.na(field_rank), 11, field_rank)) %>%
+#   mutate(adj_field_name = ifelse(doc_field_code %in% top_fields_2019$doc_field_code, paste0(FieldName, ": Rank = ", field_rank), "Other"))
+# 
+# 
+# 
+# 
+# 
+# ## do this again, well age
+# ## ------------------------------------
+# 
+# ## zero_production
+# plugged_age_final_prod <- plugged_prod %>%
+#   filter(api_prod > 0) %>%
+#   mutate(month_year = as.Date(month_year)) %>%
+#   group_by(api_ten_digit) %>%
+#   filter(month_year == max(month_year)) %>%
+#   ungroup() %>%
+#   mutate(well_age_year = well_age / 365) %>%
+#   left_join(field_names_df) %>%
+#   rename(doc_field_code = FieldCode) %>%
+#   left_join(top_fields_2019) %>%
+#   mutate(field_rank = ifelse(is.na(field_rank), 11, field_rank)) %>%
+#   mutate(adj_field_name = ifelse(doc_field_code %in% top_fields_2019$doc_field_code, paste0(FieldName, ": Rank = ", field_rank), "Other")) %>%
+#   group_by(adj_field_name, vintage) %>%
+#   mutate(well_age_year_adj = filter_lims(well_age_year)) %>%
+#   ungroup() 
+# 
+# 
+# ## add factors
+# plugged_age_final_prod$adj_field_name <- factor(plugged_age_final_prod$adj_field_name, levels = c("Belridge  South: Rank = 1", "Midway-Sunset: Rank = 2", "Kern River: Rank = 3",
+#                                                                                         "Cymric: Rank = 4", "Wilmington: Rank = 5", "Lost Hills: Rank = 6", "San Ardo: Rank = 7", 
+#                                                                                         "Elk Hills: Rank = 8", "Coalinga: Rank = 9", "Poso Creek: Rank = 10", "Other"))
+# plugged_age_final_prod$vintage <- factor(plugged_age_final_prod$vintage, levels = c("pre 1978", "1978-1982", "1983-1987", "1988-1992", "1993-1997", "1998-2002", "2003-2007", "2008-2012", "2013-2019"))
+# 
+# 
+# ## plot
+# ggplot(plugged_age_final_prod, aes(x = vintage, y = well_age_year_adj)) + 
+#   geom_boxplot(na.rm = TRUE, coef = 5) +  # remove NAs, and set the whisker length to all included points
+#   facet_wrap( ~ adj_field_name, scales = "free_y") + 
+#   ylab("Well age at least time of production\n(years)") +
+#   scale_y_continuous() +
+#   draft_theme +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 90))
+# 
+# vintage_subset <- c("1978-1982", "1983-1987", "1988-1992")
+# 
+# 
+# ## histogram
+# ggplot(plugged_age_final_prod %>% filter(vintage %in% vintage_subset), aes(x = round(well_age_year), fill = vintage)) +
+#   geom_histogram(binwidth = 1) +
+#   scale_fill_manual(values = rev(prim_calepa_pal[1:3]))
+# 
+# ## histogram
+# ggplot(plugged_age_final_prod %>% filter(vintage %in% vintage_subset), aes(x = round(well_age_year), fill = adj_field_name)) +
+#   geom_histogram(binwidth = 1) +
+#   scale_fill_manual(values = calepa_pal)
+# 
+# ## cumulative production
+# 
+# well_info <- plugged_prod %>%
+#   select(api_ten_digit, start_year, FieldCode, vintage) %>%
+#   unique() %>%
+#   group_by(api_ten_digit) %>%
+#   mutate(n = n()) %>%
+#   ungroup() %>%
+#   arrange(api_ten_digit, start_year) %>%
+#   group_by(api_ten_digit) %>%
+#   filter(start_year == min(start_year)) %>%
+#   ungroup() %>%
+#   select(-n)
+# 
+# plugged_cumul_prod <- well_info %>%
+#   left_join(plugged_prod) %>%
+#   arrange(api_ten_digit, month_year) %>%
+#   group_by(api_ten_digit) %>%
+#   mutate(cumul_prod = cumsum(api_prod),
+#          sum_well_prod = sum(api_prod)) %>%
+#   ungroup() 
+# 
+# 
+# plugged_cumul_prod2 <- plugged_cumul_prod %>%
+#   group_by(vintage, FieldCode, well_age) %>%
+#   summarise(sum_prod = sum(api_prod)) %>%
+#   ungroup() %>%
+#   group_by(vintage, FieldCode) %>%
+#   mutate(cumul_prod = cumsum(sum_prod),
+#          total_prod = sum(sum_prod)) %>%
+#   ungroup() %>%
+#   mutate(rel_prod = cumul_prod / total_prod) %>%
+#   left_join(field_names_df) %>%
+#   rename(doc_field_code = FieldCode) %>%
+#   left_join(top_fields_2019) %>%
+#   mutate(field_rank = ifelse(is.na(field_rank), 11, field_rank)) %>%
+#   mutate(adj_field_name = ifelse(doc_field_code %in% top_fields_2019$doc_field_code, paste0(FieldName, ": Rank = ", field_rank), "Other"))
+# 
+# test <- plugged_cumul_prod2 %>%
+#   filter(field_rank == 1,
+#          vintage == "pre_1987")
+# 
+# 

@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## June 9, 2020
-## well vintage and productin
+## well vintage and production
+# Updated 2/20/24 - MP
 
 library(tidyverse)
 library(lubridate)
@@ -10,14 +11,12 @@ library(readxl)
 library(openxlsx)
 library(data.table)
 
-## set directory
-data_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed/"
-save_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/"
-
-prod_file    <- "well_prod_m_processed.csv"
+# ## set directory
+# data_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed/"
+# save_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/"
 
 ## monthly well production
-well_prod <- fread(paste0(data_directory, prod_file), colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 ## field codes and field names
 field_codes <- unique(well_prod[, c("doc_field_code", "doc_fieldname")])
@@ -42,7 +41,7 @@ field_zero_prod <- field_prod2 %>%
 field_prod3 <- field_prod2 %>%
   filter(!doc_field_code %in% field_zero_prod$doc_field_code)
 
-write_csv(field_prod3, path = "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/crude_prod_x_field_revised.csv")
+write_csv(field_prod3, path = "data/processed/crude_prod_x_field_revised.csv")
 
 
 

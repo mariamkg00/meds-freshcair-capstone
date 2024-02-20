@@ -1,16 +1,21 @@
 # meas meng
 # aug 18, 2020
 # well injection type by field
+# Updated 2/20/24 - MP
 
 
 # inputs ------
 
-data_dir        = '/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed/'
-save_dir        = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/project-materials/project-materials/focus-areas-1-2/figs/injection-well-type/'
+# data_dir        = '/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed/'
+# save_dir        = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/project-materials/project-materials/focus-areas-1-2/figs/injection-well-type/'
 # inj_file        = 'well_inject_m.rds'
-inj_file        = 'well_inj_m_processed.csv'
-type_file       = 'well_type_df.csv'
-# info_file       = 'wells_19.csv'
+# inj_file        = 'well_inj_m_processed.csv'
+# type_file       = 'well_type_df.csv'
+# info_file       = 'wells_19.csv'\
+
+setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
+getwd()
+
 
 # load libraries -------- 
 
@@ -25,13 +30,13 @@ library(extrafont)
 
 
 # monthly wellstar injection data
-well_inj <- fread(paste0(data_dir, inj_file), colClasses = c('api_ten_digit' = 'character',
+well_inj <- fread("data/processed/well_inj_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                              'doc_field_code' = 'character'))
 # well_inj = readRDS(paste0(data_dir, "well_inject_m.rds")) 
 # well_inj = setDT(well_inj)
 # well_inj = well_inj[ WellTypeCode %in% c('WF', 'SC', 'SF')]
 
-well_type = fread(paste0(data_dir, "well_type_df.csv"))
+well_type = fread("data/inputs/extraction/well_type_df.csv")
 
 # well_info = fread(paste0(data_dir, info_file), colClasses = c('character', rep(NA, 22))) # info on wells, operators, location, etc
 # well_field = well_info[, c('API', 'FieldName')]

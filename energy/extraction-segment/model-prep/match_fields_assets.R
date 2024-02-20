@@ -3,25 +3,20 @@
 ## Match fields to assets
 
 ## revised: feb 16 2024 by haejin 
-## Updated 2/19/24 MP
+## Updated 2/20/24 MP
 
 # ------------------------------------------- INPUTS -----------------------------------
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
 getwd()
 
-data_directory     <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
-rystad_path        <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
-sp_dir             <- "/capstone/freshcair/meds-freshcair-capstone/data/inputs/gis/"
-save_directory     <- "/capstone/freshcair/meds-freshcair-capstone/data/proprietery-data/"
-proj_dir           <- "/capstone/freshcair/meds-freshcair-capstone/"
-output_dir         <- "proprietery-data"
-match_out_path     <- "proprietery-data"
-
-
-
-## files
-rystad_imputed_file <- "Rystad_cost_imputed_all_assets.csv"
+# data_directory     <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
+# rystad_path        <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
+# sp_dir             <- "/capstone/freshcair/meds-freshcair-capstone/data/inputs/gis/"
+# save_directory     <- "/capstone/freshcair/meds-freshcair-capstone/data/proprietery-data/"
+# proj_dir           <- "/capstone/freshcair/meds-freshcair-capstone/"
+# output_dir         <- "proprietery-data"
+# match_out_path     <- "proprietery-data"
 
 
 
@@ -32,7 +27,7 @@ library(data.table)
 library(mapview)
 library(sf)
 library(rgeos) #nearest poly to each point
-#library(nngeo) #nearest point to each poly
+library(nngeo) #nearest point to each poly
 
 
 ## step 0: fields matched to assets through wells
@@ -70,7 +65,7 @@ field_asset_well_match <- well_match_df %>%
 
 ## save file
 # write_csv(field_asset_well_match, path = "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/entry-model-input/well_doc_asset_match.csv")
-write_csv(field_asset_well_match, file = paste0(save_directory, "stocks-flows/entry-model-input/well_doc_asset_match_revised.csv")) 
+write_csv(field_asset_well_match, file = "data/outputs/well_doc_asset_match_revised.csv")
 
 
 ## are there multipe assets in a field?
@@ -130,13 +125,13 @@ rystad_prod_th <- rystad_prod %>%
 field_assets_adj <- field_assets %>%
   filter(Asset %in% rystad_prod_th$original_asset_name)
 
-write.csv(field_assets_adj, paste0(rystad_path, "processed/asset_latlon_adj.csv"))
+write.csv(field_assets_adj, "data/outputs/asset_latlon_adj.csv")
 
 
 ## make df of nearest neighbor field to asset
 ## ----------------------------------------------------------------
 
-rystad_cost_imputed <- fread(paste0(proj_dir, output_dir, "rystad-imputed-cost/", rystad_imputed_file))
+rystad_cost_imputed <- fread("data/proprietery-data/Rystad_cost_imputed_all_assets.csv")
 
 cost_imputed <- rystad_cost_imputed %>%
   mutate(na_val = ifelse(is.na(capex_forecast) | is.na(opex_forecast), 1, 0)) %>%
@@ -208,7 +203,7 @@ nn_assets_n <- nn_assets %>%
 # mapview(fields_loc %>% filter(FIELD_CODE == "464"), layer.name = "Fields", label = fields_loc$NAME) +
 #   mapview(asset_loc_sf, col.regions = "yellow", layer.name = "Asset",  label = asset_loc_sf$Asset)
 
-write.csv(nn_assets, paste0(rystad_path, "processed/fieldsAssets_adj_revised.csv"))
+write.csv(nn_assets, "data/outputs/fieldsAssets_adj_revised.csv")
 
 ## nearest field neighbor
 ## -----------------------------------------
@@ -302,7 +297,7 @@ nn_fields_n <- nn_fields %>%
   ungroup()
 
 
-write_csv(nn_fields, file = "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/entry-model-input/field_x_field_match_revised.csv")
+write_csv(nn_fields, file = "data/outputs/field_x_field_match_revised.csv")
 
 
 ## ---------------------------------------------
@@ -314,7 +309,7 @@ fields_sf2 <- fields_loc %>%
   select(NAME, FIELD_CODE, nn_field_code, nn_field_name, cost_info)
 
 ## counties
-counties <- read_sf(dsn = paste0("/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/GIS/raw/CA_Counties/", layer = "CA_Counties_TIGER2016.shp")) %>%
+counties <- read_sf(dsn = paste0("data/inputs/gis/CA_Counties/", layer = "CA_Counties_TIGER2016.shp")) %>%
   st_transform(st_crs(fields_loc))
 
 ## mapview
@@ -375,7 +370,7 @@ all_matches <- well_match_df %>%
   unique()
 
 ## save file
-write_csv(all_matches, file = paste0(save_directory, match_out_path, "field_asset_matches_revised.csv"))
+write_csv(all_matches, file = "data/processed/field_asset_matches_revised.csv")
 
 
 

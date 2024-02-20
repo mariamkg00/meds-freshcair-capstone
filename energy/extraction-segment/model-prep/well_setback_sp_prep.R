@@ -13,7 +13,7 @@ library(sf)
 library(tidyverse)
 library(purrr)
 library(rgdal)
-library(gdalUtilities)
+#library(gdalUtilities)
 library(maps)
 library(mapview)
 
