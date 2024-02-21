@@ -1,3 +1,5 @@
+# Updated 2/20/24 - MP
+
 # Load necessary libraries
 library(dplyr)
 library(tidyverse)
@@ -40,6 +42,9 @@ total_btu_per_well <- well_prod_m_processed %>%
   group_by(api_ten_digit) %>%
   summarise(TotalBTUofGasProduced = sum(BTUofGasProduced, na.rm = TRUE))
 print(total_btu_per_well)
+
+# Make sure ProductionReportDate is date-time class
+well_prod_m_processed$ProductionReportDate <- as.Date(well_prod_m_processed$ProductionReportDate)
 
 # Calculate the first production date for each well and ungroup
 well_start_dates <- well_prod_m_processed %>%
@@ -149,7 +154,7 @@ total_gas_production_per_year <- total_gas_production_per_month %>%
   arrange(month_year)
 
 # Calculate the 1 year rolling average for TotalGasProduced
-total_gas_production_per_year$TotalGasProducedRollingAvg <- rollmean(total_gas_production_per_year$TotalGasProduced, 12, fill = NA, align = 'right')
+total_gas_production_per_year$TotalGasProducedRollingAvg <- rollmean(total_gas_production_per_year$TotalProduced, 12, fill = NA, align = 'right')
 
 # Plot the total Gas Produced over time with the 1 year rolling average
 ggplot(total_gas_production_per_year, aes(x = month_year)) +
