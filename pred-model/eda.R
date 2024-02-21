@@ -231,7 +231,7 @@ top_counties_active_wells_over_time <- well_prod_m_processed_updated %>%
   summarise(ActiveWells = n_distinct(api_ten_digit), .groups = 'drop') %>%
   ungroup()
 
-# Plotting with log scale 
+# Plotting with log scale
 ggplot(top_counties_active_wells_over_time, aes(x = year, y = ActiveWells, color = county_name)) +
   geom_line() +
   geom_point() +
@@ -239,6 +239,6 @@ ggplot(top_counties_active_wells_over_time, aes(x = year, y = ActiveWells, color
   labs(title = "Number of Active Wells by Top 10 Counties Over Time (Log Scale)",
        x = "Year",
        y = "Number of Active Wells (Log Scale)") +
-  theme_minimal() +
+  theme_bw() +
   theme(legend.position = "bottom") +
   guides(color = guide_legend(title = "County Name"))
