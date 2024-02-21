@@ -5,6 +5,7 @@ library(dplyr)
 library(tidyverse)
 library(lubridate)
 library(zoo)
+library(stringr)
 
 # Read in well processed data
 well_prod_m_processed <- read.csv("data/processed/well_prod_m_processed.csv")
@@ -115,7 +116,7 @@ active_wells_per_month <- processed_active %>%
 ggplot(active_wells_per_month, aes(x = month_year, y = ActiveWells)) +
   geom_line() + 
   geom_point() + 
-  labs(x = "Month", y = "Number of Active Wells", title = "Active Wells Over Time") +
+  labs(x = "Year", y = "Number of Active Wells", title = "Active Wells Over Time") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -131,7 +132,7 @@ total_production_per_month <- processed_active %>%
 ggplot(total_production_per_month, aes(x = month_year, y = TotalBTUProduced)) +
   geom_line(color = "blue") +
   geom_point(color = "red") + 
-  labs(x = "Month", y = "Total BTU of Gas Produced", title = "Total Gas Production Over Time") +
+  labs(x = "Year", y = "Total BTU of Gas Produced", title = "Total Gas Production Over Time") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -163,12 +164,81 @@ ggplot(total_gas_production_per_year, aes(x = month_year)) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+# Calculating number of active wells by field code over time --------------------
+# Filter for active wells. Define 'active' based on your criteria, here assuming BTUofGasProduced > 0
+active_wells <- well_prod_m_processed_updated %>%
+  filter(ProductionStatus == "Active")
 
+# Calculate the cumulative count of active wells for each field code
+active_wells_summary <- active_wells %>%
+  group_by(doc_field_code) %>%
+  summarise(TotalActiveWells = n_distinct(api_ten_digit)) %>%
+  ungroup()
 
+# Identify the top 5 field codes with the highest number of active wells
+top_field_codes <- active_wells_summary %>%
+  top_n(5, TotalActiveWells) %>%
+  pull(doc_field_code)
 
+# Filter the dataset to include only the top 5 field codes
+top_active_wells_by_field_and_time <- active_wells %>%
+  filter(doc_field_code %in% top_field_codes) %>%
+  group_by(doc_field_code, month_year = floor_date(ProductionReportDate, "month")) %>%
+  summarise(ActiveWells = n_distinct(api_ten_digit)) %>%
+  ungroup()
 
+# Plot the number of active wells over time for the top 5 field codes
+ggplot(top_active_wells_by_field_and_time, aes(x = month_year, y = ActiveWells, color = as.factor(doc_field_code))) +
+  geom_line() +
+  labs(x = "Month", y = "Number of Active Wells", title = "Top 5 Field Codes: Active Wells Over Time") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.title = element_text("Field Code"))
 
+well_prod_m_processed_grouped_fields <- active_wells %>%
+  mutate(
+    doc_field_first_digit = substr(as.character(doc_field_code), 1, 1),
+    month_year = floor_date(ProductionReportDate, "month")
+  )
 
+# Group by the first digit of doc_field_code and month_year, then calculate average active wells
+average_active_wells_by_group_and_time <- well_prod_m_processed_grouped_fields %>%
+  group_by(doc_field_first_digit, month_year) %>%
+  summarise(AverageActiveWells = mean(n_distinct(api_ten_digit))) %>%
+  ungroup()
 
+# Plot the trends over time for each first digit group
+ggplot(average_active_wells_by_group_and_time, aes(x = month_year, y = AverageActiveWells, color = doc_field_first_digit)) +
+  geom_line() +
+  labs(x = "Month", y = "Average Number of Active Wells", title = "Average Active Wells by First Digit of Field Code Over Time") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.title = element_text("First Digit of Field Code"))
 
+# Visualizing the number of active wells in each county over time -----------
+well_prod_m_processed_updated <- well_prod_m_processed_updated %>%
+  mutate(year = year(ProductionReportDate))
 
+# Filter for Active wells and calculate the total active wells per county
+total_active_wells_per_county <- well_prod_m_processed_updated %>%
+  filter(ProductionStatus == "Active") %>%
+  group_by(county_name) %>%
+  summarise(TotalActiveWells = n_distinct(api_ten_digit), .groups = 'drop') %>%
+  top_n(10, TotalActiveWells)
+
+top_counties_active_wells_over_time <- well_prod_m_processed_updated %>%
+  filter(ProductionStatus == "Active", county_name %in% total_active_wells_per_county$county_name) %>%
+  mutate(year = year(ProductionReportDate)) %>%
+  group_by(county_name, year) %>%
+  summarise(ActiveWells = n_distinct(api_ten_digit), .groups = 'drop') %>%
+  ungroup()
+
+# Plotting with log scale 
+ggplot(top_counties_active_wells_over_time, aes(x = year, y = ActiveWells, color = county_name)) +
+  geom_line() +
+  geom_point() +
+  scale_y_log10() + # Apply log scale to Y axis
+  labs(title = "Number of Active Wells by Top 10 Counties Over Time (Log Scale)",
+       x = "Year",
+       y = "Number of Active Wells (Log Scale)") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(title = "County Name"))
