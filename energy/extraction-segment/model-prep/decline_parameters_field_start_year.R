@@ -1,18 +1,19 @@
 # parameterize decline at field-start year level
 # created: may 27, 2021
 # author: meas meng
+# revised: 2/21/2024
 
 # inputs ------
 
-  emlab_path      = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn'
-  fv_year_file    = 'outputs/decline-historic/data/production_field-year_yearly_entry.csv'
-  peak_file       = 'outputs/decline-historic/data/field-year_peak-production_yearly.csv'
-  entry_file      = 'outputs/stocks-flows/entry-input-df/final/entry_df_final_revised.csv'
-  plot_dir        = 'outputs/figures/interim-report-figures/drafts/fuels-model/decline_figs/'
+  emlab_path      = '/capstone/freshcair/meds-freshcair-capstone'
+  fv_year_file    = '/data/inputs/production_field-year_yearly_entry.csv'## missing file - haejin 
+  peak_file       = '/data/inputs/field-year_peak-production_yearly.csv'
+  entry_file      = '/data/inputs/entry-input-df/final/entry_df_final_revised.csv'
+  plot_dir        = '/data/proprietery-data'
   
 # outputs -------
   
-  save_path       = 'outputs/decline-historic/parameters/'
+  save_path       = '/data/processed/'
   save_file       = 'fitted-parameters_field-start-year_yearly_entry.csv'
 
 # load libraries -------- 

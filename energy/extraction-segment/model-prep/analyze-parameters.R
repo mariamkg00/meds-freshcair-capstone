@@ -1,20 +1,21 @@
 ## meas meng
 ## august 31, 2020
 ## analysis and plots of decline curve parameters
+# revised: 2/21/2024 haejin 
 
 # inputs ------
 
-  emlab_path      = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn'
+  emlab_path      = '/capstone/freshcair/meds-freshcair-capstone'
   # para_dir      = "outputs/decline-historic/parameters/"
   # yr_fil        = "fitted-parameters_field-vintage_yearly_entry_modeled_only.csv"
-  yr_file         = "outputs/decline-historic/parameters/fitted-parameters_field-start-year_yearly_entry.csv"
-  prod_file       = "outputs/stocks-flows/crude_prod_x_field_revised.csv"
-  entry_file      = 'outputs/stocks-flows/entry-input-df/final/entry_df_final_revised.csv'
-  plot_path       = "outputs/decline-historic/figures/"
+  yr_file         = "data/inputs/fitted-parameters_field-start-year_yearly_entry.csv"
+  prod_file       = "data/inputs/crude_prod_x_field_revised.csv"
+  entry_file      = 'data/inputs/entry-input-df/final/entry_df_final_revised.csv'
+  plot_path       = "data/proprietery-data/"
   
 # outputs -------
   
-  save_path       = "outputs/decline-historic/parameters"
+  save_path       = "data/proprietery-data/"
   save_file       = "forecasted_decline_parameters_2020_2045.csv"
 
 # load libraries -------- 

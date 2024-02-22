@@ -1048,40 +1048,40 @@ ica_emp_wide <- ica_emp %>%
 ica_emp_wide_direct <- ica_emp %>% 
   dplyr::select(-indirect_emp,-induced_emp) %>% 
   filter(direct_emp != 0) %>% 
-  dplyr::arrange(county,segment,-direct_emp)
-pivot_wider(id_cols = c("county","segment","industry"), names_from = "industry", 
+  dplyr::arrange(county,segment,-direct_emp) %>% 
+pivot_wider( names_from = "industry", 
             values_from = c("direct_emp")) 
 
-
+# UPDATED - MG - 2/21/2024
 ica_emp_wide_indirect <- ica_emp %>% 
   dplyr::select(-direct_emp,-induced_emp) %>% 
   filter(indirect_emp != 0) %>% 
   group_by(county,segment)  %>% 
   arrange(county,segment,-indirect_emp) %>% 
-  pivot_wider(id_cols = c("county","segment","industry"), names_from = "industry", 
+  pivot_wider(names_from = "industry", 
               values_from = c("indirect_emp"))
 
-
+# UPDATED - MG - 2/21/2024
 ica_emp_wide_induced <- ica_emp %>% 
   dplyr::select(-direct_emp,-indirect_emp) %>% 
   filter(induced_emp != 0) %>% 
   group_by(county,segment)  %>% 
   arrange(county,segment,-induced_emp) %>% 
-  pivot_wider(id_cols = c("county","segment","industry"), names_from = "industry", 
+  pivot_wider(names_from = "industry", 
               values_from = c("induced_emp")) 
 
 
 ### Compaensation 
 
 ica_comp_wide <- ica_comp %>% 
-  pivot_wider(id_cols = c("county","segment","industry"), names_from = "industry", 
+  pivot_wider(id_cols = c("county","segment"), names_from = "industry", 
               values_from = c("direct_comp","indirect_comp","induced_comp"))
 
 ica_comp_wide_direct <- ica_comp %>% 
   dplyr::select(county,segment,industry,direct_comp) %>% 
   filter(direct_comp != 0) %>% 
   arrange(county,segment,-direct_comp) %>% 
-  pivot_wider(id_cols = c("county","segment","industry"), names_from = "industry", 
+  pivot_wider(id_cols = c("county","segment"), names_from = "industry", 
               values_from = c("direct_comp")) 
 
 ica_comp_wide_indirect <- ica_comp %>% 
@@ -1089,7 +1089,7 @@ ica_comp_wide_indirect <- ica_comp %>%
   filter(indirect_comp != 0) %>% 
   group_by(county,segment)%>% 
   arrange(county,segment,-indirect_comp) %>% 
-  pivot_wider(id_cols = c("county","segment","industry"), names_from = "industry", 
+  pivot_wider(id_cols = c("county","segment"), names_from = "industry", 
               values_from = c("indirect_comp")) 
 
 
@@ -1098,7 +1098,7 @@ ica_comp_wide_induced <- ica_comp %>%
   filter(induced_comp != 0) %>% 
   group_by(county,segment) %>% 
   arrange(county,segment,-induced_comp) %>% 
-  pivot_wider(id_cols = c("county","segment","industry"), names_from = "industry", 
+  pivot_wider(id_cols = c("county","segment"), names_from = "industry", 
               values_from = c("induced_comp")) 
 
 
@@ -1109,13 +1109,20 @@ ica_comp_wide_induced <- ica_comp %>%
 ####################################################################################################################
 
 #3. Create dfs with total direct, indirect, induced multipliers by county and segment 
+# UPDATED - MG - 2/21/2024
+
+
+
+detach(package:plyr)
 
 ica_total <- ica %>% 
-  group_by(county,segment) %>% 
-  summarize(direct_emp = sum(direct_emp, na.rm = T), indirect_emp = sum(indirect_emp, na.rm = T),
-            induced_emp = sum(induced_emp, na.rm = T), direct_comp = sum(direct_comp, na.rm = T), indirect_comp = sum(indirect_comp, na.rm = T),
-            induced_comp = sum(induced_comp, na.rm = T))
-
+  group_by(segment,county) %>% 
+  summarise(direct_emp = sum(direct_emp),
+            indirect_emp = sum(indirect_emp, na.rm = TRUE),
+            induced_emp = sum(induced_emp, na.rm = TRUE),
+            direct_comp = sum(direct_comp, na.rm = TRUE),
+            indirect_comp = sum(indirect_comp, na.rm = TRUE),
+            induced_comp = sum(induced_comp, na.rm = TRUE)) 
 
 ####################################################################################################################
 ####################################################################################################################

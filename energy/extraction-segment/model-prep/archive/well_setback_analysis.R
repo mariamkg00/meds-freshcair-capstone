@@ -4,6 +4,7 @@
 # sandysum@ucsb.edu
 # written: 4/9/2021 | modified
 ##################################################################
+# revised: 2/21/2024 by Haejin 
 
 # comment out and add your own machine's file path
 sandy <- "/Volumes/GoogleDrive/Shared drives"
