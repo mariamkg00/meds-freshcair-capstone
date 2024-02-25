@@ -12,21 +12,18 @@
 rm(list=ls())
 
 
-library("cowplot")
-library("rstudioapi")
-library("ggplot2")
-library("dplyr")
-library("tidyr")
-library("magrittr")
-library("readr")
-library("stringr")
-library("readxl")
-library("quantmod")
-library("lubridate")
-library("writexl")
-library("tigris")
-library("sf")
-library(dplyr)
+library(cowplot)
+library(rstudioapi)
+library(magrittr)
+library(readr)
+library(stringr)
+library(readxl)
+library(quantmod)
+library(lubridate)
+library(writexl)
+library(tigris)
+library(sf)
+library(tidyverse)
 
 #Set wd 
 setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
@@ -65,7 +62,7 @@ ica_emp_ext_kern <- read_csv('ica-emp-ext-kern.csv') %>%
   dplyr::select(-...1,-...6) 
 
 
-ica_comp_ext_kern <- read_csv('ica-va-ext-kern.csv',skip = 1) %>% 
+ica_comp_ext_kern <- read_csv('ica-va-ext-kern.csv',skip = 1, col_names = TRUE) #%>% 
   filter(is.na(...1)==F) %>% 
   mutate(county = "Kern", segment = "extraction") %>% 
     dplyr::rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
@@ -174,7 +171,7 @@ ica_emp_drill_la <- read_csv('ica-emp-drill-la.csv') %>%
 
 
 # UPDATED - MG - 2/19/2024
-ica_comp_drill_la <- read_csv('ica-va-drill-la.csv',skip = 1) %>% 
+ica_comp_drill_la <- read_csv('ica-va-drill-la.csv', skip = 1, col_names = FALSE) #%>% 
   filter(is.na(...1)==F) %>% 
   mutate(county = "Los Angeles", segment = "drilling") %>% 
     dplyr::rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
@@ -1113,7 +1110,7 @@ ica_comp_wide_induced <- ica_comp %>%
 
 
 
-detach(package:plyr)
+#detach(package:plyr)
 
 ica_total <- ica %>% 
   group_by(segment,county) %>% 
@@ -1156,6 +1153,7 @@ ica_total_all_counties <- mutate(ica_total_all_counties, segment = ifelse(segmen
 
 
 ####################################################################################################################
+# run on 2/25/2024 -MG 
 
 ica_emp_direct_all_counties <- left_join(county_df,ica_emp_wide_direct,by=c("NAME10" = "county")) %>% 
   rename(county = NAME10) %>% 
@@ -1184,6 +1182,7 @@ ica_emp_induced_all_counties[is.na(ica_emp_induced_all_counties)] <- 0
 ica_emp_induced_all_counties <- mutate(ica_emp_induced_all_counties, segment = ifelse(segment=="0",NA,segment))
 
 ####################################################################################################################
+# run on 2/25/2024 - MG 
 
 ica_comp_direct_all_counties <- left_join(county_df,ica_comp_wide_direct,by=c("NAME10" = "county")) %>% 
   rename(county = NAME10) %>% 
@@ -1217,6 +1216,7 @@ ica_comp_induced_all_counties <- mutate(ica_comp_induced_all_counties, segment =
 ####################################################################################################################
 ####################################################################################################################
 ####################################################################################################################
+# 2/25/2024 - MG 
 #5. replace direct compensation multipliers with the sample average for counties where it is 0 
 
 ica_total_positive <- ica_total_all_counties %>% 
@@ -1238,9 +1238,12 @@ ica_total_all_counties_interpolated <- ica_total_all_counties %>%
 ####################################################################################################################
 ####################################################################################################################
 
+# UPDATED - 2/25/2024 - MG 
 #5. export as xlsx 
 
-setwd(processed)
+
+# updating working directory to processed data folder in meds-freshcair
+setwd('/capstone/freshcair/meds-freshcair-capstone/data/processed/')
 
 ## ICA file 
 
@@ -1256,9 +1259,12 @@ write_xlsx(x=ica_list,"ica_multipliers_v2.xlsx")
 ####################################################################################################################
 ####################################################################################################################
 
+# UDPATED - 2/25/2024 - MG 
 #6. save ICA industry multipliers as a csv for use in compiling results by industry in long format
 
-setwd(processed)
+# updating working directory to processed data folder in meds-freshcair
+
+setwd('/capstone/freshcair/meds-freshcair-capstone/data/processed/')
 
 ica_ind_output <- ica %>% 
   dplyr::select(county,segment,industry,direct_emp,indirect_emp,induced_emp,direct_comp,indirect_comp,induced_comp)
