@@ -1,7 +1,7 @@
 # parameterize decline at field-start year level
 # created: may 27, 2021
 # author: meas meng
-# revised: 2/21/2024
+# revised: 2/21/2024 by Haejin 
 
 # inputs ------
 

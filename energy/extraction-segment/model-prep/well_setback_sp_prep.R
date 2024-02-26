@@ -1,19 +1,19 @@
 ## Tracey Mangin
 ## May 7, 2021
 ## prep FrackTracker data for analysis
-##revised : Feb 14, 2024 by Haejin 
+##revised : Feb 14, 2024 by Haejin / Feb 25, 2024 Haejin 
 
 # comment out and add your own machine's file path
-home <- "/capstone/freshcair/meds-freshcair-capstone"
-ft_path <- "/data/inputs/FracTracker/FracTrackerSetbackgdb-newest/FracTrackerSetbackgdb/FracTrackerSetbackdata.gdb" #--- missing file ----
-save_path <- paste0(home, "/emlab/projects/current-projects/calepa-cn/data/GIS/processed/fracktracker-sr/")
+home <- "/capstone/freshcair/meds-freshcair-capstone" #### revise filepath
+ft_path <- "/data/proprietery-data/FracTrackerSetbackdata.gdb" #### revise filepath
+save_path <- paste0(home, "/data/processed") #### revise filepath
 
 # load packages
 library(sf)
 library(tidyverse)
 library(purrr)
 library(rgdal)
-#library(gdalUtilities)
+library(gdalUtilities)
 library(maps)
 library(mapview)
 
@@ -28,7 +28,7 @@ ca <- st_as_sf(map("state", plot = FALSE, fill = TRUE)) %>%
 ################################# READ DATA AND TRANSFORM
 
 # to get the names of layers in the shapefile
-layers <- sf::st_layers(dsn = file.path(home, "emlab/projects/current-projects/calepa-cn/data/FracTracker/FracTrackerSetbackgdb-newest/FracTrackerSetbackgdb/FracTrackerSetbackdata.gdb")) #### ----- missing
+layers <- sf::st_layers(dsn = file.path(home, "/data/proprietery-data/FracTrackerSetbackdata.gdb")) #### revise filepath
 
 ## read in the SR layers
 layer_vec <- c("SetbackOutlines_SR_Dwellings_082220", "PlaygroundsinCities", "DayCareCenters", "reselderlyCare",
@@ -43,8 +43,9 @@ layer_vec <- c("SetbackOutlines_SR_Dwellings_082220", "PlaygroundsinCities", "Da
 ## dwellings
 sr_dwellings <- sf::st_read(dsn = file.path(home, ft_path), layer = "SetbackOutlines_SR_Dwellings_082220")
 sr_dwellings <- sr_dwellings  %>% st_transform(ca_crs) 
-sr_dwellings <- sf::st_cast(sr_dwellings, "MULTIPOLYGON")
-sr_dwellings <- st_union(sr_dwellings)
+sr_dwellings <- sf::st_cast(sr_dwellings, "POLYGON") # not working = come back soon
+
+sr_dwellings <- st_union(sr_dwellings)  # not working = come back soon
 
 
 ## playgrounds
@@ -150,8 +151,8 @@ sr_s <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolPropCA_1") %>
   mutate(fac_type = "school") %>%
   dplyr::select(fac_type) 
 
-sr_s <- sf::st_cast(sr_s, "MULTIPOLYGON")
-sr_s <- st_union(sr_s)
+#sr_s <- sf::st_cast(sr_s, "MULTIPOLYGON") # already multipolygon
+sr_s <- st_union(sr_s) # not working = come back soon
 
 ## SchoolsCA_Sabins_1
 sr_sca <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolsCA_Sabins_1") %>%
@@ -200,7 +201,7 @@ sr_pts <- st_union(sr_pts)
 
 ## simplify dwellings
 
-simp_sr_dwell <- rmapshaper::ms_simplify(sr_dwellings, keep = 0.3, keep_shapes = TRUE, explode = TRUE)
+simp_sr_dwell <- rmapshaper::ms_simplify(sr_dwellings, keep = 0.3, keep_shapes = TRUE, explode = TRUE) # not working = come back soon
 length(st_geometry(simp_sr_dwell))
 
 # sandy's checks

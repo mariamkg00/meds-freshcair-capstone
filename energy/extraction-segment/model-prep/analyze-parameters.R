@@ -10,8 +10,8 @@
   # yr_fil        = "fitted-parameters_field-vintage_yearly_entry_modeled_only.csv"
   yr_file         = "data/inputs/fitted-parameters_field-start-year_yearly_entry.csv"
   prod_file       = "data/inputs/crude_prod_x_field_revised.csv"
-  entry_file      = 'data/inputs/entry-input-df/final/entry_df_final_revised.csv'
-  plot_path       = "data/proprietery-data/"
+  entry_file      = 'data/processed/entry_df_final_revised.csv'
+  plot_path       = "data/outputs/"
   
 # outputs -------
   

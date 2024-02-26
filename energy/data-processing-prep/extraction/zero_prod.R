@@ -14,7 +14,7 @@ library(openxlsx)
 proj_dir <- "/capstone/freshcair/meds-freshcair-capstone/data/" # revised file directory -Haejin
 raw_dir            <- "/capstone/freshcair/meds-freshcair-capstone/data/inputs/" #  revised file directory -Haejin
 data_directory <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/" #  revised file directory -Haejin
-output_dir <- "proprietery-data/"
+output_dir <- "outputs/"
 
 ## files
 prod_file       <- "well_prod_m_processed.csv"
