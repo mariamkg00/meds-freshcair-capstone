@@ -3,6 +3,7 @@
 # created: 07/28/2021
 # updated: 08/17/2021
 
+# updated: 02/25/2024 - MG 
 ############################################################################################
 # Set up environment 
 ############################################################################################
@@ -10,636 +11,659 @@
 # Clearing previous 
 rm(list=ls())
 
-
-library("cowplot")
-library("rstudioapi")
-library("ggplot2")
-library("dplyr")
-library("tidyr")
-library("magrittr")
-library("readr")
-library("stringr")
-library("readxl")
-library("quantmod")
-library("lubridate")
-library("writexl")
-library("tigris")
-library("sf")
+library(tidyverse)
+library(cowplot)
+library(rstudioapi)
+library(ggplot2)
+library(magrittr)
+library(readxl)
+library(quantmod)
+library(writexl)
+library(tigris)
+library(sf)
 
 
 #Set wd 
 
-#Chris' macbook 
-ica_dollar <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/labor/processed/implan-results/academic-paper-multipliers/ica' 
-impact_dollar <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/labor/processed/implan-results/academic-paper-multipliers/impact'
-statewide_processed <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/labor/processed/implan-results/statewide/processed'
-processed <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/labor/processed/implan-results/academic-paper-multipliers/processed'
+
+# UPDATED - 2/25/2024
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+# #Chris' macbook 
+# ica_dollar <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/labor/processed/implan-results/academic-paper-multipliers/ica' 
+# impact_dollar <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/labor/processed/implan-results/academic-paper-multipliers/impact'
+# statewide_processed <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/labor/processed/implan-results/statewide/processed'
+# processed <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/labor/processed/implan-results/academic-paper-multipliers/processed'
 
 
 
 ############################################################################################ 
-
+# read_csv() function has read in the columns differently than before. The columns now include '...' and a number proceeding the column name.
+# MG hard coded the columns as read_csv() did not include any inputs to read in the columns as before.
+# UPDATED - MG - 2/25/2024 
 #1. Import ICA files, clean up names, and add county & segment identifiers 
 
 ##1a. Industry Contribution Analysis (ICA)
 
 ### NOTE: all multipliers are for $1 million of output value in an industry 
 
-setwd(ica_dollar)
+setwd('/capstone/freshcair/meds-freshcair-capstone/data/inputs/labor/ica')
 
 ### Kern
 
 #### extraction 
+# UPDATED - 2/25/2024
 
 ica_emp_ext_kern <- read_csv('ica-emp-ext-kern.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+# read_csv() in this case reads the columns in as "...1", "Impact", "1 - Direct", "2 - Indirect", "3 - Induced", "...6"
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Kern", segment = "extraction") %>% 
-  rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::rename(industry = Impact) %>% 
+  dplyr::select(-...1,-...6) 
+
+  
+# UPDATED - 2/25/2024
 
 
-ica_comp_ext_kern <- read_csv('ica-va-ext-kern.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+ica_comp_ext_kern <- read_csv('ica-va-ext-kern.csv', skip =1) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Kern", segment = "extraction") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 #### drilling 
+# UPDATED - 2/25/2024 - MG 
 
 ica_emp_drill_kern <- read_csv('ica-emp-drill-kern.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Kern", segment = "drilling") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
-
+# UPDATED - 2/25/2024 - MG 
 ica_comp_drill_kern <- read_csv('ica-va-drill-kern.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Kern", segment = "drilling") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 
 #### refining 
+# UPDATED - 2/25/2024 - MG 
 
 ica_emp_ref_kern <- read_csv('ica-emp-ref-kern.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Kern", segment = "refining") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
-
+# UPDATED - 2/25/2024 - MG 
 ica_comp_ref_kern <- read_csv('ica-va-ref-kern.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Kern", segment = "refining") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 ####################################################################################################################
+# UPDATED - 2/25/2024 - MG 
 
 ## Los Angeles
 
 #### extraction 
 
 ica_emp_ext_la <- read_csv('ica-emp-ext-la.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Los Angeles", segment = "extraction") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ext_la <- read_csv('ica-va-ext-la.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Los Angeles", segment = "extraction") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 #### drilling 
 
+# UPDATED - 2/25/2024
+
+
 ica_emp_drill_la <- read_csv('ica-emp-drill-la.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Los Angeles", segment = "drilling") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_drill_la <- read_csv('ica-va-drill-la.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Los Angeles", segment = "drilling") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 
 #### refining 
+# UPDATED 2/25/2024 - MG 
+
 
 ica_emp_ref_la <- read_csv('ica-emp-ref-la.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Los Angeles", segment = "refining") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ref_la <- read_csv('ica-va-ref-la.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Los Angeles", segment = "refining") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
+
 
 
 ####################################################################################################################
-
+# UPDATED - 2/25/2024 - MG
 ## Santa Barbara
 
 #### extraction 
 
 ica_emp_ext_sb <- read_csv('ica-emp-ext-sb.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Santa Barbara", segment = "extraction") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ext_sb <- read_csv('ica-va-ext-sb.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Santa Barbara", segment = "extraction") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 #### drilling 
+# UPDATED - 2/25/2024 - MG 
 
 ica_emp_drill_sb <- read_csv('ica-emp-drill-sb.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Santa Barbara", segment = "drilling") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_drill_sb <- read_csv('ica-va-drill-sb.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Santa Barbara", segment = "drilling") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 
 #### refining 
+# UPDATED 2/25/2024 - MG 
 
 ica_emp_ref_sb <- read_csv('ica-emp-ref-sb.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Santa Barbara", segment = "refining") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ref_sb <- read_csv('ica-va-ref-sb.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Santa Barbara", segment = "refining") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 ####################################################################################################################
+# UPDATED - 2/24/2024 - MG 
 
 ## Monterey
 
 #### extraction 
 
 ica_emp_ext_monterey <- read_csv('ica-emp-ext-monterey.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Monterey", segment = "extraction") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ext_monterey <- read_csv('ica-va-ext-monterey.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Monterey", segment = "extraction") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 #### drilling 
+# UPDATED 
 
 ica_emp_drill_monterey <- read_csv('ica-emp-drill-monterey.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Monterey", segment = "drilling") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_drill_monterey <- read_csv('ica-va-drill-monterey.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Monterey", segment = "drilling") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 
 ####################################################################################################################
+# UPDATED - 2/25/2024
 
 ## Ventura
 
 #### extraction 
 
 ica_emp_ext_ventura <- read_csv('ica-emp-ext-ventura.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Ventura", segment = "extraction") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ext_ventura <- read_csv('ica-va-ext-ventura.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Ventura", segment = "extraction") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 #### drilling 
 
 ica_emp_drill_ventura <- read_csv('ica-emp-drill-ventura.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Ventura", segment = "drilling") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_drill_ventura <- read_csv('ica-va-drill-ventura.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Ventura", segment = "drilling") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 
 ####################################################################################################################
-
+# UPDATED - MG - 2/25/2024
 ## Orange
 
 #### extraction 
 
 ica_emp_ext_orange <- read_csv('ica-emp-ext-orange.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Orange", segment = "extraction") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ext_orange <- read_csv('ica-va-ext-orange.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Orange", segment = "extraction") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 #### drilling 
 
 ica_emp_drill_orange <- read_csv('ica-emp-drill-orange.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Orange", segment = "drilling") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_drill_orange <- read_csv('ica-va-drill-orange.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Orange", segment = "drilling") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 
 ####################################################################################################################
-
+# UDPATED - MG - 2/25/2024 
 ## Fresno
 
 #### extraction 
 
 ica_emp_ext_fresno <- read_csv('ica-emp-ext-fresno.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Fresno", segment = "extraction") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ext_fresno <- read_csv('ica-va-ext-fresno.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Fresno", segment = "extraction") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 #### drilling 
 
 ica_emp_drill_fresno <- read_csv('ica-emp-drill-fresno.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Fresno", segment = "drilling") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_drill_fresno <- read_csv('ica-va-drill-fresno.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Fresno", segment = "drilling") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 ####################################################################################################################
-
+# UPDATED - 2/25/2024 - MG 
 ## Contra Costa
 
 #### refining 
 
 ica_emp_ref_cc <- read_csv('ica-emp-ref-cc.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Contra Costa", segment = "refining") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ref_cc <- read_csv('ica-va-ref-cc.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Contra Costa", segment = "refining") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 
 
 ####################################################################################################################
+# UPDATED - 2/25/2024 - MG 
 
 ## Solano
 
 #### refining 
 
 ica_emp_ref_solano <- read_csv('ica-emp-ref-solano.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Solano", segment = "refining") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ref_solano <- read_csv('ica-va-ref-solano.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Solano", segment = "refining") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
-
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 ## Santa Barbara
 
+
 #### extraction 
 
+# UPDATED - 2/25/2024 - MG 
 ica_emp_ext_statewide <- read_csv('ica-emp-ext-statewide.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Statewide", segment = "extraction") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ext_statewide <- read_csv('ica-va-ext-statewide.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Statewide", segment = "extraction") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 #### drilling 
+# UPDATED - MG - 2/24/2024
 
 ica_emp_drill_statewide <- read_csv('ica-emp-drill-statewide.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Statewide", segment = "drilling") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_drill_statewide <- read_csv('ica-va-drill-statewide.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Statewide", segment = "drilling") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 
 #### refining 
-
+# UPDATED - MG - 2/25/2024
 ica_emp_ref_statewide <- read_csv('ica-emp-ref-statewide.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Statewide", segment = "refining") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  dplyr::select(-...1,-...6) 
 
 
 ica_comp_ref_statewide <- read_csv('ica-va-ref-statewide.csv',skip = 1) %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Statewide", segment = "refining") %>% 
-  rename(industry = `Industry Display`, direct_comp = `Employee Compensation`, 
-         direct_proprietor_income = `Proprietor Income`, direct_other_property_income = `Other Property Income`,
-         direct_taxes_prod_imports = `Taxes on Production & Imports`, direct_va = `Value Added`,
-         indirect_comp = `Employee Compensation_1`, 
-         indirect_proprietor_income = `Proprietor Income_1`, indirect_other_property_income = `Other Property Income_1`,
-         indirect_taxes_prod_imports = `Taxes on Production & Imports_1`, indirect_va = `Value Added_1`,
-         induced_comp = `Employee Compensation_2`, 
-         induced_proprietor_income = `Proprietor Income_2`, induced_other_property_income = `Other Property Income_2`,
-         induced_taxes_prod_imports = `Taxes on Production & Imports_2`, induced_va = `Value Added_2`) %>% 
-  dplyr::select(-`Employee Compensation_3`, -`Proprietor Income_3`, -`Other Property Income_3`,
-                -`Taxes on Production & Imports_3`, -`Value Added_3`,-X1)
+  rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
+         direct_proprietor_income = `Proprietor Income...4`, direct_other_property_income = `Other Property Income...5`,
+         direct_taxes_prod_imports = `Taxes on Production & Imports...6`, direct_va = `Value Added...7`,
+         indirect_comp = `Employee Compensation...8`, 
+         indirect_proprietor_income = `Proprietor Income...9`, indirect_other_property_income = `Other Property Income...10`,
+         indirect_taxes_prod_imports = `Taxes on Production & Imports...11`, indirect_va = `Value Added...12`,
+         induced_comp = `Employee Compensation...13`, 
+         induced_proprietor_income = `Proprietor Income...14`, induced_other_property_income = `Other Property Income...15`,
+         induced_taxes_prod_imports = `Taxes on Production & Imports...16`, induced_va = `Value Added...17`) %>% 
+  dplyr::select(-`Employee Compensation...18`, -`Proprietor Income...19`, -`Other Property Income...20`,
+                -`Taxes on Production & Imports...21`, -`Value Added...22`,-...1)
 
 
 
@@ -647,22 +671,23 @@ ica_comp_ref_statewide <- read_csv('ica-va-ref-statewide.csv',skip = 1) %>%
 ####################################################################################################################
 ####################################################################################################################
 ####################################################################################################################
+# UPDATED - 2/25/2024 - MG 
 
 ##1b. Impact Analysis 
 
 ### NOTE: all multipliers are for $1 million change in output value in an industry 
 
-setwd(impact_dollar)
+
 
 ### Kern
 
 #### extraction 
 
 impact_emp_ext_kern <- read_csv('impact-emp-ext-kern.csv') %>% 
-  filter(is.na(X1)==F) %>% 
+  filter(is.na(...1)==F) %>% 
   mutate(county = "Kern", segment = "extraction") %>% 
   rename(industry = Impact) %>% 
-  select(-X1,-X6) 
+  select(-...1,-...6) 
 
 
 impact_comp_ext_kern <- read_csv('impact-va-ext-kern.csv',skip = 1) %>% 
