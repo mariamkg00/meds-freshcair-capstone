@@ -2,10 +2,12 @@
 ## January 4, 2023
 ## Check health SRM outputs
 
+## UPDATED - 2/25/2024 
+
 library(tidyverse)
 
 ## paths 
-main_path                <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
+main_path                <- '/capstone/freshcair/meds-freshcair-capstone/'
 srm_save_path_general    <- paste0(main_path, "data/health/source_receptor_matrix/inmap_processed_srm/extraction/")
 srm_save_path_nh3        <- paste0(srm_save_path_general, "nh3/")
 srm_save_path_nox        <- paste0(srm_save_path_general, "nox/")
