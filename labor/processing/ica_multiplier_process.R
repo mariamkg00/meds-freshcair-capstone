@@ -171,7 +171,7 @@ ica_emp_drill_la <- read_csv('ica-emp-drill-la.csv') %>%
 
 
 # UPDATED - MG - 2/19/2024
-ica_comp_drill_la <- read_csv('ica-va-drill-la.csv', skip = 1, col_names = FALSE) #%>% 
+ica_comp_drill_la <- read_csv('ica-va-drill-la.csv', skip = 1) %>% 
   filter(is.na(...1)==F) %>% 
   mutate(county = "Los Angeles", segment = "drilling") %>% 
     dplyr::rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
@@ -1210,6 +1210,8 @@ ica_comp_induced_all_counties <- left_join(county_df,ica_comp_wide_induced,by=c(
 ica_comp_induced_all_counties[is.na(ica_comp_induced_all_counties)] <- 0 
 ica_comp_induced_all_counties <- mutate(ica_comp_induced_all_counties, segment = ifelse(segment=="0",NA,segment))
 
+ica_comp_direct_all_counties %>% 
+  group_by(county)
 
 ####################################################################################################################
 ####################################################################################################################
@@ -1270,3 +1272,33 @@ ica_ind_output <- ica %>%
   dplyr::select(county,segment,industry,direct_emp,indirect_emp,induced_emp,direct_comp,indirect_comp,induced_comp)
 
 write_csv(ica_ind_output,'ica_multipliers_by_industry_long.csv')
+
+library(sysfonts)
+library(scales)
+font_add_google(name = 'Inter', family = 'inter')
+show_text_auto()
+### producing visual 
+ica_top_ten_counties <- ica_total_all_counties %>% 
+  filter(segment == 'drilling') %>% 
+  filter(county != 'Statewide') %>% 
+  arrange(desc(direct_comp))
+options(scipen = 999)
+sub("0{3}$", "K", ica_top_ten_counties$direct_comp)
+ggplot(data = ica_top_ten_counties)+
+  geom_col(aes(x = reorder(county, -direct_comp), y = direct_comp), fill = '#006CD1')+
+  geom_text(aes(x = reorder(county, -direct_comp), y = direct_comp, label = scales::comma(round(direct_comp,2)), vjust = -0.5))+
+  scale_y_continuous(labels = label_dollar(scale = .001, suffix = "K"))+
+  labs(x = 'California County',
+       y = 'Direct Compensation ($USD)',
+       title = 'Top Direct Compensation from Drilling Segment in California Counties')+
+  annotate('text' , x = 5.75, y = 300000, label = 'Direct impacts were computed by inputting the level of revenue observed\n for the drilling industries separately for each county with active operations. ',
+           fontface = 'italic')+
+  theme_bw()+
+  theme(axis.text.x = element_text(family = 'inter', size = 12),
+        axis.text.y = element_text(family = 'inter', size = 12),
+        axis.title.x = element_text(family = 'inter', size = 14),
+        axis.title.y = element_text(family = 'inter', size = 14),
+        plot.title = element_text(family = 'inter', size = 15, hjust = 0.5),
+        panel.grid = element_blank(),
+        panel.border = element_blank())
+

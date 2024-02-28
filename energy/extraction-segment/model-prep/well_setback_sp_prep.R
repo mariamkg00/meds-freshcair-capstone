@@ -9,6 +9,9 @@ ft_path <- "/data/proprietery-data/FracTrackerSetbackdata.gdb" #### revise filep
 save_path <- paste0(home, "/data/processed") #### revise filepath
 
 # load packages
+library(ggplot2) # MP added
+library(dplyr) # MP added
+library(leaflet) # MP added
 library(sf)
 library(tidyverse)
 library(purrr)
@@ -42,11 +45,15 @@ layer_vec <- c("SetbackOutlines_SR_Dwellings_082220", "PlaygroundsinCities", "Da
 
 ## dwellings
 sr_dwellings <- sf::st_read(dsn = file.path(home, ft_path), layer = "SetbackOutlines_SR_Dwellings_082220")
-sr_dwellings <- sr_dwellings  %>% st_transform(ca_crs) 
-sr_dwellings <- sf::st_cast(sr_dwellings, "POLYGON") # not working = come back soon
 
-sr_dwellings <- st_union(sr_dwellings)  # not working = come back soon
+# Remove MULTISURFACE types (just first row) - MP
+sr_dwellings <- sr_dwellings %>%
+  filter(st_geometry_type(.) != "MULTISURFACE")
 
+sr_dwellings <- sr_dwellings %>% 
+  st_transform(ca_crs) 
+sr_dwellings <- sf::st_cast(sr_dwellings, "MULTIPOLYGON") 
+sr_dwellings <- st_union(sr_dwellings)  
 
 ## playgrounds
 sr_pg <- sf::st_read(dsn = file.path(home, ft_path), layer = "PlaygroundsinCities") %>%
@@ -139,24 +146,67 @@ sr_caach <- sf::st_read(dsn = file.path(home, ft_path), layer = "CAAcuteCAreHost
   mutate(fac_type = "general acute care hospital") %>%
   dplyr::select(fac_type)
 
-## private schools
+## private schools 
 sr_ps <- sf::st_read(dsn = file.path(home, ft_path), layer = "PrivSchoolsCA_1") %>%
   st_transform(ca_crs) %>%
   mutate(fac_type = "private school") %>%
   dplyr::select(fac_type)
 
-## schools (polygons)
+# ## schools (polygons) 
 sr_s <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolPropCA_1") %>%
   st_transform(ca_crs) %>%
+  dplyr::filter(st_geometry_type(.) != "MULTISURFACE") %>%  # MP added
   mutate(fac_type = "school") %>%
   dplyr::select(fac_type) 
 
-#sr_s <- sf::st_cast(sr_s, "MULTIPOLYGON") # already multipolygon
-sr_s <- st_union(sr_s) # not working = come back soon
+##### MP TESTING
 
-## SchoolsCA_Sabins_1
+# Step 1: Check for invalid geometries
+invalid_geoms <- st_is_valid(sr_s, NA_on_error = FALSE) == FALSE
+
+# Print the number of invalid geometries
+cat("Number of invalid geometries:", sum(invalid_geoms), "\n")
+
+# Step 2: Repair invalid geometries
+# Only proceed if there are invalid geometries
+if (any(invalid_geoms)) {
+  sr_s$Shape <- st_make_valid(sr_s$Shape)
+  
+  # Alternatively, if you want to replace the entire sf object considering all geometries:
+  # sr_s <- st_make_valid(sr_s)
+}
+
+# Check again to ensure all geometries are now valid
+all_valid_post_repair <- all(st_is_valid(sr_s, NA_on_error = FALSE))
+
+# Print the status of geometries after repair
+cat("All geometries valid after repair:", all_valid_post_repair, "\n")
+
+#####
+
+sr_s <- st_make_valid(sr_s) # MP added
+  
+# Removing for now, need to figure out how to read polygons since the rest of the data are points- MP ?????
+# sr_s <- sf::st_cast(sr_s, "MULTIPOLYGON") # we can see any false geometries format
+
+# ### MP TESTING
+# 
+# invalid <- st_is_valid(sr_s, NA_on_error = FALSE) == FALSE
+# if (any(invalid)) {
+#   print(paste("Invalid geometries at positions:", which(invalid)))
+# }
+# 
+# if (any(invalid)) {
+#   sr_s <- st_make_valid(sr_s)
+# }
+# 
+# ### END MP TESTING 
+sr_s <- st_union(sr_s) # st_union <- convert multipolygon to polygon
+
+# ## SchoolsCA_Sabins_1 -- having an issue reading these in - MP
 sr_sca <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolsCA_Sabins_1") %>%
   st_transform(ca_crs) %>%
+  dplyr::filter(st_geometry_type(.) != "MULTISURFACE") %>%  # MP added
   mutate(fac_type = "school") %>%
   dplyr::select(fac_type)
 
@@ -195,7 +245,13 @@ sr_pts <- rbind(sr_pg,
                 sr_pcc)
 
 # st_union()'s help file
-# Unioning a set of overlapping polygons has the effect of merging the areas (i.e. the same effect as iteratively unioning all individual polygons together). Unioning a set of LineStrings has the effect of fully noding and dissolving the input linework. In this context "fully noded" means that there will be a node or endpoint in the output for every endpoint or line segment crossing in the input. "Dissolved" means that any duplicate (e.g. coincident) line segments or portions of line segments will be reduced to a single line segment in the output. Unioning a set of Points has the effect of merging all identical points (producing a set with no duplicates).
+# Unioning a set of overlapping polygons has the effect of merging the areas 
+# (i.e. the same effect as iteratively unioning all individual polygons together). 
+# Unioning a set of LineStrings has the effect of fully noding and dissolving the input linework. 
+# In this context "fully noded" means that there will be a node or endpoint in the output for every endpoint or 
+# line segment crossing in the input. "Dissolved" means that any duplicate (e.g. coincident) line segments or portions 
+# of line segments will be reduced to a single line segment in the output. Unioning a set of Points has the effect of merging 
+# all identical points (producing a set with no duplicates).
 
 sr_pts <- st_union(sr_pts)
 
@@ -231,13 +287,32 @@ plot(simp_sr_dwell,
 
 par(mfrow = c(1, 1))
 ## mapview
-# mapviewOptions(fgb = FALSE) -- if map not rendering, run this
+mapviewOptions(fgb = FALSE) # -- if map not rendering, run this
 mapview(sr_dwellings, layer.name = "dwellings") 
 # sandy: this function is not running for me
 
 ## save simplified version to view in QGIS and compare
 # st_write(simp_sr_dwell, dsn = paste0(save_path, "simplified_dwellings.shp"))
 
+### MP TESTING
+
+# Assuming each object is a data frame with longitude and latitude columns named 'lon' and 'lat'
+objects_to_convert <- list(sr_dwellings, sr_pts, sr_s)
+names(objects_to_convert) <- c("sr_dwellings", "sr_pts", "sr_s")
+
+converted_objects <- lapply(objects_to_convert, function(df) {
+  if ("lon" %in% names(df) && "lat" %in% names(df)) {
+    st_as_sf(df, coords = c("lon", "lat"), crs = 4326)
+  } else {
+    warning("Data frame does not have 'lon' and 'lat' columns")
+    return(NULL)
+  }
+})
+
+# Assign converted objects back to your environment
+list2env(converted_objects, envir = .GlobalEnv)
+
+### MP TESTING 
 
 ## create an sf object for each buffer
 ## ----------------------------------------
@@ -247,7 +322,7 @@ ft_meter_val <- 0.3048
 
 create_buffer <- function(dist_ft) {
   
-  buff_dist_ft_name <- paste0(dist_ft, "ft")
+buff_dist_ft_name <- paste0(buffer_dist_ft, "ft")
   
   dist_m <- dist_ft * ft_meter_val
   
@@ -278,10 +353,37 @@ create_buffer <- function(dist_ft) {
   # plot(sr_s, xlim = xcheck, ylim = ycheck, add = TRUE, col = "blue")
   
   ## save output
-  st_write(out_tmp2, dsn = paste0(save_path, paste0("buffer_", buff_dist_ft_name, ".shp")))
+  st_write(out_tmp2, dsn = paste0(save_path, "buffer_", buff_dist_ft_name, ".shp")) # MP updated
   
 }
 
 purrr::map(buffer_dist_ft, create_buffer)
+
+### MP testing
+
+# Step 1: Get names of objects starting with "sr"
+object_names <- ls(pattern = "^sr")
+
+# Step 2: Retrieve the objects themselves
+objects <- mget(object_names, envir = .GlobalEnv)
+
+# Step 3: Extract and display geometry types
+# Extract and display geometry types correctly
+geometry_types <- sapply(objects, function(obj) {
+  if ("sf" %in% class(obj)) { # Check if the object is an sf object
+    geom_types <- st_geometry_type(obj, by_geometry = FALSE) # Get geometry types
+    return(unique(as.character(geom_types))) # Ensure unique types are returned as character strings
+  } else {
+    return("Not an sf object") # Indicate if not an sf object
+  }
+})
+
+# Print the results
+print(geometry_types)
+
+
+
+
+
 
 

@@ -11,7 +11,7 @@
 rm(list=ls())
 
 ## Packages
-
+library(tidyverse)
 packages=c("xlsx", "gdata", "dplyr","tidyr", "stringr", "fuzzyjoin", "stringr", "tictoc",
            "ggplot2", "stargazer", "plm", "cowplot", "sf", "lwgeom","data.table","tidyverse")
 
@@ -68,7 +68,7 @@ ct_inc_pop_45 <- read.csv("./data/processed/ct_inc_45.csv", stringsAsFactors  = 
   mutate(ct_id = as.numeric(paste0(stringr::str_sub(gisjoin,3,3),
                         stringr::str_sub(gisjoin,5,7),
                         stringr::str_sub(gisjoin,9,14))))%>%
-  select(ct_id,lower_age, upper_age, year, pop, incidence_2015); ct_inc_pop_45
+  dplyr::select(ct_id,lower_age, upper_age, year, pop, incidence_2015); ct_inc_pop_45
 
 #Adjust mismatch of census tract ids between inmap and benmap
 

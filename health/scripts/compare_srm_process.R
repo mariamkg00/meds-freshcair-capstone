@@ -5,15 +5,19 @@
 ## UPDATED - 2/25/2024 
 
 library(tidyverse)
+setwd('/capstone/freshcair/meds-freshcair-capstone')
 
 ## paths 
+# updated main path to capstone directory 
 main_path                <- '/capstone/freshcair/meds-freshcair-capstone/'
-srm_save_path_general    <- paste0(main_path, "data/health/source_receptor_matrix/inmap_processed_srm/extraction/")
-srm_save_path_nh3        <- paste0(srm_save_path_general, "nh3/")
-srm_save_path_nox        <- paste0(srm_save_path_general, "nox/")
-srm_save_path_pm25        <- paste0(srm_save_path_general, "pm25/")
-srm_save_path_sox        <- paste0(srm_save_path_general, "sox/")
-srm_save_path_voc       <- paste0(srm_save_path_general, "voc/")
+srm_save_path_general    <- paste0(main_path, "data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/")
+
+
+ srm_save_path_nh3        <- paste0(srm_save_path_general, "nh3/")
+ srm_save_path_nox        <- paste0(srm_save_path_general, "nox/")
+ srm_save_path_pm25        <- paste0(srm_save_path_general, "pm25/")
+ srm_save_path_sox        <- paste0(srm_save_path_general, "sox/")
+ srm_save_path_voc       <- paste0(srm_save_path_general, "voc/")
 
 
 ## files names for text
@@ -24,18 +28,18 @@ sox_fn <- "srm_sox_field14.csv"
 voc_fn <- "srm_voc_field26.csv"
 
 ## nh3
-nh3_gen <- read_csv(paste0(srm_save_path_general, nh3_fn))
+nh3_gen <- read_csv(paste0(srm_save_path_nh3, nh3_fn))
 
 nh3_comp <- read_csv(paste0(srm_save_path_nh3, nh3_fn)) %>%
-  select(GEOID, totalpm25_aw_used = totalpm25_aw) %>%
+  dplyr::select(GEOID, totalpm25_aw_used = totalpm25_aw) %>%
   left_join(nh3_gen) %>%
   mutate(diff = totalpm25_aw_used - totalpm25_aw) %>%
-  filter(diff != 0)
+  dplyr::filter(diff != 0)
 
 nrow(nh3_comp)
 
 ## nox
-nox_gen <- read_csv(paste0(srm_save_path_general, nox_fn))
+nox_gen <- read_csv(paste0(srm_save_path_nox, nox_fn))
 
 nox_comp <- read_csv(paste0(srm_save_path_nox, nox_fn)) %>%
   select(GEOID, totalpm25_aw_used = totalpm25_aw) %>%
