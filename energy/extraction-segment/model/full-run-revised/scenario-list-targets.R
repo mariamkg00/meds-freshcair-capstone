@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## January 31, 2022
 ## scenario list - revise model to generate excise tax/carbon tax stream for targets
+## Updated 2/28/24 - MP
 
 ## libraries
 library(data.table)
@@ -10,27 +11,18 @@ library(openxlsx)
 library(rebus)
 
 
-# paths -----
-outputs_path      = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs'
-data_path         = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed'
-scen_path         = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/project-materials/scenario-inputs'
-academic_out      = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/academic-out/extraction/'
-save_path         = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/academic-out/extraction/nature-energy-rev-outputs'
-
-## file names  
-oil_price_file    = 'oil_price_projections_revised.xlsx'
-inn_file          = 'innovation_scenarios.csv'
-carbon_file       = 'carbon_prices_revised.csv' 
-ccs_ext_file      = 'ccs_extraction_scenarios_revised.csv'
-setback_file      = 'setback_coverage_R.csv'
-prod_quota_file   = 'prod_quota_scenarios.csv' 
-excise_tax_file   = 'excise_tax_non_target_scens.csv' 
-incentive_file    = 'CCS_LCFS_45Q.xlsx'
+# # paths -----
+# outputs_path      = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs'
+# data_path         = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed'
+# scen_path         = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/project-materials/scenario-inputs'
+# academic_out      = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/academic-out/extraction/'
+# save_path         = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/academic-out/extraction/nature-energy-rev-outputs'
+# 
 
 # load data -----
 
-## load oil price data
-oilpx_scens = setDT(read.xlsx(file.path(data_path, oil_price_file), sheet = 'nominal', cols = c(1, 7:9)))
+## load oil price data -- Updated - MP
+oilpx_scens = setDT(read.xlsx(file.path('data/inputs/extraction/oil_price_projections_revised.xlsx'), sheet = 'nominal', cols = c(1, 7:9)))
 colnames(oilpx_scens) = c('year', 'reference_case', 'high_oil_price', 'low_oil_price')
 oilpx_scens = melt(oilpx_scens, measure.vars = c('reference_case', 'high_oil_price', 'low_oil_price'), 
                    variable.name = 'oil_price_scenario', value.name = 'oil_price_usd_per_bbl')
@@ -42,43 +34,43 @@ setorderv(oilpx_scens, c('oil_price_scenario', 'year'))
 ## unique oil px scens
 oilpx_scens_names <- distinct(oilpx_scens[, .(oil_price_scenario)])
 
-## load innovation scenarios
-innovation_scens = fread(file.path(scen_path, inn_file), header = T)
+## load innovation scenarios -- Updated - MP
+innovation_scens = fread(file.path("data/inputs/scenarios/innovation_scenarios.csv"), header = T)
 
 innovation_scens_name <- distinct(innovation_scens[, .(innovation_scenario)])
 
-## load carbon px scens
-carbonpx_scens = fread(file.path(scen_path, carbon_file), header = T)
+## load carbon px scens -- Updated - MP
+carbonpx_scens = fread(file.path("data/inputs/scenarios/carbon_prices_revised.csv"), header = T)
 
 carbonpx_scens_name <- distinct(carbonpx_scens[, .(carbon_price_scenario)])
 
-## load ccs scenarios
-ccs_scens = fread(file.path(scen_path, ccs_ext_file), header = T)
+## load ccs scenarios -- Updated - MP
+ccs_scens = fread(file.path("data/processed/ccs_extraction_scenarios_revised.csv"), header = T)
 ccs_scens[, ccs_price_usd_per_kg := ccs_price/1000] # convert from usd per metric ton to usd per kg
 ccs_scens = ccs_scens[, c('year', 'ccs_scenario', 'ccs_price_usd_per_kg')]
 ccs_scens[, ccs_scenario := factor(ccs_scenario, levels = c('no ccs', 'high CCS cost', 'medium CCS cost', 'low CCS cost'))]
 
 
-## load setback scenarios
-setback_scens = fread(file.path(outputs_path, 'setback', 'model-inputs', setback_file), header = T, colClasses = c('doc_field_code' = 'character'))
+## load setback scenarios -- Updated - MP
+setback_scens = fread(file.path('data/processed/setback_coverage_R.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 setback_scens[, setback_scenario := fifelse(setback_scenario == "no_setback", setback_scenario, paste0(setback_scenario, "ft"))]
 
 setback_scens_name <- distinct(setback_scens[, .(setback_scenario)])
 
 
-# load production quota file
-prod_quota_scens = fread(file.path(scen_path, prod_quota_file), header = T)
+# load production quota file -- Updated - MP
+prod_quota_scens = fread(file.path("data/inputs/scenarios/prod_quota_scenarios.csv"), header = T)
 
 prod_quota_scens_names <- distinct(prod_quota_scens[, .(prod_quota_scenario)])
 
 # load excise tax file
-excise_tax_scens = fread(file.path(scen_path, excise_tax_file), header = T)
+excise_tax_scens = fread(file.path("data/processed/excise_tax_non_target_scens.csv"), header = T)
 
 excise_tax_scens_name <- distinct(excise_tax_scens[, .(excise_tax_scenario)])
 
 # load ccs incentives file 
-incentives_scens = setDT(read.xlsx(file.path(data_path, incentive_file), sheet = 'scenarios', cols = c(1:3)))
+incentives_scens = setDT(read.xlsx(file.path("data/inputs/scenarios/CCS_LCFS_45Q.xlsx"), sheet = 'scenarios', cols = c(1:3)))
 
 # create adjusted ccs costs ------
 
@@ -280,4 +272,4 @@ setcolorder(scen_sel_toggle, c('scen_id', 'oil_price_scenario', 'setback_scenari
 
 
 # fwrite(scen_sel_toggle, file.path(academic_out, 'scenario_id_list_targets.csv'), row.names = F)
-fwrite(scen_sel_toggle, file.path(save_path, 'scenario_id_list_targets.csv'), row.names = F)
+fwrite(scen_sel_toggle, file.path('data/processed/scenario_id_list_targets.csv'), row.names = F)

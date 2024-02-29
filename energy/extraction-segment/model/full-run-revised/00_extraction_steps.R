@@ -2,6 +2,8 @@
 ## the user must define run_name (which will be used when saving your results) and 
 ## the save path, which should direct to a folder where the outputs will be saved
 
+## Updated 2/28/24 - MP
+
 ## define if you are using zenodo repo for inputs (if yes, set to TRUE)
 zenodo_repo <- FALSE
 
@@ -16,7 +18,7 @@ if(zenodo_repo) {
   # args = commandArgs(trailingOnly = TRUE)
   run_name        = "revision-setbacks"
   # save_path     = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/predict-production'
-  save_path       = '/Volumes/calepa/extraction-out' 
+  save_path       = 'data/processed/' 
   
 }
 
@@ -72,7 +74,7 @@ source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', '
 ## step 0: load the inputs
 
 scen_id_file      = 'scenario_id_list_targets.csv'
-scen_id_list = fread(file.path(revision_path, scen_id_file), header = T)
+scen_id_list = fread(file.path('data/processed/scenario_id_list_targets.csv'), header = T)
 
 ## filter for scenarios to run
 selected_scens <- scen_id_list[subset_scens == 1]
