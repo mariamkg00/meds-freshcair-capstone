@@ -1,6 +1,7 @@
 # get field-level emission factors (including for those not included in CARB's model)
 # created: september 23, 2020
 # author: meas meng
+# Update 2/28/24 -- Don't need to update this for USM - MP
 
 # inputs -----
 

@@ -1,22 +1,24 @@
 ## meas meng
 ## september 22, 2020
 ## predict production from existing wells without exit
+# Updated 2/28/24 MP
 
 # inputs ------
+setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
+getwd()
 
-data_path       = '/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/decline-historic/'
-prod_file       = 'data/production_api10_yearly_start_year.csv' # meas-note: update to use "production_api10_yearly_start_year.csv"
-param_file      = 'parameters/fitted-parameters_field-start-year_yearly_entry.csv' # meas-note: update to use "fitted-parameters_field-start-year_yearly_entry.csv"
-peak_file       = 'data/field-year_peak-production_yearly.csv' # meas-note: update to use "field-year_peak-production_yearly.csv"
-prod_adj_file   = 'data/adj_val_field-year_pred_prod.csv'
-setback_path    = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/setback/model-inputs/'
-w_setback_file  = 'wells_in_setbacks_revised.csv'
+# Updated - MP
+prod_file       = 'data/processed/production_api10_yearly_start_year.csv' # meas-note: update to use "production_api10_yearly_start_year.csv"
+param_file      = 'data/processed/fitted-parameters_field-start-year_yearly_entry.csv' # meas-note: update to use "fitted-parameters_field-start-year_yearly_entry.csv"
+peak_file       = 'data/processed/field-year_peak-production_yearly.csv' # meas-note: update to use "field-year_peak-production_yearly.csv"
+prod_adj_file   = 'data/processed/adj_val_field-year_pred_prod.csv'
+w_setback_file  = 'data/processed/wells_in_setbacks_revised.csv'
 
 
 # outputs ------
 
-save_path       = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/predict-production/existing_production/'
-
+# save_path       = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/predict-production/existing_production/'
+save_path         = 'data/processed/' # Updated - MP
 # load libraries -------- 
 
 library(data.table)
@@ -24,16 +26,16 @@ library(tidyverse)
 
 # read in data ------
 
-dt_prod = fread(paste0(data_path, prod_file), header = T, colClasses = c('api_ten_digit' = 'character',
+dt_prod = fread(paste0(prod_file), header = T, colClasses = c('api_ten_digit' = 'character',
                                                                          'doc_field_code' = 'character'))
 
-pred_adj_vals = fread(paste0(data_path, prod_adj_file), header = T, colClasses = c("doc_field_code" = "character"))
+pred_adj_vals = fread(paste0(prod_adj_file), header = T, colClasses = c("doc_field_code" = "character"))
 
-decline_params = fread(paste0(data_path, param_file), header = T, colClasses = c('doc_field_code' = 'character'))
+decline_params = fread(paste0(param_file), header = T, colClasses = c('doc_field_code' = 'character'))
 
-peak_prod = fread(paste0(data_path, peak_file), header = T, colClasses = c('doc_field_code' = 'character'))
+peak_prod = fread(paste0(peak_file), header = T, colClasses = c('doc_field_code' = 'character'))
 
-well_setbacks = fread(paste0(setback_path, w_setback_file), header = T, colClasses = c('api_ten_digit' = 'character'))
+well_setbacks = fread(paste0(w_setback_file), header = T, colClasses = c('api_ten_digit' = 'character'))
 
 # get fields that produced oil in recent years and the number of wells in each vintage that produced oil -----
 

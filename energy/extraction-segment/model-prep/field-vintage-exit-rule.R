@@ -1,6 +1,7 @@
 ## Ruiwen Lee
 ## June 29, 2021
 ## Create well exit variable based on original production threshold rule
+# Updated 2/28/24 - MP
 
 library(tidyverse)
 library(data.table)
@@ -8,19 +9,21 @@ library(lubridate)
 library(stringr)
 library(zoo)
 
+setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
+getwd()
 
-## set directory
-vintage_prod_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/decline-historic/data/"
-exit_rule_directory    <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/'
-save_directory         <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/exit/'
+
+# ## set directory
+# vintage_prod_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/decline-historic/data/"
+# exit_rule_directory    <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/'
+# save_directory         <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/exit/'
 
 ## files
-vintage_prod_file       <- "production_field-year_yearly_entry.csv"
 exit_rule_file          <- 'well_exit_volume_x_field_v1_revised.csv'
 
 ## read in files
-vintage_prod <- fread(paste0(vintage_prod_directory, vintage_prod_file), colClasses = c('doc_field_code' = 'character'))
-exit_threshold <- fread(paste0(exit_rule_directory, exit_rule_file), colClasses = c('doc_field_code' = 'character'))
+vintage_prod <- fread("production_field-year_yearly_entry.csv", colClasses = c('doc_field_code' = 'character'))
+exit_threshold <- fread("data/processed/well_exit_volume_x_field_v1_revised.csv"), colClasses = c('doc_field_code' = 'character'))
 
 ## construct main dataset that contains exit threshold and annual production for each field-vintage
 dt_vintage_exit <- merge(vintage_prod[,c('doc_field_code','doc_fieldname', 'start_year','year_no','well_prod','no_wells')],
@@ -40,7 +43,7 @@ dt_field_exits <- dt_vintage_exit[, .(n_exits_field = sum(n_exits)),  by = .(doc
 
 ## Save field-year-level well exit data
 
-write.csv(dt_field_exits, file = paste0(save_directory, "well_exits_under_rule.csv"))
+write.csv(dt_field_exits, "data/processed/well_exits_under_rule.csv"))
 
 
 

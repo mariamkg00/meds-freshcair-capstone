@@ -10,7 +10,7 @@ calc_2045_ghg <- function(inputs, scen) {
   
   
   depl_2019_z = inputs[year == 2020, .(doc_field_code,  oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
-                                                 setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
+                                       setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
   
   depl_2019_z = merge(depl_2019_z, entry_dt[year == 2019, .(doc_field_code, depl)],
                       by = 'doc_field_code')
@@ -20,7 +20,7 @@ calc_2045_ghg <- function(inputs, scen) {
   prod_2019_z = prod_hist[year == 2019, .(doc_field_code, total_bbls)]
   
   trr_2020_z = unique(inputs[year == 2020, .(doc_field_code, oil_price_scenario, innovation_scenario, carbon_price_scenario, 
-                                                       ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, resource)])
+                                             ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, resource)])
   
   depl_2020_z = prod_2019_z[trr_2020_z, on = 'doc_field_code']
   depl_2020_z = depl_2020_z[depl_2019_z, on = .(doc_field_code, 
@@ -789,8 +789,8 @@ calc_2045_ghg <- function(inputs, scen) {
       
       ## filter total recoverable resource for year t
       trr_prev = unique(inputs[year == t, .(doc_field_code, oil_price_scenario, 
-                                                      innovation_scenario, carbon_price_scenario, ccs_scenario, 
-                                                      setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, resource)])
+                                            innovation_scenario, carbon_price_scenario, ccs_scenario, 
+                                            setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, resource)])
       trr_prev = unique(trr_prev)
       
       ## merge previous depl and trr 
@@ -966,7 +966,7 @@ calc_2045_ghg <- function(inputs, scen) {
   setorder(vintage_all, oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario,
            setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, doc_field_code, 
            doc_fieldname, year, vintage_start)
-
+  
   
   
   ## field well entry
@@ -995,8 +995,8 @@ calc_2045_ghg <- function(inputs, scen) {
   field_all[is.na(existing_ghg_kgCO2e), new_ghg_kgCO2e := 0]
   field_all[is.na(new_ghg_kgCO2e), new_ghg_kgCO2e := 0]
   field_all[, total_ghg_kgCO2e := existing_ghg_kgCO2e + new_ghg_kgCO2e]
-
-
+  
+  
   cols = c('existing_prod_bbl', 'new_prod_bbl', 'total_prod_bbl', 
            'existing_ghg_kgCO2e', 'new_ghg_kgCO2e', 'total_ghg_kgCO2e')
   state_all = field_all[ , lapply(.SD, sum, na.rm = T), .SDcols = cols,

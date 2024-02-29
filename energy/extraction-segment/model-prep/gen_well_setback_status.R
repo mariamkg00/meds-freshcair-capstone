@@ -6,11 +6,15 @@
 # modified by Tracey Mangin
 ##################################################################
 # revise : Feb 14, 2024 by Haejin 
+# Updated 2/28 MP
 
 # comment out and add your own machine's file path
-home               <- "/capstone/freshcair/meds-freshcair-capstone"
+wd               <- "/capstone/freshcair/meds-freshcair-capstone"
 buffer_path        <- "data/processed"
 data_directory     <- "/capstone/freshcair/meds-freshcair-capstone/inputs/extraction"
+
+# Set working directory 
+setwd(wd)
 
 ## files
 prod_file    <- "well_prod_m_processed.csv" 
@@ -36,27 +40,32 @@ ca <- st_as_sf(map("state", plot = FALSE, fill = TRUE)) %>%
 
 ################################# READ DATA AND TRANSFORM
 
-buff1000 <- sf::st_read(file.path(home, buffer_path, "buffer_1000ft.shp")) # no file here 
+# Updated - MP
+buff1000 <- sf::st_read("data/processed/buffer_1000ft.shp")
 
-buff2500 <- sf::st_read(file.path(home, buffer_path, "buffer_2500ft.shp")) # no file here 
+# Updated - MP
+buff2500 <- sf::st_read("data/processed/buffer_2500ft.shp")
 
-buff5280 <- sf::st_read(file.path(home, buffer_path, "buffer_5280ft.shp")) # no file here 
+# Updated - MP
+buff5280 <- sf::st_read("data/processed/buffer_5280ft.shp") 
 
-# transform to NAD83(NSRS2007) / California Albers as well for wells and field boundaries
-wells <- sf::st_read(file.path(home, "emlab/projects/current-projects/calepa-cn/data/GIS/raw/allwells_gis/Wells_All.shp")) %>% # ---- missing file --------
+# transform to NAD83(NSRS2007) / California Albers as well for wells and field boundaries -- Updated MP
+wells <- sf::st_read("data/proprietery-data/AllWells_gis/Wells_All.shp") %>% 
   st_transform(ca_crs) %>%
   dplyr::select(API, WellStatus) %>%
   unique()
 
-wells2 <- sf::st_read(file.path(home, "emlab/projects/current-projects/calepa-cn/data/GIS/raw/allwells_gis/Wells_All.shp")) %>% 
+# Updated - MP
+wells2 <- sf::st_read("data/proprietery-data/AllWells_gis/Wells_All.shp") %>% 
   st_transform(ca_crs) %>%
   dplyr::select(API, WellStatus, FieldName) %>%
   unique()
 
-boundaries <- st_read(file.path(home, "/data/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp")) %>% st_transform(3488) # update
+# Updated - MP
+boundaries <- st_read("data/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp") %>% st_transform(3488) # update
 
-## monthly well production
-well_prod <- fread(paste0(data_directory, prod_file), colClasses = c('api_ten_digit' = 'character',
+## monthly well production -- Updated - MP
+well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
 ## wells that produce oil in time horizon
@@ -222,7 +231,7 @@ ggplot(data = buff1000) +
 #   summarize(n_in = sum(in_setback_orig))
 
 # save output
-write_csv(wells_within_df_all, file.path(home, "emlab/projects/current-projects/calepa-cn/outputs/setback/model-inputs/wells_in_setbacks_revised.csv")) # missing -------
+write_csv(wells_within_df_all, file.path("data/processed/wells_in_setbacks_revised.csv")) 
 
 ## make maps
 
@@ -332,7 +341,7 @@ View(field_boundaries2 %>%
        ungroup())
 
 ## add number of wells to each field
-n_wells <- sf::st_read(file.path(home, "emlab/projects/current-projects/calepa-cn/data/GIS/raw/allwells_gis/Wells_All.shp")) %>% # missing one
+n_wells <- sf::st_read("data/proprietery-data/AllWells_gis/Wells_All.shp") %>% 
   st_drop_geometry() %>%
   filter(!WellStatus %in% c("Abeyance")) %>%
   group_by(FieldName) %>%
@@ -359,7 +368,7 @@ field_boundaries3 <- field_boundaries2 %>%
 
 # save output
 
-write_csv(field_boundaries3, file.path(home, "/data/processed/setback_coverage_R.csv")) 
+write_csv(field_boundaries3, "data/processed/setback_coverage_R.csv")
 
 
 ## save maps for examining
@@ -375,7 +384,7 @@ coverage_map <-
   mapview(wells2, layer.name = "Wells", label = 'WellStatus', cex = 0.3, alpha = 0, legend = FALSE)
   
 # save output
-mapshot(coverage_map, url = paste0(home, "data/processed/coverage_map.html"), selfcontained = F) 
+mapshot(coverage_map, url = "data/processed/coverage_map.html", selfcontained = F) 
 
 
 

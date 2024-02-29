@@ -2,16 +2,20 @@
 ## May 7, 2021
 ## prep FrackTracker data for analysis
 ##revised : Feb 14, 2024 by Haejin / Feb 25, 2024 Haejin 
+## Updated 2/27/24 MP
 
 # comment out and add your own machine's file path
 home <- "/capstone/freshcair/meds-freshcair-capstone" #### revise filepath
 ft_path <- "/data/proprietery-data/FracTrackerSetbackdata.gdb" #### revise filepath
-save_path <- paste0(home, "/data/processed") #### revise filepath
+save_path <- paste0(home, "/data/processed/") #### revise filepath
+setwd(home)
 
 # load packages
 library(ggplot2) # MP added
+library(plotly) # MP added
 library(dplyr) # MP added
 library(leaflet) # MP added
+library(tmap)
 library(sf)
 library(tidyverse)
 library(purrr)
@@ -152,39 +156,37 @@ sr_ps <- sf::st_read(dsn = file.path(home, ft_path), layer = "PrivSchoolsCA_1") 
   mutate(fac_type = "private school") %>%
   dplyr::select(fac_type)
 
-# ## schools (polygons) 
-sr_s <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolPropCA_1") %>%
-  st_transform(ca_crs) %>%
-  dplyr::filter(st_geometry_type(.) != "MULTISURFACE") %>%  # MP added
-  mutate(fac_type = "school") %>%
-  dplyr::select(fac_type) 
+# ## schools (polygons) - removing for now MP
+# sr_s <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolPropCA_1") %>%
+#   st_transform(ca_crs) %>%
+#   dplyr::filter(st_geometry_type(.) != "MULTISURFACE") %>%  # MP added
+#   mutate(fac_type = "school") %>%
+#   dplyr::select(fac_type) 
 
-##### MP TESTING
-
-# Step 1: Check for invalid geometries
-invalid_geoms <- st_is_valid(sr_s, NA_on_error = FALSE) == FALSE
-
-# Print the number of invalid geometries
-cat("Number of invalid geometries:", sum(invalid_geoms), "\n")
-
-# Step 2: Repair invalid geometries
-# Only proceed if there are invalid geometries
-if (any(invalid_geoms)) {
-  sr_s$Shape <- st_make_valid(sr_s$Shape)
-  
-  # Alternatively, if you want to replace the entire sf object considering all geometries:
-  # sr_s <- st_make_valid(sr_s)
-}
-
-# Check again to ensure all geometries are now valid
-all_valid_post_repair <- all(st_is_valid(sr_s, NA_on_error = FALSE))
-
-# Print the status of geometries after repair
-cat("All geometries valid after repair:", all_valid_post_repair, "\n")
-
-#####
-
-sr_s <- st_make_valid(sr_s) # MP added
+# ##### MP TESTING
+# 
+# # Step 1: Check for invalid geometries
+# invalid_geoms <- st_is_valid(sr_s, NA_on_error = FALSE) == FALSE
+# 
+# # Print the number of invalid geometries
+# cat("Number of invalid geometries:", sum(invalid_geoms), "\n")
+# 
+# # Step 2: Repair invalid geometries
+# # Only proceed if there are invalid geometries
+# if (any(invalid_geoms)) {
+#   sr_s$Shape <- st_make_valid(sr_s$Shape)
+#   
+#   # Alternatively, if you want to replace the entire sf object considering all geometries:
+#   # sr_s <- st_make_valid(sr_s)
+# }
+# 
+# # Check again to ensure all geometries are now valid
+# all_valid_post_repair <- all(st_is_valid(sr_s, NA_on_error = FALSE))
+# 
+# # Print the status of geometries after repair
+# cat("All geometries valid after repair:", all_valid_post_repair, "\n")
+# 
+# #####
   
 # Removing for now, need to figure out how to read polygons since the rest of the data are points- MP ?????
 # sr_s <- sf::st_cast(sr_s, "MULTIPOLYGON") # we can see any false geometries format
@@ -201,14 +203,14 @@ sr_s <- st_make_valid(sr_s) # MP added
 # }
 # 
 # ### END MP TESTING 
-sr_s <- st_union(sr_s) # st_union <- convert multipolygon to polygon
+# sr_s <- st_union(sr_s) # st_union <- convert multipolygon to polygon
 
-# ## SchoolsCA_Sabins_1 -- having an issue reading these in - MP
-sr_sca <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolsCA_Sabins_1") %>%
-  st_transform(ca_crs) %>%
-  dplyr::filter(st_geometry_type(.) != "MULTISURFACE") %>%  # MP added
-  mutate(fac_type = "school") %>%
-  dplyr::select(fac_type)
+# ## SchoolsCA_Sabins_1 -- having an issue reading these in so commenting out for now - MP
+# sr_sca <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolsCA_Sabins_1") %>%
+#   st_transform(ca_crs) %>%
+#   dplyr::filter(st_geometry_type(.) != "MULTISURFACE") %>%  # MP added
+#   mutate(fac_type = "school") %>%
+#   dplyr::select(fac_type)
 
 # sandy's checks
 # ensure that everything is read in: looks ok 19 SR objects
@@ -241,7 +243,7 @@ sr_pts <- rbind(sr_pg,
                 sr_ach,
                 sr_caach,
                 sr_ps,
-                sr_sca,
+                #sr_sca,
                 sr_pcc)
 
 # st_union()'s help file
@@ -294,30 +296,30 @@ mapview(sr_dwellings, layer.name = "dwellings")
 ## save simplified version to view in QGIS and compare
 # st_write(simp_sr_dwell, dsn = paste0(save_path, "simplified_dwellings.shp"))
 
-### MP TESTING
-
-# Assuming each object is a data frame with longitude and latitude columns named 'lon' and 'lat'
-objects_to_convert <- list(sr_dwellings, sr_pts, sr_s)
-names(objects_to_convert) <- c("sr_dwellings", "sr_pts", "sr_s")
-
-converted_objects <- lapply(objects_to_convert, function(df) {
-  if ("lon" %in% names(df) && "lat" %in% names(df)) {
-    st_as_sf(df, coords = c("lon", "lat"), crs = 4326)
-  } else {
-    warning("Data frame does not have 'lon' and 'lat' columns")
-    return(NULL)
-  }
-})
-
-# Assign converted objects back to your environment
-list2env(converted_objects, envir = .GlobalEnv)
-
-### MP TESTING 
+# ### MP TESTING
+# 
+# # Assuming each object is a data frame with longitude and latitude columns named 'lon' and 'lat'
+# objects_to_convert <- list(sr_dwellings, sr_pts, sr_s)
+# names(objects_to_convert) <- c("sr_dwellings", "sr_pts", "sr_s")
+# 
+# converted_objects <- lapply(objects_to_convert, function(df) {
+#   if ("lon" %in% names(df) && "lat" %in% names(df)) {
+#     st_as_sf(df, coords = c("lon", "lat"), crs = 4326)
+#   } else {
+#     warning("Data frame does not have 'lon' and 'lat' columns")
+#     return(NULL)
+#   }
+# })
+# 
+# # Assign converted objects back to your environment
+# list2env(converted_objects, envir = .GlobalEnv)
+# 
+# ### MP TESTING 
 
 ## create an sf object for each buffer
 ## ----------------------------------------
 
-buffer_dist_ft <- c(1000, 2500, 5280)
+buffer_dist_ft <- c(5280)
 ft_meter_val <- 0.3048
 
 create_buffer <- function(dist_ft) {
@@ -334,55 +336,117 @@ buff_dist_ft_name <- paste0(buffer_dist_ft, "ft")
   plot(pt_buff_tmp, xlim = xcheck, ylim = ycheck)
   plot(sr_pts, xlim = xcheck, ylim = ycheck, add = TRUE, pch = 16, cex = .5)
   
-  schl_buff_tmp <- sr_s %>%
-    st_buffer(dist = dist_m) %>%
-    st_union()
+  # Commenting out for now - MP
+  # schl_buff_tmp <- sr_s %>% 
+  #   st_buffer(dist = dist_m) %>%
+  #   st_union()
   
   dwelling_buff_tmp <- simp_sr_dwell %>%
     st_buffer(dist = dist_m) %>%
     st_union()
   
-  out_tmp1 <- st_union(pt_buff_tmp, schl_buff_tmp)
+  # Commenting out for now - MP
+  #out_tmp1 <- st_union(pt_buff_tmp, schl_buff_tmp)
+  out_tmp1 <- st_union(pt_buff_tmp)
   
   out_tmp2 <- st_union(dwelling_buff_tmp, out_tmp1)
   
   # uncomment to check
-  # plot(out_tmp2, xlim = xcheck, ylim = ycheck)
-  # plot(sr_pts, xlim = xcheck, ylim = ycheck, add = TRUE, pch = 16, cex = .5)
-  # plot(simp_sr_dwell, xlim = xcheck, ylim = ycheck, add = TRUE, col = "red")
-  # plot(sr_s, xlim = xcheck, ylim = ycheck, add = TRUE, col = "blue")
+  plot(out_tmp2, xlim = xcheck, ylim = ycheck)
+  plot(sr_pts, xlim = xcheck, ylim = ycheck, add = TRUE, pch = 16, cex = .5)
+  plot(simp_sr_dwell, xlim = xcheck, ylim = ycheck, add = TRUE, col = "red")
+  plot(sr_s, xlim = xcheck, ylim = ycheck, add = TRUE, col = "blue")
+  
+  # Write dsn path - MP
+  dsn_path <- paste0("data/processed/buffer_", buff_dist_ft_name, ".shp")
+  print(dsn_path)
+  print(length(dsn_path))
   
   ## save output
-  st_write(out_tmp2, dsn = paste0(save_path, "buffer_", buff_dist_ft_name, ".shp")) # MP updated
+  st_write(out_tmp2, dsn = dsn_path) # MP updated
   
 }
 
 purrr::map(buffer_dist_ft, create_buffer)
 
-### MP testing
 
-# Step 1: Get names of objects starting with "sr"
+### MP testing ------------
+
+# Get names of objects starting with "sr"
 object_names <- ls(pattern = "^sr")
 
-# Step 2: Retrieve the objects themselves
+# Retrieve the objects 
 objects <- mget(object_names, envir = .GlobalEnv)
 
-# Step 3: Extract and display geometry types
 # Extract and display geometry types correctly
 geometry_types <- sapply(objects, function(obj) {
   if ("sf" %in% class(obj)) { # Check if the object is an sf object
     geom_types <- st_geometry_type(obj, by_geometry = FALSE) # Get geometry types
     return(unique(as.character(geom_types))) # Ensure unique types are returned as character strings
   } else {
-    return("Not an sf object") # Indicate if not an sf object
+    return("Not an sf object") 
   }
 })
 
 # Print the results
 print(geometry_types)
 
+setback5280 <- st_read('data/processed/buffer_5280ft.shp')
+
+setback5280_crs <- st_transform(setback5280, st_crs(ca))
+
+ggplot() +
+  geom_sf(data = ca, fill = "beige", color = "black") + # Plot CA shapefile
+  geom_sf(data = setback_25_crs, color = "blue", size = 3) + # Add points
+  theme_minimal() +
+  labs(title = "Sensitive Receptors in California")
+
+tm_shape(ca) +
+  tm_polygons(col = "beige", border.col = "black") + # Plot CA shapefile
+  tm_shape(setback5280_crs) +
+  tm_borders(col = "blue", lwd = 3)  # Assuming setback5280_crs are borders; adjust according to actual geometry
 
 
+
+
+
+
+# Create a plotly map
+p <- plot_ly() %>%
+  add_trace(
+    type = 'scattergeo',
+    lon = ca_df$X,
+    lat = ca_df$Y,
+    mode = 'lines',
+    line = list(color = "black"),
+    fill = 'toself',
+    fillcolor = 'beige',
+    name = 'California'
+  ) %>%
+  add_trace(
+    type = 'scattergeo',
+    lon = setback5280_df$X,
+    lat = setback5280_df$Y,
+    mode = 'markers', # Use 'lines' for polygons
+    marker = list(size = 3, color = 'blue'),
+    name = 'Setback Areas'
+  ) %>%
+  layout(
+    title = 'Sensitive Receptors in California',
+    geo = list(
+      scope = 'usa',
+      projection = list(type = 'albers usa'),
+      showland = TRUE,
+      landcolor = 'rgb(217, 217, 217)',
+      subunitwidth = 1,
+      countrywidth = 1,
+      subunitcolor = "rgb(255, 255, 255)",
+      countrycolor = "rgb(255, 255, 255)"
+    )
+  )
+
+# Display the plot
+p
 
 
 

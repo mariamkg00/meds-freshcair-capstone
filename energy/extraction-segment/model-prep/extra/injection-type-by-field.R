@@ -1,7 +1,7 @@
 # meas meng
 # aug 18, 2020
 # well injection type by field
-# Updated 2/20/24 - MP
+# Updated 2/28/24 - MP
 
 
 # inputs ------
@@ -42,7 +42,7 @@ well_type = fread("data/inputs/extraction/well_type_df.csv")
 # well_field = well_info[, c('API', 'FieldName')]
 # well_field = unique(well_field)
 
-ci_info = fread('/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/raw/ci/table_CA-fields-carbon-intensities_2018.csv', header = T)
+ci_info = fread('data/inputs/table_CA-fields-carbon-intensities_2018.csv', header = T)
 ci_info[ field_name == 'Belridge South', field_name := 'Belridge  South']
 
 
@@ -149,7 +149,7 @@ bar_top10inj = ggplot(type_field_yr[ year %in% c(2015,2018) & doc_fieldname %in%
 # bar_top10inj
 
 ggsave(bar_top10inj,
-       filename = paste0(save_dir, 'injection-by-well-type_top10inj_2015-vs-2018_revised.png'),
+       filename = paste0('data/outputs/injection-by-well-type_top10inj_2015-vs-2018_revised.png'),
        width = 16,
        height = 9,
        dpi = 400)
@@ -171,7 +171,7 @@ bar_top10prod = ggplot(type_field_yr[ year %in% c(2015,2018) & doc_fieldname %in
 # bar_top10prod
 
 ggsave(bar_top10prod,
-       filename = paste0(save_dir, 'injection-by-well-type_top10prod_2015-vs-2018_revised.png'),
+       filename = paste0('data/outputs/injection-by-well-type_top10prod_2015-vs-2018_revised.png'),
        width = 16,
        height = 9,
        dpi = 400)
@@ -179,6 +179,6 @@ ggsave(bar_top10prod,
 
 # export to csv files ----
 
-fwrite(type_field, paste0(data_dir, 'injection-by-well-type-per-field_1977-2018_revised.csv'), row.names = F)
-fwrite(type_field_yr, paste0(data_dir, 'injection-by-well-type-per-field-per-year_1977-2018_revised.csv'), row.names = F)
+fwrite(type_field, 'data/processed/injection-by-well-type-per-field_1977-2018_revised.csv', row.names = F)
+fwrite(type_field_yr, 'data/processed/injection-by-well-type-per-field-per-year_1977-2018_revised.csv', row.names = F)
   

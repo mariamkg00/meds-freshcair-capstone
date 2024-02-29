@@ -8,28 +8,27 @@ library(tidyverse)
 library(sf)
 
 ## set paths and file names
-home                = "/Volumes/GoogleDrive/Shared drives"
-model_path          = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs'
+# model_path          = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs'
 # model_out_path      = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/predict-production/'
 # run_folder          = 'extraction_2021-07-22/revised-ccs-correct-new-setback/'
 # field_fname         = "diagnostic-field-level-results.csv"
 
 ## files
-entry_file        = 'stocks-flows/entry-input-df/final/entry_df_final_revised.csv'
-prod_vintage_file = 'pred_prod_no_exit_2020-2045_field_start_year_revised.csv'
+entry_file        = 'data/processed/entry_df_final_revised.csv'
+prod_vintage_file = 'data/processed/pred_prod_no_exit_2020-2045_field_start_year_revised.csv'
 
 ## save path
-save_path           = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/academic-out/extraction/'
+save_path           = 'data/processed/'
 
 ## field boundaries
-boundaries <- st_read(file.path(home, "emlab/projects/current-projects/calepa-cn/data/GIS/raw/field-boundaries/DOGGR_Admin_Boundaries_Master.shp")) %>% st_transform(3488)
+boundaries <- st_read(file.path("data/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp")) %>% st_transform(3488)
 
 
 ## read in output file
-entry_dt = fread(file.path(model_path, entry_file), header = T, colClasses = c('doc_field_code' = 'character'))
+entry_dt = fread(file.path(entry_file), header = T, colClasses = c('doc_field_code' = 'character'))
 entry_dt_fields = unique(entry_dt[, .(doc_field_code)])
 
-prod_existing_vintage = fread(file.path(model_path, 'predict-production', 'existing_production', prod_vintage_file), header = T, colClasses = c('doc_field_code' = 'character'))
+prod_existing_vintage = fread(file.path(prod_vintage_file), header = T, colClasses = c('doc_field_code' = 'character'))
 prod_fields = unique(prod_existing_vintage[, .(doc_field_code)])
 
 # field_out <- fread(paste0(model_out_path, run_folder, field_fname), header = T, colClasses = c('doc_field_code' = 'character'))

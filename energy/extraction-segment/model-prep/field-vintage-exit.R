@@ -1,6 +1,8 @@
 ## Tracey Mangin and Ruiwen Lee
 ## May 24, 2021
 ## Create well exit variable
+# Updated 2/28/24 - MP
+
 
 library(tidyverse)
 library(data.table)
@@ -8,23 +10,19 @@ library(lubridate)
 library(stringr)
 library(zoo)
 
-## set directory
-proj_dir <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/"
-raw_dir            <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/raw/"
-data_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed/"
-output_dir <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/exit/"
+# ## set directory
+# proj_dir <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/"
+# raw_dir            <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/raw/"
+# data_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed/"
+# output_dir <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/exit/"
 
-## files
-prod_file               <- "well_prod_m_processed.csv"
-well_file               <- "AllWells_table/AllWells_20210427.csv"
-no_prod_file            <- "no_prod_wells_out.csv"
 
-## read in files
-well_prod <- fread(paste0(data_directory, prod_file), colClasses = c('api_ten_digit' = 'character',
+## read in files -- Updated - MP
+well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
-## read in file of wells with zero production after 5y or 10y
-no_prod_wells <- fread(paste0(output_dir, no_prod_file), colClasses = c('api_ten_digit' = 'character'))
+## read in file of wells with zero production after 5y or 10y -- Updated - MP
+no_prod_wells <- fread("data/proprietery-data/no_prod_wells_out.csv", colClasses = c('api_ten_digit' = 'character'))
 
 no_prod_5 <- no_prod_wells %>% filter(year_cut_off == 5) %>% select(api_ten_digit) %>% unique()
 no_prod_5_vec <- no_prod_5$api_ten_digit
@@ -32,8 +30,8 @@ no_prod_5_vec <- no_prod_5$api_ten_digit
 no_prod_10 <- no_prod_wells %>% filter(year_cut_off == 10) %>% select(api_ten_digit) %>% unique()
 no_prod_10_vec <- no_prod_10$api_ten_digit
 
-## all wells
-all_wells <- fread(paste0(raw_dir, well_file))
+## all wells -- Updated - MP
+all_wells <- fread("data/inputs/extraction/AllWells_20210427.csv")
 
 ## wells status
 status <- all_wells %>%
@@ -244,8 +242,8 @@ field_exit_out <- left_join(exit_combos, field_exit_out) %>%
 
 
 
-## Save field-year-level well exit data
-write_csv(field_exit_out, file = paste0(output_dir, "well_exits.csv"))
+## Save field-year-level well exit data -- Updated - MP
+write_csv(field_exit_out, file = "data/processed/well_exits.csv")
 
 field_out_summary <- field_exit_out %>%
   group_by(exit_scen, doc_field_code) %>%

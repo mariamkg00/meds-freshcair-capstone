@@ -1,81 +1,64 @@
 ## Tracey Mangin
 ## February 1, 2022
 ## model: load input info
+## Updated 2/28/24 - MP
 
 
-if(zenodo_repo) {
-## paths and file name for zenodo users ----
-main_path          = paste0(zenodo_user_path, '/ca-transportation-supply-decarb-files/')
-extract_path       = 'intermediate/extraction-model/'
-
-model_path        = paste0(main_path, 'inputs/extraction/')
-reduct_path       = paste0(main_path, extract_path)
-scen_path         = paste0(main_path, 'inputs/scenarios')
-outputs_path      = paste0(main_path, extract_path)
-data_path         = paste0(main_path, 'inputs/extraction')
-academic_out      = paste0(main_path, extract_path)
-revision_path     = paste0(main_path, extract_path)
-forecast_path     = paste0(main_path, extract_path)
-entry_path        = paste0(main_path, extract_path)
-stocks_flows_path = paste0(main_path, extract_path)
-exist_prod_path   = paste0(main_path, extract_path)
-setback_path      = paste0(main_path, extract_path)
-decline_path      = paste0(main_path, extract_path)
-peak_path         = paste0(main_path, extract_path)
-
-entry_file        = paste0(main_path, extract_path, 'entry_df_final_revised.csv')
-
-} else {
-
-## paths and file name for emlab users -----------
-main_path          = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
-
-model_path        = paste0(main_path, 'outputs/')
-reduct_path       = paste0(main_path, 'project-materials/scenario-inputs/')
-scen_path         = paste0(main_path, 'project-materials/scenario-inputs/')
-outputs_path      = paste0(main_path, 'outputs/')
-data_path         = paste0(main_path, 'data/stocks-flows/processed/')
-academic_out      = paste0(main_path, 'outputs/academic-out/extraction/')
-revision_path     = paste0(main_path, 'outputs/academic-out/extraction/nature-energy-rev-outputs/')
-stocks_flows_path = paste0(outputs_path, 'stocks-flows/')
-forecast_path     = paste0(outputs_path, 'stocks-flows/entry-input-df/final/')
-entry_path        = paste0(outputs_path, 'entry-model-results/')
-exist_prod_path   = paste0(outputs_path, '/predict-production/existing_production/')
-setback_path      = paste0(outputs_path, 'setback/model-inputs/')
-decline_path      = paste0(outputs_path, 'decline-historic/parameters/')
-peak_path         = paste0(outputs_path, 'decline-historic/data')
-
-entry_file        = paste0(main_path, 'outputs/stocks-flows/entry-input-df/final/entry_df_final_revised.csv')
-
-
-}
+# if(zenodo_repo) {
+# ## paths and file name for zenodo users ----
+# main_path          = 'data'
+# extract_path       = 'intermediate/extraction-model/'
+# 
+# model_path        = paste0(main_path, 'inputs/extraction/')
+# reduct_path       = paste0(main_path, extract_path)
+# scen_path         = paste0(main_path, 'inputs/scenarios')
+# outputs_path      = paste0(main_path, extract_path)
+# data_path         = paste0(main_path, 'inputs/extraction')
+# academic_out      = paste0(main_path, extract_path)
+# revision_path     = paste0(main_path, extract_path)
+# forecast_path     = paste0(main_path, extract_path)
+# entry_path        = paste0(main_path, extract_path)
+# stocks_flows_path = paste0(main_path, extract_path)
+# exist_prod_path   = paste0(main_path, extract_path)
+# setback_path      = paste0(main_path, extract_path)
+# decline_path      = paste0(main_path, extract_path)
+# peak_path         = paste0(main_path, extract_path)
+# 
+# entry_file        = paste0(main_path, extract_path, 'entry_df_final_revised.csv')
+# 
+# } else {
+# 
+# ## paths and file name for emlab users -----------
+# main_path          = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
+# 
+# model_path        = paste0(main_path, 'outputs/')
+# reduct_path       = paste0(main_path, 'project-materials/scenario-inputs/')
+# scen_path         = paste0(main_path, 'project-materials/scenario-inputs/')
+# outputs_path      = paste0(main_path, 'outputs/')
+# data_path         = paste0(main_path, 'data/stocks-flows/processed/')
+# academic_out      = paste0(main_path, 'outputs/academic-out/extraction/')
+# revision_path     = paste0(main_path, 'outputs/academic-out/extraction/nature-energy-rev-outputs/')
+# stocks_flows_path = paste0(outputs_path, 'stocks-flows/')
+# forecast_path     = paste0(outputs_path, 'stocks-flows/entry-input-df/final/')
+# entry_path        = paste0(outputs_path, 'entry-model-results/')
+# exist_prod_path   = paste0(outputs_path, '/predict-production/existing_production/')
+# setback_path      = paste0(outputs_path, 'setback/model-inputs/')
+# decline_path      = paste0(outputs_path, 'decline-historic/parameters/')
+# peak_path         = paste0(outputs_path, 'decline-historic/data')
+# 
+# entry_file        = paste0(main_path, 'outputs/stocks-flows/entry-input-df/final/entry_df_final_revised.csv')
+# 
+# 
+# }
 
 ## the following are the same for emlab and zenodo users
 
 # file names  
-coef_file         = 'poisson_regression_coefficients_revised.csv'
-param_file        = 'forecasted_decline_parameters_2020_2045.csv' 
-peak_file         = 'field-year_peak-production_yearly.csv' 
-prod_vintage_file = 'pred_prod_no_exit_2020-2045_field_start_year_revised.csv' 
-histprod_file     = 'crude_prod_x_field_revised.csv'
-exit_file         = 'exit_regression_coefficients.csv'
 ccs_capture_rate  = 0.61
 # forecast_file     = 'field_capex_opex_forecast_final.csv'
-forecast_file     = 'field_capex_opex_forecast_revised.csv'
-resource_file     = 'field_resource_revised.csv'
-oil_price_file    = 'oil_price_projections_revised.xlsx'
-inn_file          = 'innovation_scenarios.csv'
-carbon_file       = 'carbon_prices_revised.csv' 
-ccs_ext_file      = 'ccs_extraction_scenarios_revised.csv' ## revised includes ccs cost = inf
-ghg_file          = 'ghg_emissions_x_field_2018-2045.csv'
-setback_file      = 'setback_coverage_R.csv'
+# ccs_ext_file      = 'ccs_extraction_scenarios_revised.csv' ## revised includes ccs cost = inf -- used revised MP
 # prod_quota_file   = 'prod_quota_scenarios_with_sb.csv'
-prod_quota_file   = 'prod_quota_scenarios.csv'
-excise_tax_file   = 'excise_tax_non_target_scens.csv' 
-incentive_file    = 'CCS_LCFS_45Q.xlsx'
-n_wells_file      = 'n_wells_area.csv'
 # scen_id_file      = 'scenario_id_list_targets.csv'
-emis_reduc_file     = 'emission_reduction_90.csv'
 
 
 # source from other scripts -----
@@ -84,7 +67,7 @@ emis_reduc_file     = 'emission_reduction_90.csv'
 # source(here::here('energy', 'extraction-segment', 'prod_quota.R'))
 
 # source ccs emissions mean b calculation script
-source(here::here('energy', 'scenario-prep', 'ccs_parameterization.R'))
+# source(here::here('energy', 'scenario-prep', 'ccs_parameterization.R'))
 
 ## source all functions for optimization
 items <- list.files(here::here("energy", "extraction-segment", "model", "full-run-revised", "target-functions"))
@@ -118,11 +101,11 @@ calc_num_well_exits <- function(fe_val, bhat, p_oil, op_hat, opex_val, dhat, dep
 # scen_id_list = fread(file.path(academic_out, scen_id_file), header = T)
 
 ## emission reduction df
-emis_reduc_90 = fread(paste0(reduct_path, emis_reduc_file), header = T)
+emis_reduc_90 = fread('data/processed/emission_reduction_90.csv', header = T)
 emis_reduc_90_val = emis_reduc_90[, ghg_emission_MtCO2e][1]
 
 # load oil price data
-oilpx_scens = setDT(read.xlsx(file.path(data_path, oil_price_file), sheet = 'nominal', cols = c(1, 7:9)))
+oilpx_scens = setDT(read.xlsx(file.path('data/inputs/extraction/oil_price_projections_revised.xlsx'), sheet = 'nominal', cols = c(1, 7:9)))
 colnames(oilpx_scens) = c('year', 'reference_case', 'high_oil_price', 'low_oil_price')
 oilpx_scens = melt(oilpx_scens, measure.vars = c('reference_case', 'high_oil_price', 'low_oil_price'), 
                    variable.name = 'oil_price_scenario', value.name = 'oil_price_usd_per_bbl')
@@ -132,36 +115,36 @@ oilpx_scens <- oilpx_scens[year > 2019]
 setorderv(oilpx_scens, c('oil_price_scenario', 'year'))
 
 ## load innovation scenarios
-innovation_scens = fread(file.path(scen_path, inn_file), header = T)
+innovation_scens = fread(file.path('data/inputs/scenarios/innovation_scenarios.csv'), header = T)
 
 ## load carbon px scens
-carbonpx_scens = fread(file.path(scen_path, carbon_file), header = T)
+carbonpx_scens = fread(file.path('data/inputs/scenarios/carbon_prices_revised.csv'), header = T)
 # carbonpx_scens[carbon_price_scenario == 'last CA auction price', carbon_price := 0] # assume rystard's BAU opex already embeds carbon price
 carbonpx_scens[, carbon_price_usd_per_kg := carbon_price/1000] # convert from usd per metric ton to usd per kg
 carbonpx_scens = carbonpx_scens[, c('year', 'carbon_price_scenario', 'carbon_price_usd_per_kg')]
 
 ## load ccs scenarios
-ccs_scens = fread(file.path(scen_path, ccs_ext_file), header = T)
+ccs_scens = fread(file.path('data/processed/ccs_extraction_scenarios_revised.csv'), header = T)
 ccs_scens[, ccs_price_usd_per_kg := ccs_price/1000] # convert from usd per metric ton to usd per kg
 ccs_scens = ccs_scens[, c('year', 'ccs_scenario', 'ccs_price_usd_per_kg')]
 ccs_scens[, ccs_scenario := factor(ccs_scenario, levels = c('no ccs', 'high CCS cost', 'medium CCS cost', 'low CCS cost'))]
 
-## load price data
-price_data = fread(file.path(forecast_path, forecast_file), header = T)
+## load price data -- Updated - MP
+price_data = fread(file.path('data/processed/field_capex_opex_forecast_revised.csv'), header = T)
 
-## load resource data
-resource_data = fread(file.path(entry_path, resource_file), header = T)
+## load resource data -- Updated but stole from Zenodo - MP
+resource_data = fread(file.path("data/intermediate-zenodo/intermediate/extraction-model/field_resource_revised.csv"), header = T)
 resource_data = resource_data[, c('doc_field_code', 'resource')]
 
-## oad ghg factors
-ghg_factors = fread(file.path(stocks_flows_path, ghg_file), header = T)
+## oad ghg factors -- Updated but stole from Zenodo - MP
+ghg_factors = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/ghg_emissions_x_field_2018-2045.csv'), header = T)
 # ghg_factors = ghg_factors[, .(doc_field_code, doc_fieldname, upstream_kgCO2e_bbl)]
 
 ## adjust setback files to include setback toggle
 ## -----------------------------------------------------------
 
 # load n wells in setbacks and setback coverage file
-n_wells_setbacks = fread(file.path(exist_prod_path, n_wells_file), header = T, colClasses = c('doc_field_code' = 'character'))
+n_wells_setbacks = fread(file.path('data/processed/n_wells_area.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 ## setback applies to existing wells
 n_wells_setbacks[, setback_existing := 1]
@@ -190,8 +173,8 @@ n_wells_setbacks0 <- n_wells_setbacks0[, .(setback_scenario, doc_field_code, doc
 n_wells_setbacks <- rbind(n_wells_setbacks, n_wells_setbacks0)
 
 
-## load setback scenarios
-setback_scens = fread(file.path(setback_path, setback_file), header = T, colClasses = c('doc_field_code' = 'character'))
+## load setback scenarios -- Updated - MP
+setback_scens = fread(file.path("data/processed/setback_coverage_R.csv"), header = T, colClasses = c('doc_field_code' = 'character'))
 setback_scens[, scen_area_m2 := orig_area_m2 *  (1 - rel_coverage)]
 setback_scens <- setback_scens[, c("doc_field_code", "setback_scenario", "orig_area_m2", "scen_area_m2", "rel_coverage")]
 setnames(setback_scens, 'rel_coverage', 'area_coverage')
@@ -213,23 +196,15 @@ setback_scens[, setback_scenario := fifelse(setback_scenario == "no_setback", se
 
 
 # load production quota file
-prod_quota_scens = fread(file.path(scen_path, prod_quota_file), header = T)
+prod_quota_scens = fread(file.path("data/inputs/scenarios/prod_quota_scenarios.csv"), header = T)
 prod_quota_scens <- prod_quota_scens[, .(year, prod_quota_scenario, quota)]
 
-# load excise tax file
-if(zenodo_repo) {
-  excise_tax_scens = fread(file.path(outputs_path, excise_tax_file), header = T)
-} else {
-  excise_tax_scens = fread(file.path(scen_path, excise_tax_file), header = T)
-}
+# load excise tax file -- Updated - MP 
+excise_tax_scens = fread(file.path('data/processed/excise_tax_non_target_scens.csv'), header = T)
 excise_tax_scens = subset(excise_tax_scens, select = -units)
 
-# load ccs incentives file 
-if(zenodo_repo) {
-  incentives_scens = setDT(read.xlsx(file.path(scen_path, incentive_file), sheet = 'scenarios', cols = c(1:3)))
-} else {
-incentives_scens = setDT(read.xlsx(file.path(data_path, incentive_file), sheet = 'scenarios', cols = c(1:3)))
-}
+# load ccs incentives file -- Updated - MP
+incentives_scens = setDT(read.xlsx(file.path('data/inputs/scenarios/CCS_LCFS_45Q.xlsx'), sheet = 'scenarios', cols = c(1:3)))
 
 # pad field codes with leading zeroes ------
 price_data[, doc_field_code := sprintf("%03d", doc_field_code)]
@@ -281,29 +256,25 @@ entry_dt = fread(file.path(entry_file), header = T, colClasses = c('doc_field_co
 # # load matrix of scenarios and forecasted variables
 # scenarios_dt = load_scenarios_dt(scenario_selection)
 
-# load coefficients from poisson regression of historic data
-coefs_dt = fread(file.path(entry_path, coef_file), header = T, colClasses = c('doc_field_code' = 'character'))
+# load coefficients from poisson regression of historic data -- Updated but stole from Zenodo - MP
+coefs_dt = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/poisson_regression_coefficients_revised.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 coefs_dt = unique(coefs_dt)
 
-# load decline parameters  
-decline_dt = fread(file.path(decline_path, param_file), header = T, colClasses = c('doc_field_code' = 'character'))
+# load decline parameters -- Updated - MP
+decline_dt = fread(file.path('data/processed/forecasted_decline_parameters_2020_2045.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 # load peak production for each field
-peak_dt = fread(file.path(peak_path, peak_file), header = T, colClasses = c('doc_field_code' = 'character'))
+peak_dt = fread(file.path('data/processed/field-year_peak-production_yearly.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 
 # exit file
-if(zenodo_repo) {
-  exit_coefs = fread(file.path(forecast_path, exit_file), header = T, colClasses = c('doc_field_code' = 'character'))
-} else {
-  exit_coefs = fread(file.path(model_path, 'exit', exit_file), header = T, colClasses = c('doc_field_code' = 'character'))
-}
+exit_coefs = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/exit_regression_coefficients.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 exit_coefs[, doc_field_code := sprintf("%03s", doc_field_code)]
 exit_coefs[, doc_fieldname := NULL]
 
-# load forecasted production from existing (pre 2020) wells
-prod_existing_vintage = fread(file.path(exist_prod_path, prod_vintage_file), header = T, colClasses = c('doc_field_code' = 'character'))
+# load forecasted production from existing (pre 2020) wells -- Updated - MP
+prod_existing_vintage = fread(file.path('data/processed/pred_prod_no_exit_2020-2045_field_start_year_revised.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 prod_existing_vintage[, vintage := as.character(start_year)]
 prod_existing_vintage[, setback_scenario := fifelse(setback_scenario == "no_setback", setback_scenario, paste0(setback_scenario, "ft"))]
 
@@ -311,8 +282,8 @@ prod_existing_vintage[, setback_scenario := fifelse(setback_scenario == "no_setb
 # load historic modeled well entry
 # hist_modeled = fread(file.path(model_path, 'entry-model-results', hist_file), header = T)
 
-# load historic production
-prod_hist = fread(file.path(stocks_flows_path, histprod_file), header = T, colClasses = c('doc_field_code' = 'character'))
+# load historic production -- Updated - MP
+prod_hist = fread(file.path('data/processed/crude_prod_x_field_revised.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 # # rename FieldCode -> doc_field_code -----
 # 

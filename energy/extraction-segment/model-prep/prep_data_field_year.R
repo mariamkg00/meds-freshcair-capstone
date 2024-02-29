@@ -1,7 +1,7 @@
 # prep data for field-yearly level decline parameters
 # created: may 25, 2021
 # author: meas meng
-# Updated 2/20/24 - MP
+# Updated 2/28/24 - MP
 
 # inputs ------
 
@@ -24,19 +24,19 @@ library(data.table)
 
 # read in data ------
 
-# monthly wellstar production data
+# monthly wellstar production data -- Updated - MP
 well_prod = fread(file.path("data/processed/well_prod_m_processed.csv"), colClasses = c('api_ten_digit' = 'character',
                                                                  'doc_field_code' = 'character'))
 
-# start year
+# start year -- Updated - MP
 init_prod = fread(file.path("data/processed/well_start_prod_api10_revised.csv"), colClasses = c('api_ten_digit' = 'character',
                                                                  'doc_field_code' = 'character'))
 
-# entry df
+# entry df -- Updated - MP
 entry_df = fread(file.path("data/processed/entry_df_final_revised.csv"), header = T, colClasses = c('doc_field_code' = 'character'))
 
-# well status
-wells <- sf::st_read(file.path(emlab_dir, "data/GIS/raw/allwells_gis/Wells_All.shp")) %>% 
+# well status -- Updated - MP
+wells <- sf::st_read("data/proprietery-data/AllWells_gis/Wells_All.shp") %>% 
   dplyr::select(API, WellStatus) %>%
   unique() %>%
   as_tibble() %>%
@@ -216,8 +216,8 @@ peak_prod_adj_val <- peak_prod_plugged_perc_all[plugged_status == "Other", .(doc
 setnames(peak_prod_adj_val, "rel_prod", "non_plug_rel_prod")
 
 # save outputs ------
-
+# Updated - MP
 fwrite(peak_fv_year, file.path("data/processed/field-year_peak-production_yearly.csv"))
-fwrite(prod_fv_year_2, file.path("data/processedproduction_field-year_yearly_entry.csv"))
+fwrite(prod_fv_year_2, file.path("data/processed/production_field-year_yearly_entry.csv"))
 fwrite(well_prod3, file.path("data/processed/production_api10_yearly_start_year.csv"))
 fwrite(peak_prod_adj_val, file.path("data/processed/adj_val_field-year_pred_prod.csv"))
