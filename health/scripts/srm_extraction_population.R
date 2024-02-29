@@ -18,7 +18,7 @@ library(foreign)
 library(haven)
 library(readr)
 library(dplyr)
-rm(list=ls())
+# rm(list=ls())
 
 
 # setting working directory 

@@ -63,6 +63,8 @@ ccs_capture_rate  = 0.61
 
 # source from other scripts -----
 
+library(here)
+
 # source function to rank costs
 # source(here::here('energy', 'extraction-segment', 'prod_quota.R'))
 

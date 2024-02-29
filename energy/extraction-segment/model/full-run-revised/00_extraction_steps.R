@@ -73,7 +73,7 @@ source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', '
 
 ## step 0: load the inputs
 
-scen_id_file      = 'scenario_id_list_targets.csv'
+# Updated - MP
 scen_id_list = fread(file.path('data/processed/scenario_id_list_targets.csv'), header = T)
 
 ## filter for scenarios to run

@@ -1,5 +1,6 @@
 ## Directory
 # updated: 2/12/24
+# 
 
 library(tidyverse)
 library(sf)
@@ -10,11 +11,11 @@ setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on T
 getwd()
 
 
-## paths 
-main_path        <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
-sp_data_path     <- paste0(main_path, "data/GIS/raw/")
-health_data_path <- paste0(main_path, "data/health/source_receptor_matrix/inmap_output_srm/")
-srm_save_path    <- paste0(main_path, "data/health/source_receptor_matrix/inmap_processed_srm/")
+# ## paths 
+# main_path        <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
+# sp_data_path     <- paste0(main_path, "data/GIS/raw/")
+# health_data_path <- paste0(main_path, "data/health/source_receptor_matrix/inmap_output_srm/")
+# srm_save_path    <- paste0(main_path, "data/health/source_receptor_matrix/inmap_processed_srm/")
 
 ## Read census tract shp file - UPDATED - MP
 census_tract <- read_sf('data/inputs/gis/census-tract/tl_2019_06_tract.shp') %>%
@@ -72,7 +73,7 @@ pollutants_vec <- c("nh3", "nox", "pm25", "sox", "voc")
 for(i in 1:length(pollutants_vec)) {
   
   dir.create(paste0(srm_save_path, sector, sp_res_path, pollutants_vec[i], "/"), showWarnings = FALSE)
-
+  
 }
 
 pattern <- paste0(c("nh3", "nox", "pm25", "sox", "voc"), collapse = "|")
@@ -93,9 +94,9 @@ inmap_process_func <- function(x) {
     data.frame()%>%
     select(-geometry) %>%
     write.csv(paste0(srm_save_path, sector, sp_res_path, pol_tmp, "/", substr(x,1,nchar(x)-4),".csv", sep=""), row.names = FALSE)
-
-}
   
+}
+
 ## run function
 map(as.list(inmap_files), inmap_process_func)
 

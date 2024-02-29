@@ -17,7 +17,6 @@ library(here)
 library(dplyr) # update -haejin
 
 ## set directory
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
 getwd()
 
