@@ -1,17 +1,18 @@
 # get opgee relevant inputs for fields over multiple years
 # created: june 16, 2021
 # author: @measrainsey
+## revised: Mar 1 2024 Haejin
 
 # inputs ------------
 
-  emlab_path      = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn'
-  prod_file       = 'data/stocks-flows/processed/well_prod_m_processed.csv'
-  inj_file        = 'data/stocks-flows/processed/well_inj_m_processed.csv'
-  opgee_file      = 'data/OPGEE/opgee_field_names.csv'
+  emlab_path      = '/capstone/freshcair/meds-freshcair-capstone'
+  prod_file       = 'data/processed/well_prod_m_processed.csv'
+  inj_file        = 'data/processed/well_inj_m_processed.csv'
+  opgee_file      = 'data/processed/opgee_field_names.csv'
   
 # outputs -----------
   
-  save_path       = 'data/stocks-flows/processed'
+  save_path       = 'data/processed'
   save_file       = 'field_opgee_inputs_1977_2019.csv'
   
 # libraries ----------

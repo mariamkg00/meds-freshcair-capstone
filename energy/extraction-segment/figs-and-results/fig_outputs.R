@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## December 6, 2021
 ## make outputs for figs
+## haejin 
 
 ## libraries
 library(data.table)
@@ -27,31 +28,31 @@ comp_result_date <- "2022-12-27"
 ## set paths
 if(zenodo_repo) {
   
-  main_path              = 'ca-transport-supply-decarb-files/'
-  extraction_folder_path = 'outputs/model-out/'
-  outputs_path           = 'outputs/fig-and-results-out/'
+  main_path              = '/capstone/freshcair/meds-freshcair-capstone'
+  extraction_folder_path = 'outputs/'
+  outputs_path           = 'outputs/'
   county_save_path       = paste0(main_path, extraction_folder_path)
   ct_save_path           = paste0(main_path, extraction_folder_path)
   state_save_path        = paste0(main_path, extraction_folder_path)
   stocks_flows_path      = outputs_path
   benmap_path            = outputs_path
-  # field_out              = paste0(main_path, "outputs/predict-production/extraction_2022-11-15/revision-setbacks/field-out/")
-  health_out             = paste0(main_path, "outputs/academic-out/health/")
+  # field_out              = paste0(main_path, "outputs/")
+  health_out             = paste0(main_path, "outputs/")
   
   county_out_file        = 'subset_county_results_adj.csv'
   
 } else {
 
 ## drive paths 
-main_path              = '/Users/tracey/Library/CloudStorage/GoogleDrive-tmangin@ucsb.edu/Shared\ drives/emlab/projects/current-projects/calepa-cn/'
+main_path              = '/capstone/freshcair/meds-freshcair-capstone'
 extraction_folder_path = paste0('outputs/academic-out/extraction/extraction_', comp_result_date, '/')
 county_save_path       = paste0(main_path, extraction_folder_path, 'county-results/')
 ct_save_path           = paste0(main_path, extraction_folder_path, 'census-tract-results/')
 state_save_path        = paste0(main_path, extraction_folder_path, 'state-results/')
-benmap_path            = "data/benmap/processed/"
-stocks_flows_path      = paste0(main_path, 'data/stocks-flows/processed/')
+benmap_path            = "data/processed/"
+stocks_flows_path      = paste0(main_path, 'data/processed/')
 # field_out              = paste0(main_path, "outputs/predict-production/extraction_", energy_result_date, "/revision-setbacks/field-out/")
-health_out             = paste0(main_path, "outputs/academic-out/health/")
+health_out             = paste0(main_path, "outputs/")
 
 county_out_file        = 'subset_county_results.csv'
 
@@ -67,7 +68,7 @@ county_out_file        = 'subset_county_results.csv'
 if(zenodo_repo) {
   save_info_path <- save_info_path
 } else { 
-  save_info_path <- paste0(main_path, 'outputs/academic-out/extraction/figures/nature-energy-revision/final/')
+  save_info_path <- paste0(main_path, 'outputs/')
 }
 dir.create(save_info_path, showWarnings = FALSE) 
 
@@ -82,7 +83,7 @@ scc_file            = 'social_cost_carbon.csv'
 if(zenodo_repo) {
   scc_df <- fread(paste0(main_path, outputs_path, scc_file))
 } else {
-  scc_df <- fread(paste0(main_path, 'data/stocks-flows/processed/', scc_file))
+  scc_df <- fread(paste0(main_path, 'data/processed/', scc_file))
 }
 
 ## filter for 3 percent, 

@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## March 20, 2023
 ## make version of county-level outputs for zenodo
+## revised: Mar 1 2024 by haein - no need to change 
 
 library(tidyverse)
 library(data.table)
@@ -9,10 +10,10 @@ library(data.table)
 comp_result_date <- "2022-12-27"
 
 ## drive paths 
-main_path              = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
-extraction_folder_path = paste0('outputs/academic-out/extraction/extraction_', comp_result_date, '/')
-county_save_path       = paste0(main_path, extraction_folder_path, 'county-results/')
-save_info_path         = paste0(main_path, 'outputs/academic-out/extraction/figures/nature-energy-revision/final/')
+main_path              = '/capstone/freshcair/meds-freshcair-capstone/data/'
+extraction_folder_path = paste0('outputs/', comp_result_date, '/')
+county_save_path       = paste0(main_path, extraction_folder_path)
+save_info_path         = paste0(main_path, 'outputs/')
 
 ## labor scen out
 labor_scen_file <- "reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-0_county_results.rds"
