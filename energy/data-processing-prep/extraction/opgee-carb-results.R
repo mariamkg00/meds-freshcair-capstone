@@ -4,9 +4,9 @@
 
 # ------------------------------------------- INPUTS -----------------------------------
 
-data_dir    = '/capstone/freshcair/meds-freshcair-capstone/data/inputs/'
-opgee_fil   = 'OPGEE_v2.0_with-CARB-inputs.xlsm' ## no file here - haejin 
-names_fil   = 'opgee_field_names.csv' ## no file here - haejin 
+data_dir    = '/capstone/freshcair/meds-freshcair-capstone/data/inputs/extraction'
+opgee_fil   = '/OPGEE_v2.0_with-CARB-inputs.xlsm' ## no file here - haejin 
+names_fil   = '/opgee_field_names.csv' ## no file here - haejin 
 
 # ------------------------------------------- MAIN -----------------------------------
 

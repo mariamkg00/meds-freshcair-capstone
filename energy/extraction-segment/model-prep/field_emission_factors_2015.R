@@ -5,18 +5,18 @@
 
 # inputs -----
 
-data_path         = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed'
-opgee_path        = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/OPGEE'
-entry_path        = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows'
+data_path         = '/capstone/freshcair/meds-freshcair-capstone/data/processed'
+opgee_path        = '/capstone/freshcair/meds-freshcair-capstonedata/processed'
+entry_path        = '/capstone/freshcair/meds-freshcair-capstone/data/outputs'
 inj_file          = 'injection-by-well-type-per-field-per-year_1977-2018_revised.csv'
 emfactor_file     = 'field-level-emissions-results_processed_revised.csv'
-entry_file        = 'entry-input-df/final/entry_df_final_revised.csv'
+entry_file        = 'outputs/entry_df_final_revised.csv'
 prod_file         = 'well_prod_m.rds'
 field_file        = 'wells_19.csv'
 
 # outputs -----
 
-save_path         = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows'
+save_path         = '/capstone/freshcair/meds-freshcair-capstone/data/outputs'
 pre_file          = 'opgee_emission_factors_x_field_2015_revised.csv'
 save_file         = 'ghg_emissions_x_field_2015_revised.csv'
 

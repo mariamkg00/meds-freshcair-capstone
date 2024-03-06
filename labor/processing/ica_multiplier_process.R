@@ -1290,7 +1290,7 @@ ggplot(data = ica_top_ten_counties)+
   scale_y_continuous(labels = label_dollar(scale = .001, suffix = "K"))+
   labs(x = 'California County',
        y = 'Direct Compensation ($USD)',
-       title = 'Top Direct Compensation from Drilling Segment in California Counties')+
+       title = 'Top California Counties with Highest Direct Compensation Multipliers')+
   annotate('text' , x = 5.75, y = 300000, label = 'Direct impacts were computed by inputting the level of revenue observed\n for the drilling industries separately for each county with active operations. ',
            fontface = 'italic')+
   theme_bw()+

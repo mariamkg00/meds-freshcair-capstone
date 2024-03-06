@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## July 21, 2021
 ## Make list of fields included in the analysis
+# Updated 2/28/24 - MP
 
 ## libraries
 library(data.table)
