@@ -90,7 +90,7 @@ viz1 <- ggplot(data = dash_cols) +
                  bins = 20, position = "identity", alpha = 0.5, color = "black") +
   scale_fill_manual(values = c("Yes" = "red", "No" = "blue"),
                     name = "Disadvantaged\nCommunity") +
-  labs(x = "PM2.5 Values", y = "Count of Census Tract", 
+  labs(x = "Annual average PM2.5 exposure (micrograms per cubic meter)", y = "Count of Census Tract", 
        title = "Distribution of Census Tracts by PM2.5 Exposure") +
   theme_bw(base_size = 14) +
   theme(legend.title.align = 0.5, 

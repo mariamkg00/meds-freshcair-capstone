@@ -46,7 +46,10 @@ buff1000 <- sf::st_read("data/processed/buffer_1000ft.shp")
 # Updated - MP
 buff2500 <- sf::st_read("data/processed/buffer_2500ft.shp")
 
-# Updated - MP
+# Added - MP
+buff3200 <- sf::st_read("data/processed/buffer_3200ft.shp")
+
+xw# Updated - MP
 buff5280 <- sf::st_read("data/processed/buffer_5280ft.shp") 
 
 # transform to NAD83(NSRS2007) / California Albers as well for wells and field boundaries -- Updated MP
@@ -142,6 +145,8 @@ wells_within_df <- wells %>%
   rename(within_1000 = FID) %>%
   st_join(buff2500, left = TRUE) %>%
   rename(within_2500 = FID) %>%
+  st_join(buff3200, left = TRUE) %>% 
+  rename(within_3200) %>% 
   st_join(buff5280, left = TRUE) %>%
   rename(within_5280 = FID) %>%
   as_tibble() %>%

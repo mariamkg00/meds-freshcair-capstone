@@ -23,7 +23,7 @@ exit_rule_file          <- 'well_exit_volume_x_field_v1_revised.csv'
 
 ## read in files
 vintage_prod <- fread("production_field-year_yearly_entry.csv", colClasses = c('doc_field_code' = 'character'))
-exit_threshold <- fread("data/processed/well_exit_volume_x_field_v1_revised.csv"), colClasses = c('doc_field_code' = 'character'))
+exit_threshold <- fread("data/processed/well_exit_volume_x_field_v1_revised.csv", colClasses = c('doc_field_code' = 'character'))
 
 ## construct main dataset that contains exit threshold and annual production for each field-vintage
 dt_vintage_exit <- merge(vintage_prod[,c('doc_field_code','doc_fieldname', 'start_year','year_no','well_prod','no_wells')],
@@ -43,7 +43,7 @@ dt_field_exits <- dt_vintage_exit[, .(n_exits_field = sum(n_exits)),  by = .(doc
 
 ## Save field-year-level well exit data
 
-write.csv(dt_field_exits, "data/processed/well_exits_under_rule.csv"))
+write.csv(dt_field_exits, "data/processed/well_exits_under_rule.csv")
 
 
 

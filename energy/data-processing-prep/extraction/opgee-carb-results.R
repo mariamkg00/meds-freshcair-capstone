@@ -1,12 +1,14 @@
 # meas meng
 # september 4, 2020
 # opgee ghg emission intensities
+## Need to upload OPGEE data to Taylor - MP
+## updated necessary files - Haejin
 
 # ------------------------------------------- INPUTS -----------------------------------
 
 data_dir    = '/capstone/freshcair/meds-freshcair-capstone/data/inputs/extraction'
-opgee_fil   = '/OPGEE_v2.0_with-CARB-inputs.xlsm' ## no file here - haejin 
-names_fil   = '/opgee_field_names.csv' ## no file here - haejin 
+opgee_fil   = '/OPGEE_v2.0_with-CARB-inputs.xlsm' 
+names_fil   = '/opgee_field_names.csv' 
 
 # ------------------------------------------- MAIN -----------------------------------
 

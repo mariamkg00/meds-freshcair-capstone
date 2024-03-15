@@ -1,14 +1,14 @@
 # get opgee relevant inputs for fields over multiple years
 # created: june 16, 2021
 # author: @measrainsey
-## revised: Mar 1 2024 Haejin
+## revised: Mar 11 2024 Haejin
 
 # inputs ------------
 
   emlab_path      = '/capstone/freshcair/meds-freshcair-capstone'
   prod_file       = 'data/processed/well_prod_m_processed.csv'
   inj_file        = 'data/processed/well_inj_m_processed.csv'
-  opgee_file      = 'data/processed/opgee_field_names.csv'
+  opgee_file      = 'data/proprietery-data/opgee_field_names.csv'
   
 # outputs -----------
   

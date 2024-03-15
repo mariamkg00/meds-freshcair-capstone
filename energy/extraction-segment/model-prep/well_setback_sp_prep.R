@@ -2,7 +2,7 @@
 ## May 7, 2021
 ## prep FrackTracker data for analysis
 ##revised : Feb 14, 2024 by Haejin / Feb 25, 2024 Haejin 
-## Updated 2/27/24 MP
+## Updated 3/13/24 MP
 
 # comment out and add your own machine's file path
 home <- "/capstone/freshcair/meds-freshcair-capstone" #### revise filepath
@@ -319,7 +319,7 @@ mapview(sr_dwellings, layer.name = "dwellings")
 ## create an sf object for each buffer
 ## ----------------------------------------
 
-buffer_dist_ft <- c(5280)
+buffer_dist_ft <- c(3200)
 ft_meter_val <- 0.3048
 
 create_buffer <- function(dist_ft) {
@@ -355,7 +355,7 @@ buff_dist_ft_name <- paste0(buffer_dist_ft, "ft")
   plot(out_tmp2, xlim = xcheck, ylim = ycheck)
   plot(sr_pts, xlim = xcheck, ylim = ycheck, add = TRUE, pch = 16, cex = .5)
   plot(simp_sr_dwell, xlim = xcheck, ylim = ycheck, add = TRUE, col = "red")
-  plot(sr_s, xlim = xcheck, ylim = ycheck, add = TRUE, col = "blue")
+  # plot(sr_s, xlim = xcheck, ylim = ycheck, add = TRUE, col = "blue")
   
   # Write dsn path - MP
   dsn_path <- paste0("data/processed/buffer_", buff_dist_ft_name, ".shp")
@@ -367,7 +367,7 @@ buff_dist_ft_name <- paste0(buffer_dist_ft, "ft")
   
 }
 
-purrr::map(buffer_dist_ft, create_buffer)
+purrr::map(buffer_dist_ft, create_buffer) 
 
 
 ### MP testing ------------
@@ -391,13 +391,13 @@ geometry_types <- sapply(objects, function(obj) {
 # Print the results
 print(geometry_types)
 
-setback5280 <- st_read('data/processed/buffer_5280ft.shp')
+setback3200 <- st_read('data/processed/buffer_5280ft.shp')
 
-setback5280_crs <- st_transform(setback5280, st_crs(ca))
+setback3200_crs <- st_transform(setback3200, st_crs(ca))
 
 ggplot() +
   geom_sf(data = ca, fill = "beige", color = "black") + # Plot CA shapefile
-  geom_sf(data = setback_25_crs, color = "blue", size = 3) + # Add points
+  geom_sf(data = setback3200_crs, color = "blue", size = 3) + # Add points
   theme_minimal() +
   labs(title = "Sensitive Receptors in California")
 
@@ -410,43 +410,6 @@ tm_shape(ca) +
 
 
 
-
-# Create a plotly map
-p <- plot_ly() %>%
-  add_trace(
-    type = 'scattergeo',
-    lon = ca_df$X,
-    lat = ca_df$Y,
-    mode = 'lines',
-    line = list(color = "black"),
-    fill = 'toself',
-    fillcolor = 'beige',
-    name = 'California'
-  ) %>%
-  add_trace(
-    type = 'scattergeo',
-    lon = setback5280_df$X,
-    lat = setback5280_df$Y,
-    mode = 'markers', # Use 'lines' for polygons
-    marker = list(size = 3, color = 'blue'),
-    name = 'Setback Areas'
-  ) %>%
-  layout(
-    title = 'Sensitive Receptors in California',
-    geo = list(
-      scope = 'usa',
-      projection = list(type = 'albers usa'),
-      showland = TRUE,
-      landcolor = 'rgb(217, 217, 217)',
-      subunitwidth = 1,
-      countrywidth = 1,
-      subunitcolor = "rgb(255, 255, 255)",
-      countrycolor = "rgb(255, 255, 255)"
-    )
-  )
-
-# Display the plot
-p
 
 
 

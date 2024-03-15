@@ -18,6 +18,7 @@ library(foreign)
 library(haven)
 library(readr)
 library(dplyr)
+library(janitor)
 # rm(list=ls())
 
 
@@ -26,12 +27,17 @@ setwd('/capstone/freshcair/meds-freshcair-capstone')
 
 
 # (0) Load CES3.0
-ces3<-read_csv(paste0(mainFiles,"/ces3results_part.csv", sep=""))
+ces3<-read_csv("data/inputs/health/ces3results.csv")
+
+ces3 <- ces3 %>% 
+  janitor::clean_names()
 ces3$GEOID=paste("0",as.character(ces3$census_tract),sep="")
 
 ct_total_pop<-ces3%>%dplyr::select("GEOID","total_population")
 
-ct_dac_pop<-ces3%>%dplyr::filter(sb535_dac=="Yes")%>%dplyr::select("GEOID","total_population","sb535_dac")%>%dplyr::rename(dac_population=total_population)
+ct_dac_pop<-ces3%>%dplyr::filter(sb_535_disadvantaged_community=="Yes")%>%
+  dplyr::select("GEOID","total_population","sb_535_disadvantaged_community")%>%
+  dplyr::rename(dac_population=total_population)
 
 demographics<-left_join(ct_total_pop,ct_dac_pop)
 # (1.1) Load source receptor matrix (srm) #######
@@ -66,7 +72,12 @@ srm_all_pollutants_extraction <-map_df(fields_vector, read_extraction) %>%
   dplyr::rename(weighted_totalpm25=totalpm25_aw)%>%
   select(-totalpm25)%>%
   spread(poll, weighted_totalpm25)%>%
-  dplyr::rename(weighted_totalpm25nh3=nh3,weighted_totalpm25nox=nox,weighted_totalpm25pm25=pm25,weighted_totalpm25sox=sox,weighted_totalpm25voc=voc,id=field)
+  dplyr::rename(weighted_totalpm25nh3=nh3,
+                weighted_totalpm25nox=nox,
+                weighted_totalpm25pm25=pm25,
+                weighted_totalpm25sox=sox,
+                weighted_totalpm25voc=voc,
+                id=field)
 
 
 srm_all_pollutants_extraction$total_pm25=srm_all_pollutants_extraction$weighted_totalpm25nh3+srm_all_pollutants_extraction$weighted_totalpm25nox+srm_all_pollutants_extraction$weighted_totalpm25pm25+srm_all_pollutants_extraction$weighted_totalpm25sox+srm_all_pollutants_extraction$weighted_totalpm25voc
@@ -76,21 +87,33 @@ srm_all_pollutants_extraction_population<-left_join(srm_all_pollutants_extractio
 
 
 #Obtain measure 1: filtering if positive pm2.5
-measure1<-srm_all_pollutants_extraction_population%>%dplyr::filter(total_pm25>0.0001)
-measure1_by_cluster<-measure1%>%dplyr::group_by(id)%>%dplyr::summarize(total_population=sum(total_population,na.rm=T),dac_population=sum(dac_population,na.rm=T))
+measure1<-srm_all_pollutants_extraction_population%>%
+  dplyr::filter(total_pm25>0.0001)
+measure1_by_cluster<-measure1%>%
+  dplyr::group_by(id)%>%
+  dplyr::summarize(total_population=sum(total_population,na.rm=T),dac_population=sum(dac_population,na.rm=T))
+
 measure1_by_cluster$share_dac=measure1_by_cluster$dac_population/measure1_by_cluster$total_population
 
 
 #Obtain measure 2: population weighting by PM2.5
-measure2<-srm_all_pollutants_extraction_population%>%dplyr::select(GEOID,id,total_pm25,total_population,dac_population)
+measure2<-srm_all_pollutants_extraction_population%>%
+  dplyr::select(GEOID,id,total_pm25,total_population,dac_population)
+
 measure2$dac_population<-ifelse(is.na(measure2$dac_population)==TRUE,0,measure2$dac_population)
+
 measure2$numA=measure2$total_pm25*measure2$total_population
+
 measure2$numD=measure2$total_pm25*measure2$dac_population
+
 measure2_by_cluster<-measure2%>%dplyr::group_by(id)%>%dplyr::summarize(numA=sum(numA,na.rm=T),numD=sum(numD,na.rm=T),total_pm25=sum(total_pm25))
+
 measure2_by_cluster$share_dac_weighted=measure2_by_cluster$numD/measure2_by_cluster$numA
 
 
+
 measures<-left_join(measure1_by_cluster,measure2_by_cluster,by="id")
+
 measures<-measures%>%select(id,share_dac,share_dac_weighted,numA)
 
 write_csv(measures,"calepa-cn/outputs/academic-out/health/extraction_cluster_affectedpop.csv")

@@ -1,7 +1,7 @@
 ## Tracey Mangin
 ## January 31, 2022
 ## prep excise tax scenarios
-# Updated 2/28/24
+# Updated 2/28/24 - MP
 
 library(tidyverse)
 library(data.table)
