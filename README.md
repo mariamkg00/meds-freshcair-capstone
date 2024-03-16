@@ -18,12 +18,9 @@ The purpose of this Github repository is to maintain a clear and effective histo
 
 ## Purpose
 
-........ 
 
 
-
-
-#### repository file structure :dog:
+## repository file structure :dog:
 
 This is the fundamental structure of our repository:
 We have two primary structures: "model" and "data". The existing model comprises three different sections (extraction, health, labor), which will be simplified to sections, and we will select the necessary ones to remain in this repository in the future. The Shinydashboard will be updated in the Spring quarter.
