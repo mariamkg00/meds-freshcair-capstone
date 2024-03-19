@@ -25,9 +25,9 @@ library(janitor)
 # setting working directory 
 setwd('/capstone/freshcair/meds-freshcair-capstone')
 
-
+# UPDATED - MG
 # (0) Load CES3.0
-ces3<-read_csv("data/inputs/health/ces3results.csv")
+ces3<-read_csv("data/inputs/health/ces3results_part.csv")
 
 ces3 <- ces3 %>% 
   janitor::clean_names()
@@ -35,8 +35,8 @@ ces3$GEOID=paste("0",as.character(ces3$census_tract),sep="")
 
 ct_total_pop<-ces3%>%dplyr::select("GEOID","total_population")
 
-ct_dac_pop<-ces3%>%dplyr::filter(sb_535_disadvantaged_community=="Yes")%>%
-  dplyr::select("GEOID","total_population","sb_535_disadvantaged_community")%>%
+ct_dac_pop<-ces3%>%dplyr::filter(sb535_dac == 'Yes')%>%
+  dplyr::select("GEOID","total_population","sb535_dac")%>%
   dplyr::rename(dac_population=total_population)
 
 demographics<-left_join(ct_total_pop,ct_dac_pop)
@@ -46,15 +46,69 @@ demographics<-left_join(ct_total_pop,ct_dac_pop)
 
 fields_vector <- c(1:26)
 
+field_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction'
+
+
+# alternate way of reading in field data - MG 
+
+# -----------nh3 data------------
+nh3_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/nh3'
+
+
+nh3_files <- fs::dir_ls(nh3_data, regexp = '\\.csv$')
+
+
+nh3 <- nh3_files %>% 
+  map_dfr(read_csv)
+
+
+# -----------nox data --------------
+nox_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/nox'
+
+nox_files <- fs::dir_ls(nox_data, regexp = '\\.csv$')
+
+nox <- nox_files %>% 
+  map_dfr(read_csv)
+
+
+# -----------pm 2.5 data ------------------
+pm_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/pm25'
+
+pm_files <- fs::dir_ls(pm_data, regexp = '\\.csv$')
+
+pm25 <- pm_files %>% 
+  map_dfr(read_csv)
+
+
+# --------- sox data ------------------------
+sox_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/sox'
+
+sox_files <- fs::dir_ls(sox_data, regexp = '\\.csv$')
+
+sox <- sox_files %>% 
+  map_dfr(read_csv)
+
+# ----------------voc data -------------------
+
+voc_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/voc'
+
+voc_files <- fs::dir_ls(voc_data, regexp = '\\.csv$')
+
+voc <- voc_files %>% 
+  map_dfr(read_csv)
+
+
+all_polls <- rbind(nh3,nox,pm25,sox,voc)
+
 read_extraction <- function(buff_field){
   
   bfield <- buff_field
   
-  nh3<-read_csv(paste0(inmapExFiles,"/nh3/srm_nh3_field",bfield,".csv",sep=""))%>%mutate(poll="nh3")
-  nox<-read_csv(paste0(inmapExFiles,"/nox/srm_nox_field",bfield,".csv",sep=""))%>%mutate(poll="nox")
-  pm25<-read_csv(paste0(inmapExFiles,"/pm25/srm_pm25_field",bfield,".csv",sep=""))%>%mutate(poll="pm25")
-  sox<-read_csv(paste0(inmapExFiles,"/sox/srm_sox_field",bfield,".csv",sep=""))%>%mutate(poll="sox")
-  voc<-read_csv(paste0(inmapExFiles,"/voc/srm_voc_field",bfield,".csv",sep=""))%>%mutate(poll="voc")
+  nh3<-read_csv(paste0(field_data,"/nh3/srm_nh3_field",bfield,".csv",sep=""))%>%mutate(poll="nh3")
+  nox<-read_csv(paste0(field_data,"/nox/srm_nox_field",bfield,".csv",sep=""))%>%mutate(poll="nox")
+  pm25<-read_csv(paste0(field_data,"/pm25/srm_pm25_field",bfield,".csv",sep=""))%>%mutate(poll="pm25")
+  sox<-read_csv(paste0(field_data,"/sox/srm_sox_field",bfield,".csv",sep=""))%>%mutate(poll="sox")
+  voc<-read_csv(paste0(field_data,"/voc/srm_voc_field",bfield,".csv",sep=""))%>%mutate(poll="voc")
   
   all_polls<-rbind(nh3,nox,pm25,sox,voc)
   
