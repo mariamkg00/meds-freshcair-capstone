@@ -49,56 +49,8 @@ fields_vector <- c(1:26)
 field_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction'
 
 
-# alternate way of reading in field data - MG 
-
-# -----------nh3 data------------
-nh3_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/nh3'
 
 
-nh3_files <- fs::dir_ls(nh3_data, regexp = '\\.csv$')
-
-
-nh3 <- nh3_files %>% 
-  map_dfr(read_csv)
-
-
-# -----------nox data --------------
-nox_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/nox'
-
-nox_files <- fs::dir_ls(nox_data, regexp = '\\.csv$')
-
-nox <- nox_files %>% 
-  map_dfr(read_csv)
-
-
-# -----------pm 2.5 data ------------------
-pm_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/pm25'
-
-pm_files <- fs::dir_ls(pm_data, regexp = '\\.csv$')
-
-pm25 <- pm_files %>% 
-  map_dfr(read_csv)
-
-
-# --------- sox data ------------------------
-sox_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/sox'
-
-sox_files <- fs::dir_ls(sox_data, regexp = '\\.csv$')
-
-sox <- sox_files %>% 
-  map_dfr(read_csv)
-
-# ----------------voc data -------------------
-
-voc_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/voc'
-
-voc_files <- fs::dir_ls(voc_data, regexp = '\\.csv$')
-
-voc <- voc_files %>% 
-  map_dfr(read_csv)
-
-
-all_polls <- rbind(nh3,nox,pm25,sox,voc)
 
 read_extraction <- function(buff_field){
   
@@ -124,7 +76,7 @@ read_extraction <- function(buff_field){
 srm_all_pollutants_extraction <-map_df(fields_vector, read_extraction) %>% 
   bind_rows()%>%
   dplyr::rename(weighted_totalpm25=totalpm25_aw)%>%
-  select(-totalpm25)%>%
+  dplyr::select(-totalpm25)%>%
   spread(poll, weighted_totalpm25)%>%
   dplyr::rename(weighted_totalpm25nh3=nh3,
                 weighted_totalpm25nox=nox,
@@ -160,7 +112,8 @@ measure2$numA=measure2$total_pm25*measure2$total_population
 
 measure2$numD=measure2$total_pm25*measure2$dac_population
 
-measure2_by_cluster<-measure2%>%dplyr::group_by(id)%>%dplyr::summarize(numA=sum(numA,na.rm=T),numD=sum(numD,na.rm=T),total_pm25=sum(total_pm25))
+measure2_by_cluster<-measure2%>%dplyr::group_by(id)%>%
+  dplyr::summarize(numA=sum(numA,na.rm=T),numD=sum(numD,na.rm=T),total_pm25=sum(total_pm25))
 
 measure2_by_cluster$share_dac_weighted=measure2_by_cluster$numD/measure2_by_cluster$numA
 
@@ -168,21 +121,90 @@ measure2_by_cluster$share_dac_weighted=measure2_by_cluster$numD/measure2_by_clus
 
 measures<-left_join(measure1_by_cluster,measure2_by_cluster,by="id")
 
-measures<-measures%>%select(id,share_dac,share_dac_weighted,numA)
+measures<-measures%>%
+  dplyr::select(id,share_dac,share_dac_weighted,numA)
 
-write_csv(measures,"calepa-cn/outputs/academic-out/health/extraction_cluster_affectedpop.csv")
+setwd('/capstone/freshcair/meds-freshcair-capstoneoutputs')
+write_csv(measures,"extraction_cluster_affectedpop.csv")
 
 
 ######EXTRACTION FIELDS
 #LOAD AND PROCESS X-WALK BETWEEN FIELDS AND CLUSTERS
-extraction_field_clusters_10km<-read_csv(paste0(sourceFiles,"/extraction_fields_clusters_10km.csv",sep=""))%>%
+# UPDATED - MG -3/19
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+extraction_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/extraction-model'
+
+extraction_field_clusters_10km<-read_csv(paste0(extraction_data,"/extraction_fields_clusters_10km.csv",sep=""))%>%
   dplyr::select(OUTPUT_FID,INPUT_FID)
+
 extraction_field_clusters_10km<-dplyr::rename(extraction_field_clusters_10km,id=OUTPUT_FID,input_fid=INPUT_FID)
 
-extraction_fields_xwalk<-read.dbf(paste0(sourceFiles,"/extraction_fields_xwalk_id.dbf",sep=""))
+extraction_fields_xwalk<-read.dbf(paste0(extraction_data,"/extraction_fields_xwalk_id.dbf",sep=""))
+
 extraction_fields_xwalk<-dplyr::rename(extraction_fields_xwalk,input_fid=id,doc_field_code=dc_fld_)
 
 extraction_xwalk<-left_join(extraction_field_clusters_10km,extraction_fields_xwalk,by=c("input_fid"))
+
 extraction_xwalk$doc_field_code=as.numeric(as.character(extraction_xwalk$doc_field_code))
 
-write_csv(extraction_xwalk,"calepa-cn/outputs/academic-out/health/extraction_xwalk.csv")
+
+setwd('/capstone/freshcair/meds-freshcair-capstoneoutputs')
+
+
+write_csv(extraction_xwalk,"extraction_xwalk.csv")
+
+
+
+
+# 
+# # alternate way of reading in field data - MG 
+# 
+# # -----------nh3 data------------
+# nh3_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/nh3'
+# 
+# 
+# nh3_files <- fs::dir_ls(nh3_data, regexp = '\\.csv$')
+# 
+# 
+# nh3 <- nh3_files %>% 
+#   map_dfr(read_csv)
+# 
+# 
+# # -----------nox data --------------
+# nox_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/nox'
+# 
+# nox_files <- fs::dir_ls(nox_data, regexp = '\\.csv$')
+# 
+# nox <- nox_files %>% 
+#   map_dfr(read_csv)
+# 
+# 
+# # -----------pm 2.5 data ------------------
+# pm_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/pm25'
+# 
+# pm_files <- fs::dir_ls(pm_data, regexp = '\\.csv$')
+# 
+# pm25 <- pm_files %>% 
+#   map_dfr(read_csv)
+# 
+# 
+# # --------- sox data ------------------------
+# sox_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/sox'
+# 
+# sox_files <- fs::dir_ls(sox_data, regexp = '\\.csv$')
+# 
+# sox <- sox_files %>% 
+#   map_dfr(read_csv)
+# 
+# # ----------------voc data -------------------
+# 
+# voc_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/voc'
+# 
+# voc_files <- fs::dir_ls(voc_data, regexp = '\\.csv$')
+# 
+# voc <- voc_files %>% 
+#   map_dfr(read_csv)
+# 
+
+all_polls <- rbind(nh3,nox,pm25,sox,voc)
