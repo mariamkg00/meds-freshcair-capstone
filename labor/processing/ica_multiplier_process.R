@@ -2,7 +2,7 @@
 # Chris Malloy (cmalloy@ucsb.edu)
 # created: 07/28/2021
 # updated: 08/17/2021
-# updated : 02/19/2024
+# updated 4/5/24 - MP
 
 ############################################################################################
 # Set up environment 
@@ -62,7 +62,7 @@ ica_emp_ext_kern <- read_csv('ica-emp-ext-kern.csv') %>%
   dplyr::select(-...1,-...6) 
 
 
-ica_comp_ext_kern <- read_csv('ica-va-ext-kern.csv',skip = 1, col_names = TRUE) #%>% 
+ica_comp_ext_kern <- read_csv('ica-va-ext-kern.csv',skip = 1, col_names = TRUE) %>% 
   filter(is.na(...1)==F) %>% 
   mutate(county = "Kern", segment = "extraction") %>% 
     dplyr::rename(industry = `Industry Display`, direct_comp = `Employee Compensation...3`, 
@@ -1129,6 +1129,7 @@ ica_total <- ica %>%
 
 #4. Add in counties without O&G sector activity 
 
+# Removed filter since there is only one row - MP
 ica_total_state <- filter(ica_total,county=="Statewide")
 ica_emp_wide_direct_state <- filter(ica_emp_wide_direct,county=="Statewide")
 ica_emp_wide_indirect_state <- filter(ica_emp_wide_indirect,county=="Statewide")

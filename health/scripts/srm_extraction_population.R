@@ -2,6 +2,7 @@
 #INFRASTRUCTURE TO SEND TO THE MODELING TEAM
 
 # Updated 2/14/2024 by MG 
+# Updated 4/3 MP
 
 #Libraries
 library(sf)
@@ -124,8 +125,8 @@ measures<-left_join(measure1_by_cluster,measure2_by_cluster,by="id")
 measures<-measures%>%
   dplyr::select(id,share_dac,share_dac_weighted,numA)
 
-setwd('/capstone/freshcair/meds-freshcair-capstoneoutputs')
-write_csv(measures,"extraction_cluster_affectedpop.csv")
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+write_csv(measures,"data/processed/extraction_cluster_affectedpop.csv")
 
 
 ######EXTRACTION FIELDS
@@ -149,10 +150,10 @@ extraction_xwalk<-left_join(extraction_field_clusters_10km,extraction_fields_xwa
 extraction_xwalk$doc_field_code=as.numeric(as.character(extraction_xwalk$doc_field_code))
 
 
-setwd('/capstone/freshcair/meds-freshcair-capstoneoutputs')
+setwd('/capstone/freshcair/meds-freshcair-capstone')
 
 
-write_csv(extraction_xwalk,"extraction_xwalk.csv")
+write_csv(extraction_xwalk,"data/processed/extraction_xwalk.csv")
 
 
 
@@ -207,4 +208,4 @@ write_csv(extraction_xwalk,"extraction_xwalk.csv")
 #   map_dfr(read_csv)
 # 
 
-all_polls <- rbind(nh3,nox,pm25,sox,voc)
+# all_polls <- rbind(nh3,nox,pm25,sox,voc)

@@ -6,7 +6,7 @@
 # modified by Tracey Mangin
 ##################################################################
 # revise : Feb 14, 2024 by Haejin 
-# Updated 2/28 MP
+# Updated 4/7 MP
 
 # comment out and add your own machine's file path
 wd               <- "/capstone/freshcair/meds-freshcair-capstone"
@@ -49,7 +49,7 @@ buff2500 <- sf::st_read("data/processed/buffer_2500ft.shp")
 # Added - MP
 buff3200 <- sf::st_read("data/processed/buffer_3200ft.shp")
 
-xw# Updated - MP
+# Updated - MP
 buff5280 <- sf::st_read("data/processed/buffer_5280ft.shp") 
 
 # transform to NAD83(NSRS2007) / California Albers as well for wells and field boundaries -- Updated MP
@@ -146,7 +146,7 @@ wells_within_df <- wells %>%
   st_join(buff2500, left = TRUE) %>%
   rename(within_2500 = FID) %>%
   st_join(buff3200, left = TRUE) %>% 
-  rename(within_3200) %>% 
+  rename(within_3200 = FID) %>% 
   st_join(buff5280, left = TRUE) %>%
   rename(within_5280 = FID) %>%
   as_tibble() %>%
@@ -203,7 +203,7 @@ wells_within_df <- wells %>%
   mutate(within_setback = ifelse(within_1000 == 0, 1, within_1000),
          within_setback = ifelse(is.na(within_setback), 0, within_setback))
 
-ggplot(data = buff1000) +
+ggplot(data = buff3200) +
   geom_sf() +
   lims(x=xcheck, y=ycheck) +
   geom_sf(data = wells_within_df, aes(color = factor(within_setback)))
@@ -300,12 +300,13 @@ field_coverage_df_1000 <- field_boundaries %>%
 #      add = TRUE, 
 #      color = "yellow")
 
+# Update: using as_tibble instead of as.tibble due to depreciation in tibble 2.0.0
 field_coverage_df_1000_2 <- field_coverage_df_1000 %>%
   mutate(setback_area = st_area(field_coverage_df_1000),
          setback_1000 = setback_area / orig_area_m2) %>%
   dplyr::select(doc_field_code, setback_1000) %>%
   st_drop_geometry() %>%
-  as.tibble()
+  as_tibble()
 
 field_coverage_df_2500 <- field_boundaries %>% 
   st_intersection(buff2500)
@@ -315,7 +316,19 @@ field_coverage_df_2500_2 <- field_coverage_df_2500 %>%
          setback_2500 = setback_area / orig_area_m2) %>%
   dplyr::select(doc_field_code, setback_2500) %>%
   st_drop_geometry() %>%
-  as.tibble()
+  as_tibble()
+
+# Generated - MP
+field_coverage_df_3200 <- field_boundaries %>% 
+  st_intersection(buff3200)
+
+# Generated - MP
+field_coverage_df_3200_2 <- field_coverage_df_3200 %>%
+  mutate(setback_area = st_area(field_coverage_df_3200),
+         setback_3200 = setback_area / orig_area_m2) %>%
+  dplyr::select(doc_field_code, setback_3200) %>%
+  st_drop_geometry() %>%
+  as_tibble()
 
 field_coverage_df_5280 <- field_boundaries %>% 
   st_intersection(buff5280) 
@@ -325,12 +338,13 @@ field_coverage_df_5280_2 <- field_coverage_df_5280 %>%
          setback_5280 = setback_area / orig_area_m2) %>%
   dplyr::select(doc_field_code, setback_5280) %>%
   st_drop_geometry() %>%
-  as.tibble()
+  as_tibble()
 
-## combine all three setbacks
+## combine all three setbacks -- Updated - MP
 field_boundaries2 <- field_boundaries %>%
   left_join(field_coverage_df_1000_2) %>%
   left_join(field_coverage_df_2500_2) %>%
+  left_join(field_coverage_df_3200_2) %>% 
   left_join(field_coverage_df_5280_2) %>%
   st_drop_geometry() %>%
   units::drop_units() %>%
@@ -373,6 +387,7 @@ field_boundaries3 <- field_boundaries2 %>%
 
 # save output
 
+# Updated - MP
 write_csv(field_boundaries3, "data/processed/setback_coverage_R.csv")
 
 
@@ -382,13 +397,15 @@ coverage_map <-
   mapview(field_boundaries, layer.name = "Field boundary", label = 'doc_field_code', col.regions = "yellow", legend = FALSE) +
   mapview(buff1000, layer.name = "1000ft", col.regions = "blue", legend = FALSE) +
   mapview(buff2500, layer.name = "2500ft", col.regions = "grey", legend = FALSE) +
+  mapview(buff3200, layer.name = "3200ft", col.regions = "pink", legend = FALSE) +
   mapview(buff5280, layer.name = "5280ft", col.regions = "red", legend = FALSE) +
   mapview(field_coverage_df_1000, layer.name = "1000ft coverage", col.regions = "green", legend = FALSE) +
   mapview(field_coverage_df_2500, layer.name = "2500ft coverage", col.regions = "purple", legend = FALSE) +
+  mapview(field_coverage_df_3200, layer.name = "3200 ft coverage", col.regions = "salmon", legend = FALSE) +
   mapview(field_coverage_df_5280, layer.name = "5280ft coverage", col.regions = "orange", legend = FALSE) +
   mapview(wells2, layer.name = "Wells", label = 'WellStatus', cex = 0.3, alpha = 0, legend = FALSE)
   
-# save output
+# save output -- Updated - MP
 mapshot(coverage_map, url = "data/processed/coverage_map.html", selfcontained = F) 
 
 
@@ -396,9 +413,11 @@ mapshot(coverage_map, url = "data/processed/coverage_map.html", selfcontained = 
   mapview(field_boundaries %>% filter(doc_field_code %in% c('660')), layer.name = "Field boundary", label = 'doc_field_code', col.regions = "yellow", legend = FALSE) +
   mapview(buff1000, layer.name = "1000ft", col.regions = "blue", legend = FALSE) +
   mapview(buff2500, layer.name = "2500ft", col.regions = "grey", legend = FALSE) +
+  mapview(buff3200, layer.name = "3200ft", col.regions = "pink", legend = FALSE) +
   mapview(buff5280, layer.name = "5280ft", col.regions = "red", legend = FALSE) +
   mapview(field_coverage_df_1000, layer.name = "1000ft coverage", col.regions = "green", legend = FALSE) +
   mapview(field_coverage_df_2500, layer.name = "2500ft coverage", col.regions = "purple", legend = FALSE) +
+  mapview(field_coverage_df_3200, layer.name = "3200ft coverage", col.regions = "salmon", legend = FALSE) +
   mapview(field_coverage_df_5280, layer.name = "5280ft coverage", col.regions = "orange", legend = FALSE) +
   mapview(wells2 %>% filter(FieldName == "Sansinena"), layer.name = "Wells", label = 'WellStatus', cex = 0.3, alpha = 0, legend = FALSE)
 
@@ -419,11 +438,29 @@ mapshot(coverage_map, url = "data/processed/coverage_map.html", selfcontained = 
 ## do test with doc field 660
   mapview(field_boundaries %>% filter(doc_field_code == '660'), layer.name = "Field boundary", label = 'doc_field_code', col.regions = "yellow", legend = FALSE) +
     mapview(buff2500, layer.name = "2500ft", col.regions = "grey", legend = FALSE) +
+    mapview(buff3200, layer.name = "3200ft", col.regions = "pink", legend = FALSE) +
     mapview(buff5280, layer.name = "5280ft", col.regions = "red", legend = FALSE)
 
 
 test <- field_boundaries %>% 
   filter(doc_field_code == '660') %>%
-  st_intersection(buff2500) %>%
+  st_intersection(buff3200) %>%
   mutate(setback_area = st_area(geometry),
          diff = orig_area_m2 - setback_area)
+
+# Added - MP
+test_map <- mapview(field_boundaries %>% filter(doc_field_code == '660'), 
+                    layer.name = "Field boundary", 
+                    label = 'doc_field_code', 
+                    col.regions = "yellow", 
+                    legend = FALSE) +
+  mapview(buff3200, 
+          layer.name = "3200ft", 
+          col.regions = "blue", 
+          legend = FALSE) +
+  mapview(test, 
+          layer.name = "Setback area", 
+          col.regions = "red", 
+          legend = FALSE)
+
+test_map

@@ -2,6 +2,7 @@
 # updated: 2/12/24
 # 
 
+library(dplyr)
 library(tidyverse)
 library(sf)
 
@@ -14,23 +15,24 @@ getwd()
 # ## paths 
 # main_path        <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
 # sp_data_path     <- paste0(main_path, "data/GIS/raw/")
-# health_data_path <- paste0(main_path, "data/health/source_receptor_matrix/inmap_output_srm/")
-# srm_save_path    <- paste0(main_path, "data/health/source_receptor_matrix/inmap_processed_srm/")
+health_data_path <- paste0("data/health/source_receptor_matrix/inmap_output_srm/")
+srm_save_path    <- paste0("data/health/source_receptor_matrix/inmap_processed_srm/")
 
 ## Read census tract shp file - UPDATED - MP
 census_tract <- read_sf('data/inputs/gis/census-tract/tl_2019_06_tract.shp') %>%
-  select(-STATEFP:-TRACTCE,-NAME:-INTPTLON)%>%
-  st_transform(crs=3310)
+  st_transform(crs = 3310) %>%
+  sf::st_drop_geometry() %>%
+  dplyr::select(-STATEFP:-TRACTCE, -NAME:-INTPTLON)
 
 ## counties, no islands - UPDATED - MP
 CA_counties <- st_read('data/inputs/gis/CA_counties_noislands/CA_Counties_TIGER2016_noislands.shp') %>%
   st_transform(crs=3310) %>%
-  select(OBJECTID, GEOID)
+  dplyr::select(OBJECTID, GEOID)
 
 ## remove islands
 CA_counties_noisl <- CA_counties %>%
   filter(!OBJECTID %in% c(3, 49)) %>%
-  select(- OBJECTID)
+  dplyr::select(- OBJECTID)
 
 # county_shp <- read_sf("./data/inmap/census-tract/tl_2019_06_tract.shp")%>%
 #   select(-STATEFP:-TRACTCE,-NAME:-INTPTLON)%>%
@@ -58,22 +60,23 @@ if(sp_res == "county") {
   
 }
 
+## create directories for each pollutant
+pollutants_vec <- c("nh3", "nox", "pm25", "sox", "voc")
 
 ## read in files
 inmap_files_raw <- list.files(paste0(health_data_path, sector))
 inmap_files <- ifelse(stringr::str_sub(inmap_files_raw,-3,-1)=="shp",inmap_files_raw, 0)
 inmap_files <- inmap_files[!inmap_files %in% c(0)]
 
-## create save directory for sp resolution
-dir.create(paste0(srm_save_path, sector, sp_res_path), showWarnings = TRUE)
+# Create the sector-specific directory inside "data/processed"
+dir.create(paste0("data/processed/", sector), showWarnings = FALSE)
 
-## create directories for each pollutant
-pollutants_vec <- c("nh3", "nox", "pm25", "sox", "voc")
+# Create the spatial resolution directory inside the sector-specific directory
+dir.create(paste0("data/processed/", sector, sp_res_path), showWarnings = FALSE)
 
+# Create directories for each pollutant inside the spatial resolution directory
 for(i in 1:length(pollutants_vec)) {
-  
-  dir.create(paste0(srm_save_path, sector, sp_res_path, pollutants_vec[i], "/"), showWarnings = FALSE)
-  
+  dir.create(paste0("data/processed/", sector, sp_res_path, pollutants_vec[i], "/"), recursive = TRUE, showWarnings = FALSE)
 }
 
 pattern <- paste0(c("nh3", "nox", "pm25", "sox", "voc"), collapse = "|")
@@ -93,7 +96,7 @@ inmap_process_func <- function(x) {
               totalpm25_aw = sum(weight * TotalPM25, na.rm = T))%>%
     data.frame()%>%
     select(-geometry) %>%
-    write.csv(paste0(srm_save_path, sector, sp_res_path, pol_tmp, "/", substr(x,1,nchar(x)-4),".csv", sep=""), row.names = FALSE)
+    write.csv(paste0("data/processed/", sector, sp_res_path, pol_tmp, "/", substr(x,1,nchar(x)-4),".csv", sep=""), row.names = FALSE)
   
 }
 

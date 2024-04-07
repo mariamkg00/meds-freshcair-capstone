@@ -6,7 +6,7 @@
 # inputs -----
 
 data_path         = '/capstone/freshcair/meds-freshcair-capstone/data/processed'
-opgee_path        = '/capstone/freshcair/meds-freshcair-capstonedata/processed'
+opgee_path        = '/capstone/freshcair/meds-freshcair-capstone/data/processed'
 entry_path        = '/capstone/freshcair/meds-freshcair-capstone/data/outputs'
 inj_file          = 'injection-by-well-type-per-field-per-year_1977-2018_revised.csv'
 emfactor_file     = 'field-level-emissions-results_processed_revised.csv'

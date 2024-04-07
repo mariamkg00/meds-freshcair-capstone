@@ -137,11 +137,11 @@ county_prod_2019 <- field_prod %>%
 california_counties <- california_counties %>%
   left_join(county_2019_summary, by = c("name" = "county_name"))
 
-buffer_5280 <- st_read(here("data/processed/buffer_5280ft.shp")) 
+buffer_3200 <- st_read(here("data/processed/buffer_3200ft.shp")) 
 
 viz2 <- ggplot() +
   geom_sf(data = california_counties, aes(fill = TotalNumberOfActiveWells), color = "white") +
-  geom_sf(data = buffer_5280, color = "red", fill = 'red', alpha = 0.3) + 
+  geom_sf(data = buffer_3200, color = "red", fill = 'red', alpha = 0.3) + 
   scale_fill_gradient(name = "Number of active wells", 
                       low = "lightblue", high = "darkblue",
                       labels = label_comma()) +
@@ -149,7 +149,9 @@ viz2 <- ggplot() +
   coord_sf(xlim = c(-122, -116), ylim = c(32, 38), expand = FALSE) +
   theme_bw()
 
-ggsave("data/processed/viz2.png", viz2, width = 12, height = 8)
+viz2
+
+# ggsave("data/processed/viz2.png", viz2, width = 12, height = 8)
 
 # # --------------------------------------------
 # Testing regression

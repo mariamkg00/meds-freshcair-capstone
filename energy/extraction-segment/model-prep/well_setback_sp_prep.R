@@ -35,7 +35,7 @@ ca <- st_as_sf(map("state", plot = FALSE, fill = TRUE)) %>%
 ################################# READ DATA AND TRANSFORM
 
 # to get the names of layers in the shapefile
-layers <- sf::st_layers(dsn = file.path(home, "/data/proprietery-data/FracTrackerSetbackdata.gdb")) #### revise filepath
+layers <- sf::st_layers(dsn = file.path(home, "/data/proprietery-data/FracTrackerSetbackdata.gdb")) 
 
 ## read in the SR layers
 layer_vec <- c("SetbackOutlines_SR_Dwellings_082220", "PlaygroundsinCities", "DayCareCenters", "reselderlyCare",

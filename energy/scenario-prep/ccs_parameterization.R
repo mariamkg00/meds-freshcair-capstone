@@ -1,16 +1,15 @@
 # ccs paramaterization of field extraction and refinery ghg emissions combined
 # created: october 12, 2020
 # author: meas meng
+# Updated 4/5/24 - MP
 
 
-if(zenodo_repo) {
-  # zenodo path --
-  input_path   = paste0(zenodo_user_path, '/ca-transportation-supply-decarb-files/intermediate/extraction-model')
-} else {
-  # emlab path
-  input_path   = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows'
-  # input_path <- file.path('/Volumes/GoogleDrive-103159311076289514198/.shortcut-targets-by-id/139aDqzs5T2c-DtdKyLw7S5iJ9rqveGaP/calepa-cn', 'outputs/stocks-flows')
-}
+#input_path   = paste0(zenodo_user_path, '/ca-transportation-supply-decarb-files/intermediate/extraction-model')
+
+
+#input_path   = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows'
+# input_path <- file.path('/Volumes/GoogleDrive-103159311076289514198/.shortcut-targets-by-id/139aDqzs5T2c-DtdKyLw7S5iJ9rqveGaP/calepa-cn', 'outputs/stocks-flows')
+
 
 
 # inputs ------------
@@ -105,5 +104,4 @@ solve_mean_b <- function(a, p, sector){
 }
 
 # remove items from environment -----
-
-rm(input_path, fprod_file, emfac_file, ref_file, field_prod, field_emfac, ref_ghg, field_ghg, select_year)
+#rm(input_path, fprod_file, emfac_file, ref_file, field_prod, field_emfac, ref_ghg, field_ghg, select_year)
