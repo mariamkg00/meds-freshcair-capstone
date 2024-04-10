@@ -21,7 +21,7 @@ main_path <- '/capstone/freshcair/meds-freshcair-capstone/' # revised file path
 carbon_px_file <- 'carbon_price_scenarios_revised.xlsx'
 
 ## read in carbon file
-cpi_df <- setDT(read.xlsx(paste0(main_path, 'data/inputs/', carbon_px_file), sheet = 'BLS Data Series', startRow = 12))
+cpi_df <- setDT(read.xlsx(paste0(main_path, 'data/inputs/extraction', carbon_px_file), sheet = 'BLS Data Series', startRow = 12))
 
 cpi_df <- cpi_df[Year %in% c(2019, 2020), .(Year, Annual)]
 

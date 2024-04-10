@@ -1,3 +1,4 @@
+library(dplyr)
 
 run_extraction_model <- function(input_scenarios) {
   
@@ -37,7 +38,7 @@ run_extraction_model <- function(input_scenarios) {
         mutate(carbon_price = ifelse(tval == 0, carbon_price, calculate_carbonpx_val(x0 = carbon_price, r = perc_inc, t = tval)),
                carbon_price_usd_per_kg = carbon_price / 1000,
                carbon_price_scenario = scen[, carbon_price_scenario][1]) %>%
-        select(year, carbon_price_scenario, carbon_price_usd_per_kg) %>%
+        dplyr::select(year, carbon_price_scenario, carbon_price_usd_per_kg) %>%
         as.data.table()
 
       excise_tax_scens_z <- copy(excise_tax_scens)
@@ -1285,7 +1286,7 @@ run_extraction_model <- function(input_scenarios) {
   run_info = data.table(start_time = start_time,
                         end_time = end_time,
                         duration = paste0(round(time_diff[[1]]), ' minutes'))
-  fwrite(run_info, file.path(save_info_path, 'run_info.csv'), row.names = F)
+  fwrite(run_info, file.path('data/outputs/run_info.csv'), row.names = F)
   
   # save outputs to csv -----
   

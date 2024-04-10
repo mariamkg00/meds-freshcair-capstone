@@ -6,6 +6,7 @@
 library(data.table)
 library(tidyverse)
 library(openxlsx)
+library(dplyr)
 
 ## model output location
 save_external <- 1
@@ -13,7 +14,7 @@ save_external <- 1
 ## path names, ## UPDATE THESE WITH NEW RUNS!!!!!
 # extraction_folder_path <- 'outputs/predict-production/extraction_2022-11-15/revision-sb-test/'
 # extraction_folder_name <- 'subset_target_scens/'
-external_path <- 'extraction-out/extraction_2022-11-15/revision-setbacks/'
+external_path <- 'data/processed/extraction_2024-02-29/revision-setbacks/'
 
 
 ## current date
@@ -21,21 +22,21 @@ cur_date              = Sys.Date()
 
 ## paths 
 main_path  <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
-data_path  <-'data/stocks-flows/processed/'
+data_path  <-'data/inputs/extraction'
 
 
 ## files
 oil_price_file    <- 'oil_price_projections_revised.xlsx'
 
-## external paths
-main_path_external <- '/Volumes/calepa/'
+# ## external paths
+# main_path_external <- '/Volumes/calepa/'
 
 ## compiled state outputs 
 state_out_list <- list()
 
 ## files to process
-state_files_to_process <- list.files(paste0(main_path_external, external_path, 'state-out/'))
-state_files_to_process <- list.files(paste0(main_path, extraction_folder_path, 'state-out/'))
+state_files_to_process <- list.files(paste0(external_path, 'state-out/'))
+# state_files_to_process <- list.files(paste0(main_path, extraction_folder_path, 'state-out/'))
 
 for (i in 1:length(state_files_to_process)) {
   
@@ -43,7 +44,7 @@ for (i in 1:length(state_files_to_process)) {
   
   state_file_name <- state_files_to_process[i]
   
-  state_scen_out <- readRDS(paste0(main_path_external, external_path, 'state-out/', state_file_name))
+  state_scen_out <- readRDS(paste0(external_path, 'state-out/', state_file_name))
   # state_scen_out <- readRDS(paste0(main_path, extraction_folder_path, 'state-out/', state_file_name))
   
   state_out_list[[i]]  <- state_scen_out
@@ -54,9 +55,9 @@ state_subset_all <- rbindlist(state_out_list)
 
 ## save a version with the tax values
 ## ---------------------------------------------
-
 ## add oil price
-oilpx_scens = setDT(read.xlsx(paste0(main_path, data_path, oil_price_file), 'nominal', cols = c(1, 7:9)))
+oilpx_scens_df <- read.xlsx('data/inputs/extraction/oil_price_projections_revised.xlsx', 'nominal', cols = c(1, 7:9))
+oilpx_scens = setDT(oilpx_scens_df)
 colnames(oilpx_scens) = c('year', 'reference_case', 'high_oil_price', 'low_oil_price')
 oilpx_scens = melt(oilpx_scens, measure.vars = c('reference_case', 'high_oil_price', 'low_oil_price'), 
                    variable.name = 'oil_price_scenario', value.name = 'oil_price_usd_per_bbl')
@@ -77,20 +78,20 @@ oilpx_scens <- oilpx_scens[, .(year, oil_price_scenario, oil_price_usd_per_bbl)]
 ## -------------------------------------
 
 tax_val_df <- state_subset_all %>%
-  select(scen_id, oil_price_scenario, carbon_price_scenario, setback_scenario, setback_existing,
+  dplyr::select(scen_id, oil_price_scenario, carbon_price_scenario, setback_scenario, setback_existing,
          excise_tax_scenario, year, total_prod_bbl, total_ghg_mtCO2e, target_policy,
          target, target_val, tax_rate, carbon_price_usd_per_kg) %>%
   left_join(oilpx_scens) %>%
   mutate(excise_tax_val = tax_rate * oil_price_usd_per_bbl) %>%
-  select(scen_id, oil_price_scenario, carbon_price_scenario, setback_scenario, setback_existing,
+  dplyr::select(scen_id, oil_price_scenario, carbon_price_scenario, setback_scenario, setback_existing,
          excise_tax_scenario, target_policy, target, target_val,
          year, total_prod_bbl, total_ghg_mtCO2e, tax_rate, oil_price_usd_per_bbl,
          excise_tax_val, carbon_price_usd_per_kg)
 
-fwrite(tax_val_df, paste0(save_info_path, 'state_levels_all_oil.csv'))
+fwrite(tax_val_df, paste0('data/outputs/state_levels_all_oil.csv'))
 
 
-fwrite(tax_val_df, paste0(main_path, 'outputs/academic-out/extraction/nature-energy-rev-outputs/tax_values.csv'))
+fwrite(tax_val_df, paste0('data/outputs/tax_values.csv'))
 
 
 

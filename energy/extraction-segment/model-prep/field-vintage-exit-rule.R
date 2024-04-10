@@ -2,6 +2,7 @@
 ## June 29, 2021
 ## Create well exit variable based on original production threshold rule
 # Updated 2/28/24 - MP
+# Updated 4/7/24 - MP
 
 library(tidyverse)
 library(data.table)
@@ -22,7 +23,7 @@ getwd()
 exit_rule_file          <- 'well_exit_volume_x_field_v1_revised.csv'
 
 ## read in files
-vintage_prod <- fread("production_field-year_yearly_entry.csv", colClasses = c('doc_field_code' = 'character'))
+vintage_prod <- fread("data/processed/production_field-year_yearly_entry.csv", colClasses = c('doc_field_code' = 'character'))
 exit_threshold <- fread("data/processed/well_exit_volume_x_field_v1_revised.csv", colClasses = c('doc_field_code' = 'character'))
 
 ## construct main dataset that contains exit threshold and annual production for each field-vintage

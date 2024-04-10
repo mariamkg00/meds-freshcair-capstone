@@ -1,0 +1,44 @@
+---
+title: 'Census Tract Analysis'
+output:
+  html_document: default
+---
+
+This document will store analysis one on the census tract level. It serves as a basepoint to investigate the `tidycensus` package, find variables that are applicable and useful for our analysis from the `tidycensus` package, and conduct analysis and generate visualizations. 
+
+It is possible that some variables are not defined in this file that are referenced,in which case run the entirety of the eda.R script. This is something that will be cleaned up by project submission.
+
+```{r}
+# Install packages
+library(tidyverse)
+library(dplyr)
+library(tidycensus) # use API for more streamlined results
+library(tigris)
+options(tigris_use_cache = TRUE) # enable cache functionality
+```
+
+```{r, message=FALSE}
+ca_crs <- 3488
+
+census_tracts <- get_acs(
+  geography = "tract",
+  variables = c(total_pop = "B01003_001"),
+  state = "CA",
+  geometry = TRUE,
+  year = 2022
+) %>%
+  st_transform(ca_crs)
+
+# Loading in census variables
+v22 <- load_variables(2022, "acs1", cache = TRUE)
+```
+
+```{r}
+wells_by_tract <- st_join(wells, census_tracts, join = st_within)
+
+# Count the number of wells in each tarct
+wells_in_tract <- wells_by_tract %>%
+  group_by(NAME) %>%
+  summarize(total_wells = n())
+```
+

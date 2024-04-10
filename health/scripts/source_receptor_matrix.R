@@ -5,6 +5,7 @@
 library(dplyr)
 library(tidyverse)
 library(sf)
+library(purrr)
 
 
 # setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -15,7 +16,11 @@ getwd()
 # ## paths 
 # main_path        <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
 # sp_data_path     <- paste0(main_path, "data/GIS/raw/")
-health_data_path <- paste0("data/health/source_receptor_matrix/inmap_output_srm/")
+
+# updated health_data_path 4/8/24 - MG 
+health_data_path <- paste0("data/meds-transfer-2-19/meds-transfer/extraction/")
+
+
 srm_save_path    <- paste0("data/health/source_receptor_matrix/inmap_processed_srm/")
 
 ## Read census tract shp file - UPDATED - MP
@@ -64,7 +69,7 @@ if(sp_res == "county") {
 pollutants_vec <- c("nh3", "nox", "pm25", "sox", "voc")
 
 ## read in files
-inmap_files_raw <- list.files(paste0(health_data_path, sector))
+inmap_files_raw <- list.files(paste0(health_data_path))
 inmap_files <- ifelse(stringr::str_sub(inmap_files_raw,-3,-1)=="shp",inmap_files_raw, 0)
 inmap_files <- inmap_files[!inmap_files %in% c(0)]
 
@@ -76,7 +81,7 @@ dir.create(paste0("data/processed/", sector, sp_res_path), showWarnings = FALSE)
 
 # Create directories for each pollutant inside the spatial resolution directory
 for(i in 1:length(pollutants_vec)) {
-  dir.create(paste0("data/processed/", sector, sp_res_path, pollutants_vec[i], "/"), recursive = TRUE, showWarnings = FALSE)
+  dir.create(paste0("data/processed/", sp_res_path, pollutants_vec[i], "/"), recursive = TRUE, showWarnings = FALSE)
 }
 
 pattern <- paste0(c("nh3", "nox", "pm25", "sox", "voc"), collapse = "|")
@@ -85,7 +90,7 @@ inmap_process_func <- function(x) {
   
   pol_tmp <- str_extract(x, pattern)
   
-  read_sf(paste0(health_data_path, sector, x)) %>%
+  read_sf(paste0(health_data_path, x)) %>%
     st_transform(crs=3310) %>%
     select(-BasePM25:-SOx,-TotalPop, -WindSpeed) %>%
     st_intersection(shp_int) %>%
@@ -101,19 +106,19 @@ inmap_process_func <- function(x) {
 }
 
 ## run function
-map(as.list(inmap_files), inmap_process_func)
+purrr::map(as.list(inmap_files), inmap_process_func)
+
+
+purrr::map(inmap_files[[1]], inmap_process_func)
 
 
 
 
 
-
-
-
-# inmap_files <- subset(inmap_files, inmap_files != 0);inmap_fileslapply(unique(inmap_files), function(x)
-#   
+# inmap_files <- subset(inmap_files, inmap_files != 0);inmap_fileslapply(unique(inmap_files), function(x))
+# 
 #   pol_tmp <- str_extract(x, pattern)
-#   
+# 
 #   read_sf(paste0(health_data_path, sector, x)) %>%
 #     st_transform(crs=3310) %>%
 #     select(-BasePM25:-SOx,-TotalPop, -WindSpeed) %>%
@@ -127,4 +132,4 @@ map(as.list(inmap_files), inmap_process_func)
 #     select(-geometry) %>%
 #     write.csv(paste0(srm_save_path, sector, sp_res_path, pol_tmp, "/", substr(x,1,nchar(x)-4),".csv", sep=""), row.names = FALSE)
 # )
-# 
+

@@ -1,11 +1,18 @@
-# Updated 2/20/24 - MP
+# Updated 4/8/24 - MP
 
 # Load necessary libraries
 library(dplyr)
 library(tidyverse)
+library(janitor)
 library(lubridate)
 library(zoo)
 library(stringr)
+library(ggplot2)
+library(ggridges)
+library(sf)
+library(rmapshaper)
+library(mapview)
+library(tidycensus)
 
 # Read in well processed data
 well_prod_m_processed <- read.csv("data/processed/well_prod_m_processed.csv")
@@ -242,3 +249,256 @@ ggplot(top_counties_active_wells_over_time, aes(x = year, y = ActiveWells, color
   theme_bw() +
   theme(legend.position = "bottom") +
   guides(color = guide_legend(title = "County Name"))
+
+### Setback coverage by buffer ---------------------- ----------------------
+
+# Read in setback coverage data
+coverage <- read_csv('data/processed/setback_coverage_R.csv') %>% 
+  janitor::clean_names()
+
+# Adding km covered by field
+coverage <- coverage %>% 
+  mutate(area_sq_mi = round(area_sq_mi * rel_coverage, digits = 6))
+
+# Num of wells and sq miles of field
+field_summary <- coverage %>%
+  group_by(doc_field_code, name) %>%
+  summarize(total_area_sq_mi = sum(area_sq_mi),
+            total_wells = sum(n_wells))
+
+# Quartile stats for average coverage for each setback distance
+buffer_summary <- coverage %>% 
+  group_by(setback_scenario) %>% 
+  summarise(
+    n = n(),
+    min = min(rel_coverage),
+    q1 = quantile(rel_coverage, 0.25),
+    median = median(rel_coverage),
+    mean = mean(rel_coverage),
+    q3 = quantile(rel_coverage, 0.75),
+    max = max(rel_coverage),
+    sd = sd(rel_coverage)
+  ) %>%
+  ungroup() %>%
+  mutate(across(where(is.numeric), round, 3))
+
+print(buffer_summary)
+
+# Box plot of relative coverage by setback
+ggplot(coverage, aes(x = setback_scenario, y = rel_coverage)) +
+  geom_boxplot() +
+  labs(x = "Setback Scenario", y = "Relative Coverage") +
+  theme_minimal()
+
+# Violin plot of relative coverage by setback 
+ggplot(coverage, aes(x = setback_scenario, y = rel_coverage)) +
+  geom_violin() +
+  labs(x = "Setback Scenario", y = "Relative Coverage") +
+  theme_minimal()
+
+# Ridge plot of relative coverage by setback
+ggplot(coverage, aes(x = rel_coverage, y = setback_scenario, fill = setback_scenario)) +
+  geom_density_ridges(alpha = 0.6) +
+  labs(x = "Relative Coverage", y = "Setback Scenario") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Box plot of relative coverage 
+ggplot(coverage, aes(x = rel_coverage, fill = setback_scenario)) +
+  geom_histogram(binwidth = 0.1, alpha = 0.7, position = "identity") +
+  labs(x = "Relative Coverage", y = "Count", fill = "Setback Scenario") +
+  theme_minimal() +
+  facet_wrap(~setback_scenario, ncol = 1) +
+  scale_fill_discrete(name = "Setback Scenario") +
+  theme(legend.position = "none")
+
+### Checking well locations  --------------------------------------------
+ca_crs <- 3488
+
+wells <- sf::st_read("data/proprietery-data/AllWells_gis/Wells_All.shp") %>% 
+  st_transform(ca_crs) %>%
+  dplyr::select(API, WellStatus, FieldName) %>%
+  unique()
+
+# Regroup wells 
+wells <- wells %>%
+  mutate(WellStatus = case_when(
+    WellStatus %in% c("Active", "New") ~ "Active",
+    WellStatus %in% c("PluggedOnly") ~ "Plugged",
+    WellStatus %in% c("Abeyance", "Canceled", "Idle") ~ "Abandoned",
+    TRUE ~ WellStatus
+  )) %>%
+  mutate(api_num = as.numeric(API)) %>%  # Remove first 3 digits
+  select(-API)
+
+# Getting separate well status
+active_wells <- wells %>% filter(WellStatus == "Active")
+abandoned_wells <- wells %>% filter(WellStatus == "Abandoned")
+plugged_wells <- wells %>% filter(WellStatus == "Plugged")
+unknown_wells <- wells %>% filter(WellStatus == "Unknown")
+
+well_colors <- c("Active" = "#0747f7", "Plugged" = "yellow", "Abeyance" = "#f7cf07", "Abandoned" = "red",
+                 "Idle" = "#f7cf07", "New" = "#0747f7", "PluggedOnly" = "yellow", "Unknown" = "grey")
+
+ca <- st_as_sf(maps::map("state", plot = FALSE, fill = TRUE)) %>%
+  filter(ID == "california") %>%
+  st_transform(ca_crs)
+
+interactive_map <- mapview(ca, layer.name = "California", alpha.regions = 0.5) +
+  mapview(wells2, zcol = "WellStatus", crs = ca_crs, layer.name = "Wells", legend = TRUE,
+          col.regions = well_colors, pointShape = 21, pointSize = 3, pointFill = "black")
+
+interactive_map <- mapview(ca, layer.name = "California", alpha.regions = 0.5, homebutton = TRUE, layersControl = TRUE) +
+  mapview(active_wells, zcol = "WellStatus", crs = ca_crs, layer.name = "Active Wells", legend = TRUE,
+          col.regions = well_colors["Active"], pointShape = 21, pointSize = 0.03, pointFill = "black") +
+  mapview(plugged_wells, zcol = "WellStatus", crs = ca_crs, layer.name = "Plugged Wells", legend = TRUE,
+          col.regions = well_colors["Plugged"], pointShape = 21, pointSize = 0.03, pointFill = "black") +
+  mapview(unknown_wells, zcol = "WellStatus", crs = ca_crs, layer.name = "Unknown Wells", legend = TRUE,
+          col.regions = well_colors["Unknown"], pointShape = 21, pointSize = 0.03, pointFill = "black") +
+  mapview(abandoned_wells, zcol = "WellStatus", crs = ca_crs, layer.name = "Abandoned Wells", legend = TRUE,
+          col.regions = well_colors["Abandoned"], pointShape = 21, pointSize = 0.03, pointFill = "black")
+
+
+# Display the map
+interactive_map
+
+# # Heat map
+# well_buffers <- st_buffer(wells, dist = 10000 * 0.3048)
+# 
+# interactive_map <- mapview(ca, layer.name = "California", alpha.regions = 0.5, homebutton = TRUE, layersControl = TRUE) +
+#   mapview(well_buffers, zcol = "WellStatus", crs = ca_crs, layer.name = "Well Buffers", legend = TRUE,
+#           col.regions = c("purple", "yellow"), alpha.regions = c(1, 0.5)) +
+#   mapview(wells, zcol = "WellStatus", crs = ca_crs, layer.name = "Wells", legend = TRUE,
+#           col.regions = well_colors, pointShape = 21, pointSize = 1.5, pointFill = "black")
+# 
+# interactive_map
+
+
+### Census tract analysis   ----------------------------------------------------------------------------------------
+# Get census tract boundaries
+library(tigris)
+options(tigris_use_cache = TRUE)
+
+census_tracts <- get_acs(
+  geography = "tract",
+  variables = c(total_pop = "B01003_001"),
+  state = "CA",
+  geometry = TRUE,
+  year = 2022
+) %>%
+  st_transform(ca_crs)
+
+# Checking out census variables
+v22 <- load_variables(2022, "acs5", cache = TRUE)
+
+filtered_v22 <- v22 %>%
+  filter(grepl("minority", label, ignore.case = TRUE))
+
+census_tract_groups <- census_tracts %>% 
+  group_by(NAME)
+
+# Join well counts by census info
+wells_by_tract <- st_join(wells, census_tracts, join = st_within)
+
+# Count wells in each census tract
+wells_count <- wells_by_tract %>%
+  group_by(NAME) %>%
+  summarize(total_wells = n()/2)
+
+interactive_map <- mapview(wells_by_tract, zcol = "WellStatus", layer.name = "Wells and Census Tracts")
+
+interactive_map
+
+library(RColorBrewer)
+
+reds <- colorRampPalette(brewer.pal(5, "Reds"))(5)
+
+wells_count_sf <- st_as_sf(wells_count, coords = NULL, crs = st_crs(census_tracts))
+
+wells_count_df <- st_drop_geometry(wells_count)
+
+# Join total_wells from wells_count to census_tracts
+census_tracts_with_wells <- census_tracts %>%
+  left_join(wells_count_df %>% 
+              select(NAME, total_wells), by = "NAME") 
+
+# # Check the updated structure
+# str(census_tracts_with_wells)
+
+interactive_map_tracts <- mapview(ca, layer.name = "California", alpha.regions = 0.5) +
+  mapview(census_tracts_with_wells, zcol = "total_wells", col.regions = reds, layer.name = "Num of wells", at = seq(0, 40000, 5000, na.rm = TRUE), length.out = 9)
+
+interactive_map_tracts
+
+# Kern county -----
+kern_county_tracts <- census_tracts_with_wells %>%
+  filter(grepl("Kern County", NAME)) %>% 
+  filter(!is.na(total_wells))
+
+kern_county_wells <- census_tracts_with_wells %>%
+  filter(grepl("Kern County", NAME))
+
+kern_county_wells <- kern_county_wells %>%
+  mutate(total_wells_cat = case_when(
+    total_wells == 0 ~ "0",
+    total_wells > 0 & total_wells <= 100 ~ "1-100",
+    total_wells > 100 & total_wells <= 1000 ~ "101-1000",
+    total_wells > 1000 & total_wells <= 10000 ~ "1001-10000",
+    total_wells > 10000 ~ "> 10000"
+  )) %>%
+  mutate(total_wells_cat = factor(total_wells_cat, levels = c("0", "1-100", "101-1000", "1001-10000", "> 10000")))
+
+# # Now plotting
+# ggplot(kern_county_wells, aes(x = NAME, fill = total_wells_cat)) +
+#   geom_point(stat = "count") +
+#   scale_fill_manual(values = c("0" = "#1f77b4", "1-100" = "green", "101-1000" = "yellow", "1001-10000" = "#d62728", "> 10000" = "#9467bd"),
+#                     labels = c("0", "1-100", "101-1000", "1001-10000", "> 10000"),
+#                     breaks = c("0", "1-100", "101-1000", "1001-10000", "> 10000")) +
+#   labs(fill = "Number of Wells", x = total_wells, y = "Frequency") +
+#   theme_minimal() +
+#   labs(title = NULL, # Correctly removing the title
+#        subtitle = NULL, # Correctly removing the subtitle
+#        caption = NULL, # Correctly removing the caption
+#        x = "X-axis Label",
+#        y = "Y-axis Label",
+#        fill = NULL) + # Correctly removing the legend title for fill
+#   theme(legend.title.align = 0.5)
+
+kern_county_map <- mapview(kern_county_tracts, zcol = "total_wells", layer.name = "Wells Count", legend = TRUE)
+
+kern_county_map
+
+# !Kern county ------
+non_kern_county_tracts <- census_tracts_with_wells %>%
+  filter(!grepl("Kern County", NAME))
+
+non_kern_county_wells <- non_kern_county_tracts %>%
+  select(NAME, total_wells, geometry) %>%
+  filter(!is.na(total_wells)) %>% 
+  mutate(well_count_category = case_when(
+    total_wells >= 0 & total_wells <= 25 ~ "1-25",
+    total_wells >= 26 & total_wells <= 250 ~ "26-250",
+    total_wells >= 251 & total_wells <= 2500 ~ "251-2500",
+    total_wells >= 2501 & total_wells <= 11000 ~ "2501-11000",
+    total_wells > 11000 ~ "> 11000"
+  ), well_count_category = factor(well_count_category, 
+                                  levels = c("1-25", "26-250", "251-2500", "2501-11000", "> 11000"),
+                                  ordered = TRUE)) 
+
+ggplot(non_kern_county_wells, aes(x = NAME, fill = well_count_category)) +
+  geom_bar(stat = "count") +
+  scale_fill_brewer(palette = "Spectral", direction = -1) +
+  theme_minimal() +
+  labs(fill = "Well Count Category", x = NULL, y = "Frequency") +
+  theme(legend.title.align = 0.5)
+
+well_count_bins <- cut(non_kern_county_wells$total_wells, breaks = c(0, 25, 250, 2500, 9000, Inf), include.lowest = TRUE, labels = c("1-25", "26-250", "251-2500", "2501-11000", "> 11000"))
+
+# Create an interactive map for non-Kern County areas
+non_kern_county_map <- mapview(non_kern_county_wells, zcol = "well_count_category", col.regions = reds, layer.name = "Wells Count", legend = TRUE)
+
+# Display the non-Kern County map
+non_kern_county_map
+
+mapview(non_kern_county_wells, zcol = as.character(well_count_bins), col.regions = reds, layer.name = "Wells Count", legend = TRUE)
+

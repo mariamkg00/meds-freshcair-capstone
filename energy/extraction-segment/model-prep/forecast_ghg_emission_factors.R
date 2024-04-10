@@ -8,7 +8,7 @@
 res_path        = 'data/OPGEE'
 prod_file       = 'data/processed/crude_prod_x_field_revised.csv'
 entry_file      = 'data/processed/entry_df_final_revised.csv'
-inj_file        = 'data/stocks-flows/processed/injection-by-well-type-per-field-per-year_1977-2018_revised.csv'
+inj_file        = 'data/processed/injection-by-well-type-per-field-per-year_1977-2018_revised.csv'
 
 # outputs -----------
 

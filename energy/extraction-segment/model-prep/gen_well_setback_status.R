@@ -28,6 +28,7 @@ library(data.table)
 library(gdalUtilities)
 library(maps)
 library(mapview)
+library(ggplot2)
 
 # transform to NAD83(NSRS2007) / California Albers
 # units will be in meters
@@ -208,6 +209,7 @@ ggplot(data = buff3200) +
   lims(x=xcheck, y=ycheck) +
   geom_sf(data = wells_within_df, aes(color = factor(within_setback)))
 
+ggsave()
 
 # # check number in setback compared to tracey's output
 # 

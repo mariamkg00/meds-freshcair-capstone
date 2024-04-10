@@ -64,6 +64,8 @@ ccs_capture_rate  = 0.61
 # source from other scripts -----
 
 library(here)
+library(dplyr)
+library(openxlsx)
 
 # source function to rank costs
 # source(here::here('energy', 'extraction-segment', 'prod_quota.R'))
@@ -145,8 +147,8 @@ ghg_factors = fread(file.path('data/intermediate-zenodo/intermediate/extraction-
 ## adjust setback files to include setback toggle
 ## -----------------------------------------------------------
 
-# load n wells in setbacks and setback coverage file
-n_wells_setbacks = fread(file.path('data/processed/n_wells_area.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
+# load n wells in setbacks and setback coverage file -- need to fix our version
+n_wells_setbacks = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/n_wells_area.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 ## setback applies to existing wells
 n_wells_setbacks[, setback_existing := 1]
@@ -253,7 +255,7 @@ setnames(ccs_scens_all, c('ccs_scenario_adj', 'ccs_price_usd_per_kg_adj'), c('cc
 
 
 # load entry data
-entry_dt = fread(file.path(entry_file), header = T, colClasses = c('doc_field_code' = 'character'))
+entry_dt = fread(file.path('data/processed/entry_df_final_revised.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 # # load matrix of scenarios and forecasted variables
 # scenarios_dt = load_scenarios_dt(scenario_selection)

@@ -259,7 +259,7 @@ prod_fv_year_2[, peak_year_diff := as.numeric(year_no) - as.numeric(peak_prod_ye
 # export data -----
 
 fwrite(peak_fv_year, paste0('data/processed/field-vintage_peak-production_yearly_revised.csv'), row.names = F)
-fwrite(prod_fv_year_2, paste0('data/processedproduction_field-vintange_yearly_entry_revised.csv'), row.names = F)
+fwrite(prod_fv_year_2, paste0('data/processed/production_field-vintange_yearly_entry_revised.csv'), row.names = F)
 
 fwrite(well_prod3, paste0('data/processed/production_api10_monthly_revised.csv'), row.names = F)
 

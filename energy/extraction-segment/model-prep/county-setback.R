@@ -2,6 +2,7 @@
 ## February 7, 2022
 ## Percentage of county covered by setback
 ## Updated 2/27/24 - MP
+## Updated 4/7/24 - MP
 
 # load packages
 library(sf)
@@ -45,6 +46,8 @@ boundaries <- st_read("data/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_M
 buff1000 <- sf::st_read("data/processed/buffer_1000ft.shp")
 
 buff2500 <- sf::st_read("data/processed/buffer_2500ft.shp")
+
+buff3200 <- sf::st_read("data/processed/buffer_3200ft.shp")
 
 buff5280 <- sf::st_read("data/processed/buffer_5280ft.shp")
 
@@ -94,6 +97,15 @@ county_coverage_df_2500 <- county_field_area %>%
   select(adj_county_name, setback_scenario, county_field_area, setback_area, county_field_coverage) %>%
   st_drop_geometry()
 
+# Added - MP
+county_coverage_df_3200 <- county_field_area %>%
+  st_intersection(buff3200) %>%
+  mutate(setback_area = st_area(geometry),
+         county_field_coverage = setback_area / county_field_area,
+         setback_scenario = "setback_3200ft") %>%
+  select(adj_county_name, setback_scenario, county_field_area, setback_area, county_field_coverage) %>%
+  st_drop_geometry()
+
 county_coverage_df_5280 <- county_field_area %>%
   st_intersection(buff5280) %>%
   mutate(setback_area = st_area(geometry),
@@ -104,7 +116,7 @@ county_coverage_df_5280 <- county_field_area %>%
 
 
 ## combine all three setbacks
-county_setbacks <- rbind(county_coverage_df_1000, county_coverage_df_2500, county_coverage_df_5280) %>%
+county_setbacks <- rbind(county_coverage_df_1000, county_coverage_df_2500, county_coverage_df_3200, county_coverage_df_5280) %>%
   units::drop_units() 
   
 

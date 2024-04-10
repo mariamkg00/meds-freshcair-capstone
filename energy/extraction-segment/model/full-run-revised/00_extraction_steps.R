@@ -18,7 +18,7 @@ if(zenodo_repo) {
   # args = commandArgs(trailingOnly = TRUE)
   run_name        = "revision-setbacks"
   # save_path     = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/predict-production'
-  save_path       = 'data/processed/' 
+  save_path       = 'data/processed' 
   
 }
 
@@ -73,7 +73,7 @@ source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', '
 
 ## step 0: load the inputs
 
-# Updated - MP
+# Need to fix this file
 scen_id_list = fread(file.path('data/processed/scenario_id_list_targets.csv'), header = T)
 
 ## filter for scenarios to run

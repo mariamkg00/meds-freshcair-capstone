@@ -23,6 +23,7 @@ save_path         = 'data/processed/' # Updated - MP
 
 library(data.table)
 library(tidyverse)
+library(dplyr)
 
 # read in data ------
 
@@ -113,8 +114,8 @@ dt_pred_long[, c('q_i', 'D', 'b', 'd', 'int_yr') := NULL]
 setback_all <- expand.grid(api_ten_digit = unique(op_wells$api_ten_digit),
                            setback_scenario = unique(well_setbacks$setback_scenario))
 
-## join with setback policies
-op_wells = left_join(op_wells, setback_all)
+## join with setback policies -- Updated to define relationship as many-to-many - MP
+op_wells = left_join(op_wells, setback_all, relationship = "many-to-many")
 
 ## get number of wells not in setback for calculating density
 n_wells_area <- op_wells %>%
@@ -123,41 +124,55 @@ n_wells_area <- op_wells %>%
   ## assume NA means not in setback (note that there are about 20 wells that are na)
   mutate(within_setback = ifelse(is.na(within_setback), 0, within_setback)) %>%
   group_by(setback_scenario, doc_field_code, doc_fieldname) %>%
-  summarise(n_wells = n(),
+  summarise(n_wells = length(unique(paste(api_ten_digit, start_year))),
             n_wells_in_setback = sum(within_setback)) %>%
   ungroup() %>%
   mutate(adj_no_wells = n_wells - n_wells_in_setback)
 
 fwrite(n_wells_area, paste0(save_path, 'n_wells_area.csv'))
 
-## create input for predict production
+# create input for predict production
 op_wells_agg <- op_wells %>%
   ## join with setback info
   left_join(well_setbacks) %>%
   ## make well status for NA "Unknown_NL" for unknown, not listed
   mutate(well_status = ifelse(is.na(well_status), "Unknown_NL", well_status)) %>%
-  ## assume NA means not in setback (note that there are about 20 wells that are na)
+  # assume NA means not in setback (note that there are about 20 wells that are na)
   mutate(within_setback = ifelse(is.na(within_setback), 0, within_setback),
          active_well = ifelse(well_status == "Plugged", 0, 1),
          prod_post_setback = ifelse(within_setback == 0, 1, 0),
          prod_post_setback_plug = ifelse(within_setback == 0 & active_well == 1, 1, 0)) %>%
-  group_by(setback_scenario, doc_field_code, doc_fieldname, start_year) %>% 
+  dplyr::group_by(setback_scenario, doc_field_code, doc_fieldname, start_year) %>%
   ## calculate total number of wells, active wells (- plugged), active wells post setback (- plugged)
-  summarise(n_wells_total = n(),
+  dplyr::summarise(n_wells_total = n(),
             n_active_wells = sum(active_well),
             n_not_in_setback = sum(prod_post_setback),
             n_not_setback_active = sum(prod_post_setback_plug)) %>%
   ungroup()
 
+# Convert to data.table
+# setDT(op_wells_agg)
+
+# # Group by the desired columns and calculate sums
+# op_wells_agg <- op_wells_agg[
+#   , .(n_wells_total = .N,
+#       n_active_wells = sum(active_well_sum),
+#       n_not_in_setback = sum(prod_post_setback),
+#       n_not_setback_active = sum(prod_post_setback_plug)),
+#   by = .(doc_field_code, doc_fieldname, start_year, setback_scenario)
+# ]
+
+
 ## clean for joining  -- adjust this depending on version
 op_wells_agg2 <- op_wells_agg %>%
-  select(-n_wells_total, -n_not_in_setback) 
+  dplyr::select(doc_field_code, doc_fieldname, start_year, n_active_wells, n_not_setback_active)
 
-## join with dt_pred_long, adjust production to account for setbacks and plugged wells
-dt_pred_long_adj <- merge(op_wells_agg2, dt_pred_long, by = c('doc_field_code', 'doc_fieldname', 'start_year'), all.x = T)
+## join with dt_pred_long, adjust production to account for setbacks and plugged wells -- Updated 
+dt_pred_long_adj <- merge(op_wells_agg, dt_pred_long, by = c('doc_field_code', 'doc_fieldname', 'start_year'), all.x = T)
 
+# Updated - MP
 setcolorder(dt_pred_long_adj, c("doc_field_code", "doc_fieldname", "setback_scenario", "start_year", "no_wells", 
-                                "n_active_wells", "n_not_setback_active", "year", "production_bbl"))
+                                "n_not_setback_active", "year", "production_bbl"))
 
 setDT(dt_pred_long_adj)
 

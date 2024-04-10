@@ -20,7 +20,6 @@ lapply(1:length(packages), function(x)
          require(packages[x],character.only=TRUE)))
 
 # Set directory 
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
 getwd()
 

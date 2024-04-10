@@ -56,3 +56,4 @@ field_boundaries <- boundaries %>%
 ## save for health/labor team
 st_write(field_boundaries, dsn = paste0(save_path, "extraction_fields.shp"), update = TRUE)
 
+
