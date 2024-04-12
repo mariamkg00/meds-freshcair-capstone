@@ -1,0 +1,92 @@
+
+The purpose of this script is to compile features from various data sets to build the predictive model of new well entry
+
+```{r}
+# Install packages
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+```
+
+Features we will want to pull in:
+- Wells in each field YoY
+
+
+
+```{r, warning=FALSE, message=FALSE}
+# Set directory
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+# Read in field production data
+cum_prod <- read_csv('data/processed/asset-year_cumulative_sum_production.csv')
+
+# Read in well exits data
+well_exits <- read_csv('data/processed/well_exits.csv')
+well_exits_rule <- read_csv('data/processed/well_exits_under_rule.csv')
+
+# Poisson coefficients
+poiss_coef <- read.csv('data/intermediate-zenodo/intermediate/extraction-model/exit_regression_coefficients.csv')
+```
+
+
+```{r}
+cum_prod$year <- as.numeric(cum_prod$year)
+
+prod_summary <- cum_prod %>%
+  group_by(year) %>%
+  dplyr::summarise(total_production = sum(production, na.rm = TRUE))
+
+ggplot(prod_summary, aes(x = year, y = total_production)) +
+  geom_line() +
+  labs(x = "Year", y = "Total Oil Production", title = "Total Oil Production over Time") +
+  scale_x_continuous(breaks = seq(min(prod_summary$year), max(prod_summary$year), by = 10)) +
+  theme_minimal() 
+```
+
+```{r}
+
+```
+
+
+```{r}
+# Well exits plot
+yearly_exits <- well_exits %>%
+  group_by(exit_year) %>%
+  dplyr::summarise(total_exits = sum(well_exits, na.rm = TRUE))
+
+ggplot(yearly_exits, aes(x = exit_year, y = total_exits)) +
+  geom_col() +
+  labs(
+    title = "Total Well Exits by Year",
+    x = "Exit Year",
+    y = "Total Well Exits"
+  )
+```
+
+
+```{r}
+yearly_exits_rule <- well_exits_rule %>% 
+  group_by(exit_year) %>% 
+  dplyr::summarise(total_exits = sum(n_exits_field, na.rm=TRUE))
+
+ggplot(yearly_exits_rule, aes(x = exit_year, y = total_exits)) +
+  geom_col() +
+  labs(
+    title = "Total Well Exits by Year",
+    x = "Exit Year",
+    y = "Total Well Exits"
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -6,23 +6,23 @@
 ## libraries
 library(data.table)
 
-external_save <- 0
+external_save <- 1
 
 ## paths
-main_path         <- '/capstone/freshcair/meds-freshcair-capstone/data' # revised file path -hkim
+main_path_external     <- '/capstone/freshcair/meds-freshcair-capstone/'
 academic_out_path <- file.path(main_path, 'processed/') # revised file path -hkim
-input_path        <- file.path(main_path, 'processed/') # revised file path -hkim
+input_path        <- file.path(main_path, 'data/processed/') # revised file path -hkim
 
 ## read in saved rds files - updates as needed
-extraction_folder = 'extraction_2023-01-04/'
+extraction_folder = 'extraction_2024-04-08/'
 
-external_path <- '/capstone/freshcair/meds-freshcair-capstone/data/processed/' # revised file path -hkim
+external_path <- '/capstone/freshcair/meds-freshcair-capstone/data/processed' # revised file path -hkim
 
 ## get correct path
 
 if(external_save == 1) {
   
-  compiled_path = external_path
+  compiled_path = paste0(main_path_external, 'data/processed/extraction_2024-04-08/')
 } else {
   
   compiled_path  = paste0(academic_out_path, extraction_folder)
@@ -30,12 +30,12 @@ if(external_save == 1) {
 }
 
 ## sub folders
-field_path     = paste0(compiled_path)# , 'field-results/')
-state_path     = paste0(compiled_path)# , 'state-results/')
-state_hs_path  = paste0(compiled_path)# , 'state-results/health_sens/')
-county_path    = paste0(compiled_path)# , 'county-results/')
-ct_path        = paste0(compiled_path)#, 'census-tract-results/')
-ct_hs_path     = paste0(compiled_path)# , 'health-county-results/')
+field_path     = paste0(compiled_path, 'field-results/')
+state_path     = paste0(compiled_path , 'state-results/')
+state_hs_path  = paste0(compiled_path , 'state-results/health_sens/')
+county_save_path    = paste0(compiled_path, 'county-results/')
+ct_path        = paste0(compiled_path, 'census-tract-results/')
+ct_hs_path     = paste0(compiled_path, 'health-county-results/')
 
 
 ## files

@@ -11,37 +11,36 @@ library(readxl)
 library(openxlsx)
 library(furrr)
 library(future)
+library(dplyr)
 
 
 ## model output location
-save_external <- 0
+save_external <- 1
 
 ## current date
 cur_date              = Sys.Date()
 
 ## paths 
 main_path     <- '/capstone/freshcair/meds-freshcair-capstone/'
+main_path_external     <- '/capstone/freshcair/meds-freshcair-capstone/'
 sp_data_path     <- paste0(main_path, "data/input/gis/")
 
 ## UPDATE THESE WITH NEW RUNS!!!!!
-extraction_folder_path <- 'outputs/processed'
+extraction_folder_path <- 'data/processed/extraction_2024-04-08'
 extraction_folder_name <- 'revision-setbacks/'
 data_path  <-'data/processed/'
 
 ## health code paths
 source_path   <- paste0(main_path, 'data/inputs/health/source_receptor_matrix/')
-inmap_ex_path  <- paste0(main_path, "data/inputs/health/source_receptor_matrix/inmap_processed_srm/extraction")
-
-## external paths
-main_path_external <- '/Volumes/calepa/'
+inmap_ex_path  <- paste0(main_path, "data/processed/extraction")
 
 if(save_external == 1) {
   
   ## UPDATE THIS WITH NEW RUNS!!!!!
-  extraction_path <- paste0(main_path_external, 'extraction-out/extraction_2022-11-15/revision-setbacks/')
+  extraction_path <- paste0('data/processed/extraction_2024-04-08/revision-setbacks/')
   
-  dir.create(paste0(main_path_external, 'academic-out/'), showWarnings = FALSE)
-  compiled_save_path  <- paste0(main_path_external, 'academic-out/extraction_', cur_date, '/')
+  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-04-08/academic-out/'), showWarnings = FALSE)
+  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-04-08/')
 
 } else {
   
@@ -106,18 +105,18 @@ med_house_income <- med_house_income[, .(census_tract, estimate)]
 setnames(med_house_income, "estimate", "median_hh_income")
 
 ## income -- county
-county_income <- fread(paste0(main_path, "data/input/gis/census-tract/ca-median-house-income-county.csv"), stringsAsFactors = F) # not exist -----
+county_income <- fread('data/inputs/gis/census-tract/ca-median-house-income-county.csv', stringsAsFactors = F) # not exist -----
 county_income <- county_income[, .(county, estimate)]
 setnames(county_income, "estimate", "median_hh_income")
 
 
-## monthly well production
-well_prod <- fread(paste0(main_path, "data/processed/", prod_file), colClasses = c('api_ten_digit' = 'character',
+## monthly well production -- Updated - MP
+well_prod <- fread('data/processed/well_prod_m_processed.csv', colClasses = c('api_ten_digit' = 'character',
                                                                                                  'doc_field_code' = 'character'))
 
 ## historical GHG emissions, 2019
 ## --------------------------
-hist_ghg <- fread(paste0(main_path, 'data/processed/', ghg_hist_file), header = T)
+hist_ghg <- fread('data/processed/indust_emissions_2000-2019.csv', header = T)
 
 hist_ghg <- hist_ghg[segment %chin% c('Oil & Gas: Production & Processing') &
                        year == 2019, .(segment, unit, year, value)]
@@ -127,11 +126,14 @@ ghg_2019 <- as.numeric(hist_ghg[, value][1])
 
 
 ## ghg factors
-ghg_factors = fread(file.path(main_path, 'proprietery-data/stocks-flows', ghg_file), header = T, colClasses = c('doc_field_code' = 'character'))
+ghg_factors = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/ghg_emissions_x_field_2018-2045.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 ghg_factors_2019 = ghg_factors[year == 2019, c('doc_field_code', 'year', 'upstream_kgCO2e_bbl')]
 
 ## oil prices
-oilpx_scens = setDT(read.xlsx(file.path(main_path, data_path, oil_price_file), sheet = 'real', cols = c(1:4)))
+oilpx_scens = read_excel(path = file.path('data/inputs/extraction/oil_price_projections_revised.xlsx'), 
+                         sheet = "real") %>%
+  select(1:4) %>%
+  setDT()
 colnames(oilpx_scens) = c('year', 'reference_case', 'high_oil_price', 'low_oil_price')
 oilpx_scens = melt(oilpx_scens, measure.vars = c('reference_case', 'high_oil_price', 'low_oil_price'), 
                    variable.name = 'oil_price_scenario', value.name = 'oil_price_usd_per_bbl')
@@ -147,7 +149,7 @@ setorderv(oilpx_scens, c('oil_price_scenario', 'year'))
 ## NOTE: Prefix "ip." denotes a multiplier that has been replaced with the sample average because IMPLAN has no 
 ## data on extraction in this county 
 
-total_multipliers_ext <- read_xlsx(paste0(main_path, labor_processed, 'ica_multipliers_v2.xlsx'), sheet = 'ica_total') %>% 
+total_multipliers_ext <- read_xlsx('data/processed/ica_multipliers_v2.xlsx', sheet = 'ica_total') %>% 
   filter((county != "Statewide" & segment == "extraction") | is.na(segment)==T) %>% 
   rename(dire_emp_mult = direct_emp, 
          indi_emp_mult = indirect_emp, 
@@ -234,11 +236,11 @@ read_extraction <- function(buff_field){
   
   bfield <- buff_field
   
-  nh3  <- read_csv(paste0(inmap_ex_path, "/nh3/srm_nh3_field", bfield, ".csv", sep="")) %>% mutate(poll = "nh3")
-  nox  <- read_csv(paste0(inmap_ex_path, "/nox/srm_nox_field", bfield, ".csv", sep="")) %>% mutate(poll = "nox")
-  pm25 <- read_csv(paste0(inmap_ex_path, "/pm25/srm_pm25_field", bfield, ".csv", sep="")) %>% mutate(poll = "pm25")
-  sox  <- read_csv(paste0(inmap_ex_path, "/sox/srm_sox_field", bfield, ".csv", sep="")) %>% mutate(poll = "sox")
-  voc  <- read_csv(paste0(inmap_ex_path, "/voc/srm_voc_field", bfield, ".csv", sep="")) %>% mutate(poll = "voc")
+  nh3  <- read_csv(paste0("data/processed/extraction/census-tract/nh3/srm_nh3_field", bfield, ".csv", sep="")) %>% mutate(poll = "nh3")
+  nox  <- read_csv(paste0("data/processed/extraction/census-tract/nox/srm_nox_field", bfield, ".csv", sep="")) %>% mutate(poll = "nox")
+  pm25 <- read_csv(paste0("data/processed/extraction/census-tract/pm25/srm_pm25_field", bfield, ".csv", sep="")) %>% mutate(poll = "pm25")
+  sox  <- read_csv(paste0("data/processed/extraction/census-tract/sox/srm_sox_field", bfield, ".csv", sep="")) %>% mutate(poll = "sox")
+  voc  <- read_csv(paste0("data/processed/extraction/census-tract/voc/srm_voc_field", bfield, ".csv", sep="")) %>% mutate(poll = "voc")
   
   all_polls <- rbind(nh3, nox, pm25, sox, voc)
   
@@ -307,12 +309,13 @@ srm_all_pollutants_extraction_c <- future_map_dfr(fields_vector, read_extraction
 
 # (1.2) Calculate census tract ambient emissions for extraction  #######
 
-#load and process cross-walk between fields and clusters 
-extraction_field_clusters_10km <- read_csv(paste0(source_path,"/extraction_fields_clusters_10km.csv",sep="")) %>%
-  select(OUTPUT_FID, INPUT_FID) %>%
+#load and process cross-walk between fields and clusters -- removed sep="" 
+extraction_field_clusters_10km <- read.csv('data/intermediate-zenodo/intermediate/extraction-model/extraction_fields_clusters_10km.csv') %>%
+  dplyr::select(OUTPUT_FID, INPUT_FID) %>%
   rename(id = OUTPUT_FID, input_fid = INPUT_FID)
 
-extraction_fields_xwalk <- foreign::read.dbf(paste0(source_path, "/extraction_fields_xwalk_id.dbf", sep = "")) %>%
+# Removed sep=""
+extraction_fields_xwalk <- foreign::read.dbf('data/intermediate-zenodo/intermediate/extraction-model/extraction_fields_xwalk_id.dbf') %>%
   rename(input_fid = id, doc_field_code = dc_fld_)
 
 ## Add Old Wilmington to xwalk
@@ -328,7 +331,7 @@ extraction_xwalk <- extraction_field_clusters_10km %>%
 
 ## (2.1) Load demographic data
 # Disadvantaged community definition
-ces3 <- read.csv(paste0(main_path, "data/health/processed/ces3_data.csv"), stringsAsFactors = FALSE) %>%
+ces3 <- read.csv('data/inputs/health/ces3_data.csv', stringsAsFactors = FALSE) %>%
   select(census_tract, population, CES3_score, disadvantaged) %>%
   mutate(census_tract = paste0("0", census_tract, sep="")) %>%
   as.data.table()
@@ -341,7 +344,7 @@ ces3 <- merge(ces3, ces_county,
 ces3[, population := NULL]
 
 # Population and incidence
-ct_inc_pop_45 <- fread(paste0(main_path, "data/benmap/processed/ct_inc_45.csv"), stringsAsFactors  = FALSE) %>%
+ct_inc_pop_45 <- fread('data/processed/ct_inc_45.csv', stringsAsFactors  = FALSE) %>%
   mutate(ct_id = paste0(stringr::str_sub(gisjoin, 2, 3),
                         stringr::str_sub(gisjoin, 5, 7),
                         stringr::str_sub(gisjoin, 9, 14))) %>%
@@ -409,7 +412,7 @@ county_dac[, dac_share := Yes / total_pop]
 county_dac <- county_dac[, .(dac_share = weighted.mean(dac_share, total_pop, na.rm = T)), by = .(county, year)]
 
 ## county geoids
-county_ids <- st_read(paste0(sp_data_path, "CA_counties_noislands/CA_Counties_TIGER2016_noislands.shp")) %>%
+county_ids <- st_read('data/inputs/gis/CA_counties_noislands/CA_Counties_TIGER2016_noislands.shp') %>%
   st_transform(crs=3310) %>%
   select(GEOID, county = NAME) %>%
   st_drop_geometry() %>%
@@ -421,7 +424,7 @@ beta <- 0.00582
 se <- 0.0009628
 
 ## for monetary mortality impact - growth in income for use in WTP function
-growth_rates <- read.csv(paste0(main_path, "data/benmap/processed/growth_rates.csv"), stringsAsFactors = FALSE) %>%
+growth_rates <- read.csv('data/inputs/health/growth_rates.csv', stringsAsFactors = FALSE) %>%
   filter(year > 2018) %>%
   mutate(growth = ifelse(year == 2019, 0, growth_2030),
          cum_growth = cumprod(1 + growth)) %>%

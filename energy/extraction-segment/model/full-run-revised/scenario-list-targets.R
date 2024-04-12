@@ -22,10 +22,21 @@ library(rebus)
 # load data -----
 
 ## load oil price data -- Updated - MP
-oilpx_scens = setDT(read.xlsx(file.path('data/inputs/extraction/oil_price_projections_revised.xlsx'), sheet = 'nominal', cols = c(1, 7:9)))
+# Reading in with readxl due to errors
+oilpx_scens = setDT(read_excel(path = 'data/inputs/extraction/oil_price_projections_revised.xlsx',
+                               sheet = 'nominal',
+                               col_names = TRUE))
+
+oilpx_scens = oilpx_scens[, c('Year', 'AEO 2021 Reference case $/b', 'AEO 2021 High oil price $/b', 'AEO 2021 Low oil price $/b')]
+
+# oilpx_scens = setDT(read.xlsx(file.path('data/inputs/extraction/oil_price_projections_revised.xlsx'), sheet = 'nominal', cols = c(1, 7:9)))
 colnames(oilpx_scens) = c('year', 'reference_case', 'high_oil_price', 'low_oil_price')
 oilpx_scens = melt(oilpx_scens, measure.vars = c('reference_case', 'high_oil_price', 'low_oil_price'), 
                    variable.name = 'oil_price_scenario', value.name = 'oil_price_usd_per_bbl')
+
+# Convert oilpx_scens to a data.table -- Added - MP
+setDT(oilpx_scens)
+
 oilpx_scens[, oil_price_scenario := gsub('_', ' ', oil_price_scenario)]
 oilpx_scens[, oil_price_scenario := factor(oil_price_scenario, levels = c('reference case', 'high oil price', 'low oil price'))]
 oilpx_scens <- oilpx_scens[year > 2019]
@@ -70,7 +81,13 @@ excise_tax_scens = fread(file.path("data/processed/excise_tax_non_target_scens.c
 excise_tax_scens_name <- distinct(excise_tax_scens[, .(excise_tax_scenario)])
 
 # load ccs incentives file 
-incentives_scens = setDT(read.xlsx(file.path("data/inputs/scenarios/CCS_LCFS_45Q.xlsx"), sheet = 'scenarios', cols = c(1:3)))
+# Reading in with read_excel due to errors
+incentives_scens = setDT(read_excel(path = "data/inputs/scenarios/CCS_LCFS_45Q.xlsx",
+                                    sheet = "scenarios",
+                                    col_names = TRUE))
+
+incentives_scens = incentives_scens[, 1:3]
+# incentives_scens = setDT(read.xlsx(file.path("data/inputs/scenarios/CCS_LCFS_45Q.xlsx"), sheet = 'scenarios', cols = c(1:3)))
 
 # create adjusted ccs costs ------
 

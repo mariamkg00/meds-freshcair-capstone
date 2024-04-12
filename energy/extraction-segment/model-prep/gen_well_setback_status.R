@@ -197,10 +197,12 @@ wells_within_df_all %>%
 wells_within_df <- wells %>% 
   st_join(buff1000, left = TRUE) %>%
   rename(within_1000 = FID) %>%
-  # st_join(buff2500, left = TRUE) %>%
-  # rename(within_2500 = FID) %>%
-  # st_join(buff5280, left = TRUE) %>%
-  # rename(within_5280 = FID) %>% 
+  st_join(buff2500, left = TRUE) %>%
+  rename(within_2500 = FID) %>%
+  st_join(buff3200, left=TRUE) %>% 
+  rename(within_3200 = FID) %>% 
+  st_join(buff5280, left = TRUE) %>%
+  rename(within_5280 = FID) %>%
   mutate(within_setback = ifelse(within_1000 == 0, 1, within_1000),
          within_setback = ifelse(is.na(within_setback), 0, within_setback))
 
@@ -209,7 +211,6 @@ ggplot(data = buff3200) +
   lims(x=xcheck, y=ycheck) +
   geom_sf(data = wells_within_df, aes(color = factor(within_setback)))
 
-ggsave()
 
 # # check number in setback compared to tracey's output
 # 
@@ -397,10 +398,10 @@ write_csv(field_boundaries3, "data/processed/setback_coverage_R.csv")
 
 coverage_map <-  
   mapview(field_boundaries, layer.name = "Field boundary", label = 'doc_field_code', col.regions = "yellow", legend = FALSE) +
-  mapview(buff1000, layer.name = "1000ft", col.regions = "blue", legend = FALSE) +
-  mapview(buff2500, layer.name = "2500ft", col.regions = "grey", legend = FALSE) +
-  mapview(buff3200, layer.name = "3200ft", col.regions = "pink", legend = FALSE) +
-  mapview(buff5280, layer.name = "5280ft", col.regions = "red", legend = FALSE) +
+  mapview(buff1000, layer.name = "1000ft", col.regions = "blue", legend = TRUE) +
+  mapview(buff2500, layer.name = "2500ft", col.regions = "grey", legend = TRUE) +
+  mapview(buff3200, layer.name = "3200ft", col.regions = "pink", legend = TRUE) +
+  mapview(buff5280, layer.name = "5280ft", col.regions = "red", legend = TRUE) +
   mapview(field_coverage_df_1000, layer.name = "1000ft coverage", col.regions = "green", legend = FALSE) +
   mapview(field_coverage_df_2500, layer.name = "2500ft coverage", col.regions = "purple", legend = FALSE) +
   mapview(field_coverage_df_3200, layer.name = "3200 ft coverage", col.regions = "salmon", legend = FALSE) +
@@ -421,7 +422,8 @@ mapshot(coverage_map, url = "data/processed/coverage_map.html", selfcontained = 
   mapview(field_coverage_df_2500, layer.name = "2500ft coverage", col.regions = "purple", legend = FALSE) +
   mapview(field_coverage_df_3200, layer.name = "3200ft coverage", col.regions = "salmon", legend = FALSE) +
   mapview(field_coverage_df_5280, layer.name = "5280ft coverage", col.regions = "orange", legend = FALSE) +
-  mapview(wells2 %>% filter(FieldName == "Sansinena"), layer.name = "Wells", label = 'WellStatus', cex = 0.3, alpha = 0, legend = FALSE)
+  mapview(wells2 %>% 
+            filter(FieldName == "Sansinena"), layer.name = "Wells", label = 'WellStatus', cex = 0.3, alpha = 0, legend = FALSE)
 
 # # read in original output
 # orig_coverage <- read_csv(file.path(home, "emlab/projects/current-projects/calepa-cn/outputs/setback/model-inputs/setback_coverage.csv")) %>%

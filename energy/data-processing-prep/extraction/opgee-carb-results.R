@@ -35,8 +35,10 @@ raw_opgee[is.na(variable), 'variable'] = c('Other Small Sources', 'Offsite emiss
 # melt raw data ------
 
 dt_res = melt(raw_opgee, measure.vars = colnames(raw_opgee)[2:158], variable.name = 'field_name', value.name = 'value')
+setDT(dt_res)
 dt_res[, value := as.numeric(value)]
-dt_res = dcast(dt_res, field_name ~ variable, value.var = 'value')
+dt_res = dcast.data.table(dt_res, field_name ~ variable, value.var = 'value')  # Use dcast.data.table instead of dcast
+
 colnames(dt_res) = c('field_name', 'gor_bbl_bbl', 'wor_bbl_bbl', 'water_injection_ratio_bbl_bbl', 'sor_bbl_bbl', 
                      'exploration_gCO2e_MJ', 'drilling_gCO2e_MJ', 'crude_production_gCO2e_MJ', 'surface_processing_gCO2e_MJ', 'maintenance_gCO2e_MJ', 'waste_gCO2e_MJ',
                      'transport_gCO2e_MJ', 'lifecycle_gCO2e_MJ', 'offsite_credit-debit_gCO2e_MJ', 'other_gCO2e_MJ')

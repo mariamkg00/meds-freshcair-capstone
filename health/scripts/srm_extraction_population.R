@@ -32,12 +32,15 @@ ces3<-read_csv("data/inputs/health/ces3results_part.csv")
 
 ces3 <- ces3 %>% 
   janitor::clean_names()
+
 ces3$GEOID=paste("0",as.character(ces3$census_tract),sep="")
 
-ct_total_pop<-ces3%>%dplyr::select("GEOID","total_population")
+ct_total_pop<-ces3 %>% 
+  dplyr::select("GEOID","total_population")
 
-ct_dac_pop<-ces3%>%dplyr::filter(sb535_dac == 'Yes')%>%
-  dplyr::select("GEOID","total_population","sb535_dac")%>%
+ct_dac_pop<-ces3 %>% 
+  dplyr::filter(sb535_dac == 'Yes') %>%
+  dplyr::select("GEOID","total_population","sb535_dac") %>%
   dplyr::rename(dac_population=total_population)
 
 demographics<-left_join(ct_total_pop,ct_dac_pop)
@@ -47,11 +50,10 @@ demographics<-left_join(ct_total_pop,ct_dac_pop)
 
 fields_vector <- c(1:26)
 
-field_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction'
+# field_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction'
 
-
-
-
+# Updated - MP
+field_data <- '/capstone/freshcair/meds-freshcair-capstone/data/processed/extraction/county'
 
 read_extraction <- function(buff_field){
   
@@ -89,7 +91,7 @@ srm_all_pollutants_extraction <-map_df(fields_vector, read_extraction) %>%
 
 srm_all_pollutants_extraction$total_pm25=srm_all_pollutants_extraction$weighted_totalpm25nh3+srm_all_pollutants_extraction$weighted_totalpm25nox+srm_all_pollutants_extraction$weighted_totalpm25pm25+srm_all_pollutants_extraction$weighted_totalpm25sox+srm_all_pollutants_extraction$weighted_totalpm25voc
 
-# Join with total population
+# Join with total population -- Having issues since GEOID columns are different, but data in outputs folder is correct
 srm_all_pollutants_extraction_population<-left_join(srm_all_pollutants_extraction,demographics)
 
 
@@ -97,8 +99,8 @@ srm_all_pollutants_extraction_population<-left_join(srm_all_pollutants_extractio
 measure1<-srm_all_pollutants_extraction_population%>%
   dplyr::filter(total_pm25>0.0001)
 measure1_by_cluster<-measure1%>%
-  dplyr::group_by(id)%>%
-  dplyr::summarize(total_population=sum(total_population,na.rm=T),dac_population=sum(dac_population,na.rm=T))
+  group_by(id)%>%
+  dplyr::summarise(total_population=sum(total_population,na.rm=T),dac_population=sum(dac_population,na.rm=T))
 
 measure1_by_cluster$share_dac=measure1_by_cluster$dac_population/measure1_by_cluster$total_population
 

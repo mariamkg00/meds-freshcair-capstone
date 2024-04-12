@@ -3,6 +3,8 @@
 ## model: load input info
 ## Updated 2/28/24 - MP
 
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
 
 # if(zenodo_repo) {
 # ## paths and file name for zenodo users ----
@@ -66,6 +68,7 @@ ccs_capture_rate  = 0.61
 library(here)
 library(dplyr)
 library(openxlsx)
+library(readxl)
 
 # source function to rank costs
 # source(here::here('energy', 'extraction-segment', 'prod_quota.R'))
@@ -104,15 +107,25 @@ calc_num_well_exits <- function(fe_val, bhat, p_oil, op_hat, opex_val, dhat, dep
 ## scen id list
 # scen_id_list = fread(file.path(academic_out, scen_id_file), header = T)
 
-## emission reduction df
 emis_reduc_90 = fread('data/processed/emission_reduction_90.csv', header = T)
 emis_reduc_90_val = emis_reduc_90[, ghg_emission_MtCO2e][1]
 
 # load oil price data
-oilpx_scens = setDT(read.xlsx(file.path('data/inputs/extraction/oil_price_projections_revised.xlsx'), sheet = 'nominal', cols = c(1, 7:9)))
+# Readin in oilpx_scens with readxl instead - MP
+oilpx_scens = setDT(read_excel(path = 'data/inputs/extraction/oil_price_projections_revised.xlsx', 
+                               sheet = 'nominal', 
+                               col_names = TRUE, 
+                               col_types = 'numeric'))
+# Selecting 4 columns used - MP
+oilpx_scens = oilpx_scens[, c('Year', 'AEO 2021 Reference case $/b', 'AEO 2021 High oil price $/b', 'AEO 2021 Low oil price $/b')]
+# oilpx_scens = setDT(read.xlsx(file = file.path('data/inputs/extraction/oil_price_projections_revised.xlsx'), sheet = 'nominal', cols = c(1, 7:9)))
 colnames(oilpx_scens) = c('year', 'reference_case', 'high_oil_price', 'low_oil_price')
 oilpx_scens = melt(oilpx_scens, measure.vars = c('reference_case', 'high_oil_price', 'low_oil_price'), 
                    variable.name = 'oil_price_scenario', value.name = 'oil_price_usd_per_bbl')
+
+# Convert oilpx_scens to a data.table -- Added - MP
+setDT(oilpx_scens)
+
 oilpx_scens[, oil_price_scenario := gsub('_', ' ', oil_price_scenario)]
 oilpx_scens[, oil_price_scenario := factor(oil_price_scenario, levels = c('reference case', 'high oil price', 'low oil price'))]
 oilpx_scens <- oilpx_scens[year > 2019]
@@ -208,7 +221,12 @@ excise_tax_scens = fread(file.path('data/processed/excise_tax_non_target_scens.c
 excise_tax_scens = subset(excise_tax_scens, select = -units)
 
 # load ccs incentives file -- Updated - MP
-incentives_scens = setDT(read.xlsx(file.path('data/inputs/scenarios/CCS_LCFS_45Q.xlsx'), sheet = 'scenarios', cols = c(1:3)))
+# Reading in with read_excel instead
+incentives_scens = setDT(read_excel(path = 'data/inputs/scenarios/CCS_LCFS_45Q.xlsx',
+                                    sheet = 'scenarios',
+                                    col_names = TRUE,
+                                    range = cell_cols(1:3)))
+#incentives_scens = setDT(read.xlsx(file.path('data/inputs/scenarios/CCS_LCFS_45Q.xlsx'), sheet = 'scenarios', cols = c(1:3)))
 
 # pad field codes with leading zeroes ------
 price_data[, doc_field_code := sprintf("%03d", doc_field_code)]
@@ -320,3 +338,4 @@ entry_dt = entry_dt[, .(doc_field_code, doc_fieldname, year, new_wells, depl)]
 # ccs emissions scalar ---------
 
 ccs_ghg_scalar <- 1 - ccs_capture_rate
+

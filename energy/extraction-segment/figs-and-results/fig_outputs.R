@@ -1,7 +1,6 @@
 ## Tracey Mangin
 ## December 6, 2021
 ## make outputs for figs
-## haejin 
 
 ## libraries
 library(data.table)
@@ -44,7 +43,7 @@ if(zenodo_repo) {
 } else {
 
 ## drive paths 
-main_path              = '/capstone/freshcair/meds-freshcair-capstone'
+main_path              = '/capstone/freshcair/meds-freshcair-capstone/'
 extraction_folder_path = paste0('outputs/academic-out/extraction/extraction_', comp_result_date, '/')
 county_save_path       = paste0(main_path, extraction_folder_path, 'county-results/')
 ct_save_path           = paste0(main_path, extraction_folder_path, 'census-tract-results/')
@@ -150,7 +149,7 @@ future_WTP <- function(elasticity, growth_rate, WTP){
 
 ## 2019 GHG emissions
 ## --------------------------
-hist_ghg <- fread(paste0(stocks_flows_path, ghg_file), header = T)
+hist_ghg <- fread('data/processed/indust_emissions_2000-2019.csv', header = T)
 
 hist_ghg <- hist_ghg[segment %chin% c('Oil & Gas: Production & Processing') &
                        year == 2019, .(segment, unit, year, value)]

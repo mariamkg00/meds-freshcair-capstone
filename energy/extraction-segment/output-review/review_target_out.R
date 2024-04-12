@@ -7,6 +7,7 @@ library(data.table)
 library(tidyverse)
 library(openxlsx)
 library(dplyr)
+library(readxl)
 
 ## model output location
 save_external <- 1
@@ -56,11 +57,14 @@ state_subset_all <- rbindlist(state_out_list)
 ## save a version with the tax values
 ## ---------------------------------------------
 ## add oil price
-oilpx_scens_df <- read.xlsx('data/inputs/extraction/oil_price_projections_revised.xlsx', 'nominal', cols = c(1, 7:9))
+oilpx_scens_df <- read_excel('data/inputs/extraction/oil_price_projections_revised.xlsx', sheet = 'nominal')
+oilpx_scens_df <- oilpx_scens_df[, c(1, 7:9)]
+# oilpx_scens_df <- read.xlsx('data/inputs/extraction/oil_price_projections_revised.xlsx', 'nominal', cols = c(1, 7:9))
 oilpx_scens = setDT(oilpx_scens_df)
 colnames(oilpx_scens) = c('year', 'reference_case', 'high_oil_price', 'low_oil_price')
 oilpx_scens = melt(oilpx_scens, measure.vars = c('reference_case', 'high_oil_price', 'low_oil_price'), 
                    variable.name = 'oil_price_scenario', value.name = 'oil_price_usd_per_bbl')
+oilpx_scens = setDT(oilpx_scens)
 oilpx_scens[, oil_price_scenario := gsub('_', ' ', oil_price_scenario)]
 oilpx_scens[, oil_price_scenario := factor(oil_price_scenario, levels = c('reference case', 'high oil price', 'low oil price'))]
 oilpx_scens <- oilpx_scens[year > 2019]
@@ -76,6 +80,10 @@ oilpx_scens$scenario_name <- factor(oilpx_scens$scenario_name, levels = c('EIA l
 oilpx_scens <- oilpx_scens[, .(year, oil_price_scenario, oil_price_usd_per_bbl)]
 
 ## -------------------------------------
+
+# Added - MP
+# Convert oil_price_scenario to factor in state_subset_all
+state_subset_all[, oil_price_scenario := factor(oil_price_scenario, levels = c("reference case", "high oil price", "low oil price"))]
 
 tax_val_df <- state_subset_all %>%
   dplyr::select(scen_id, oil_price_scenario, carbon_price_scenario, setback_scenario, setback_existing,

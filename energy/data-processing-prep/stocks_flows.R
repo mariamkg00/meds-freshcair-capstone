@@ -1148,7 +1148,7 @@ indust_ghg <- indust_ghg[1:7, ]
 indust_ghg2 <- indust_ghg %>%
   pivot_longer(`2000`:`2019`, names_to = "year", values_to = "value") %>%
   mutate(year = as.numeric(year)) %>%
-  rename(segment = Parameter,
+  dplyr::rename(segment = Parameter,
          unit = Unit) %>%
   mutate(source = source)
 

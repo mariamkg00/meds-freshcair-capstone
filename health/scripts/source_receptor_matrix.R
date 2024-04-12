@@ -26,7 +26,7 @@ srm_save_path    <- paste0("data/health/source_receptor_matrix/inmap_processed_s
 ## Read census tract shp file - UPDATED - MP
 census_tract <- read_sf('data/inputs/gis/census-tract/tl_2019_06_tract.shp') %>%
   st_transform(crs = 3310) %>%
-  sf::st_drop_geometry() %>%
+  # sf::st_drop_geometry() %>%
   dplyr::select(-STATEFP:-TRACTCE, -NAME:-INTPTLON)
 
 ## counties, no islands - UPDATED - MP
@@ -37,7 +37,9 @@ CA_counties <- st_read('data/inputs/gis/CA_counties_noislands/CA_Counties_TIGER2
 ## remove islands
 CA_counties_noisl <- CA_counties %>%
   filter(!OBJECTID %in% c(3, 49)) %>%
-  dplyr::select(- OBJECTID)
+  dplyr::select(- OBJECTID) %>% 
+  st_transform(crs=3310) # added - MP
+  
 
 # county_shp <- read_sf("./data/inmap/census-tract/tl_2019_06_tract.shp")%>%
 #   select(-STATEFP:-TRACTCE,-NAME:-INTPTLON)%>%
@@ -50,7 +52,8 @@ sector <- "extraction/"
 #sector <- "refining/"
 
 ## set spatial resolutoin for SRM
-sp_res <- "county"
+# sp_res <- "county"
+sp_res <- "census-tract"
 # sp_res <- "cesnsus-tract"
 
 if(sp_res == "county") {
@@ -86,30 +89,57 @@ for(i in 1:length(pollutants_vec)) {
 
 pattern <- paste0(c("nh3", "nox", "pm25", "sox", "voc"), collapse = "|")
 
+# inmap_process_func <- function(x) {
+#   
+#   pol_tmp <- str_extract(x, pattern)
+#   
+#   read_sf(paste0(health_data_path, x)) %>%
+#     st_transform(crs=3310) %>%
+#     dplyr::select(-BasePM25:-SOx,-TotalPop, -WindSpeed) %>%
+#     st_intersection(shp_int) %>%
+#     mutate(area = as.numeric(st_area(.)))%>%
+#     group_by(GEOID)%>%
+#     mutate(weight = area/sum(area))%>%
+#     summarize(totalpm25 = mean(TotalPM25, na.rm = T),
+#               totalpm25_aw = sum(weight * TotalPM25, na.rm = T))%>%
+#     data.frame()%>%
+#     dplyr::select(-geometry) %>%
+#     write.csv(paste0("data/processed/", sector, sp_res_path, pol_tmp, "/", substr(x,1,nchar(x)-4),".csv", sep=""), row.names = FALSE)
+#   
+# }
+
 inmap_process_func <- function(x) {
-  
   pol_tmp <- str_extract(x, pattern)
   
-  read_sf(paste0(health_data_path, x)) %>%
-    st_transform(crs=3310) %>%
-    select(-BasePM25:-SOx,-TotalPop, -WindSpeed) %>%
-    st_intersection(shp_int) %>%
-    mutate(area = as.numeric(st_area(.)))%>%
-    group_by(GEOID)%>%
-    mutate(weight = area/sum(area))%>%
-    summarize(totalpm25 = mean(TotalPM25, na.rm = T),
-              totalpm25_aw = sum(weight * TotalPM25, na.rm = T))%>%
-    data.frame()%>%
-    select(-geometry) %>%
-    write.csv(paste0("data/processed/", sector, sp_res_path, pol_tmp, "/", substr(x,1,nchar(x)-4),".csv", sep=""), row.names = FALSE)
+  shp_data <- read_sf(paste0(health_data_path, x)) %>%
+    st_transform(crs = 3310) %>%
+    dplyr::select(-BasePM25:-SOx, -TotalPop, -WindSpeed)
   
+  if (!identical(st_crs(shp_data), st_crs(shp_int))) {
+    shp_int_transformed <- st_transform(shp_int, st_crs(shp_data))
+  } else {
+    shp_int_transformed <- shp_int
+  }
+  
+  shp_data %>%
+    st_intersection(shp_int_transformed) %>%
+    mutate(area = as.numeric(st_area(.))) %>%
+    group_by(GEOID) %>%
+    mutate(weight = area / sum(area)) %>%
+    summarize(
+      totalpm25 = mean(TotalPM25, na.rm = T),
+      totalpm25_aw = sum(weight * TotalPM25, na.rm = T)
+    ) %>%
+    data.frame() %>%
+    dplyr::select(-geometry) %>%
+    write.csv(paste0("data/processed/", sector, sp_res_path, pol_tmp, "/", substr(x, 1, nchar(x) - 4), ".csv", sep = ""), row.names = FALSE)
 }
 
 ## run function
 purrr::map(as.list(inmap_files), inmap_process_func)
 
 
-purrr::map(inmap_files[[1]], inmap_process_func)
+# purrr::map(inmap_files[[1]], inmap_process_func)
 
 
 

@@ -3,6 +3,8 @@
 # author: @measrainsey
 # Updated 2/28/24 - MP but not finished yet
 
+setwd('/capstone/freshcair/meds-freshcair-capstone/')
+
 # inputs ------------
 
 res_path        = 'data/OPGEE'

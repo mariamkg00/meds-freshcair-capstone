@@ -12,6 +12,7 @@ library(data.table)
 library(zoo)
 library(openxlsx)
 library(readxl)
+library(dplyr)
 
 
 ## path
@@ -21,7 +22,7 @@ main_path <- '/capstone/freshcair/meds-freshcair-capstone/' # revised file path
 carbon_px_file <- 'carbon_price_scenarios_revised.xlsx'
 
 ## read in carbon file
-cpi_df <- setDT(read.xlsx(paste0(main_path, 'data/inputs/extraction', carbon_px_file), sheet = 'BLS Data Series', startRow = 12))
+cpi_df <- setDT(read.xlsx(paste0(main_path, 'data/inputs/extraction/', carbon_px_file), sheet = 'BLS Data Series', startRow = 12))
 
 cpi_df <- cpi_df[Year %in% c(2019, 2020), .(Year, Annual)]
 
@@ -58,6 +59,9 @@ scc_df <- merge(year_df, scc_df,
 scc_df <- melt(scc_df, id.vars = c("year"),
                measure.vars = c("five_perc_avg", "three_perc_avg", "two_pt_five_avg", "perc_95"),
                variable.name = "discount_rate", value.name = "social_cost_co2")
+
+# Convert back to dt - MP
+scc_df <- as.data.table(scc_df)
 
 scc_df[, social_cost_co2 := na.approx(social_cost_co2), by = .(discount_rate)]
 

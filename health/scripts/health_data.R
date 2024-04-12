@@ -13,7 +13,8 @@ options(java.parameters = "-Xmx8000m")
 ## Packages
 
 packages=c("xlsx", "gdata", "dplyr","tidyr", "stringr", "fuzzyjoin", "stringr", 
-           "ggplot2", "stargazer", "plm", "cowplot", "sf", "lwgeom","data.table", "here")
+           "ggplot2", "stargazer", "plm", "cowplot", "sf", "lwgeom","data.table", 
+           "here", "dplyr")
 
 lapply(1:length(packages), function(x) 
   ifelse((require(packages[x],character.only=TRUE)==FALSE),install.packages(packages[x]),
@@ -48,7 +49,7 @@ ct_ca <- ct_raw %>%
          upper_age = str_sub(age_group_desc,-2,-1),
          upper_age = as.numeric(ifelse(upper_age %in% "er",99,upper_age)),
          year = as.integer(year))%>%
-  select(-geogyear,-age_group_raw,-age_group_str); str(ct_ca)
+  dplyr::select(-geogyear,-age_group_raw,-age_group_str); str(ct_ca)
 
 age_group_ct <- ct_ca %>%
   mutate(upper_age = ifelse(upper_age==5,4,upper_age))%>% ## What it actually should be (under 5 year old)
@@ -59,7 +60,7 @@ age_group_ct <- ct_ca %>%
 
 # UPDATED - MP
 cdof_raw <- fread("data/inputs/health/CDOF_p2_Age_1yr_Nosup.csv", stringsAsFactors = FALSE, blank.lines.skip = TRUE)%>%
-  select(-Column1:-Column16331)%>%
+  dplyr::select(-Column1:-Column16331)%>%
   gather(year,pop,'2010':'2060')%>%
   mutate(pop = as.numeric(str_replace(pop,",","")),
          County = str_replace(County," County",""),
@@ -104,7 +105,7 @@ county$col <- as.integer(county$col)
 # UPDATED - MP
 incidence_ca <- read.csv("data/inputs/health/Mortality Incidence (2015).csv", stringsAsFactors = F) %>%
   filter(Endpoint == "Mortality, All Cause") %>%
-  select(-Endpoint.Group,-Race:-Ethnicity, -Type)%>%
+  dplyr::select(-Endpoint.Group,-Race:-Ethnicity, -Type)%>%
   left_join(county, by = c("Column"="col","Row"="row"))%>%
   filter(state %in% "California"); str(incidence_ca)
 
@@ -119,11 +120,11 @@ gc()
 # Mortality 
 
 temp_incidence_ca <- incidence_ca %>%
-  select(-endpoint,-column,-row,-state)%>%
+  dplyr::select(-endpoint,-column,-row,-state)%>%
   ungroup(); temp_incidence_ca
 
 temp_ct_ca <- ct_ca%>%
-  select(-state,-statea,-tracta, -countya,-age_group_desc)%>%
+  dplyr::select(-state,-statea,-tracta, -countya,-age_group_desc)%>%
   mutate(county = str_remove(county, " County"))%>%
   ungroup(); temp_ct_ca
 
@@ -137,7 +138,7 @@ ct_incidence_ca <- temp_ct_ca %>%
            "upper_age" = "end.age"),
     match_fun = list(`==`,`>=`, `<=`))%>%
   mutate(county = coalesce(county.x,county.y))%>%
-  select(-county.x,-county.y)%>%
+  dplyr::select(-county.x,-county.y)%>%
   fuzzyjoin::fuzzy_left_join(
     temp_incidence_ca,
     by = c("lower_age" = "start.age" ,
@@ -148,7 +149,7 @@ ct_incidence_ca <- temp_ct_ca %>%
          end.age = coalesce(end.age.x,end.age.y),
          county = coalesce(county.x,county.y),
          value = coalesce(value.x,value.y))%>%
-  select(-start.age.x,-start.age.y,-end.age.x, -end.age.y,
+  dplyr::select(-start.age.x,-start.age.y,-end.age.x, -end.age.y,
          -county.x,-county.y,-value.x,-value.y)
 
 # UPDATED - MP
@@ -159,7 +160,7 @@ ct_incidence_ca <- read.csv("data/processed/ct_incidence_ca.csv", stringsAsFacto
 
 cdof_pred_sp <- cdof_pred %>%
   filter(year>2010)%>%
-  select(-pop)%>%
+  dplyr::select(-pop)%>%
   spread(year,change_pct)
 
 ct_inc_45_temp <- ct_incidence_ca %>%
@@ -174,12 +175,12 @@ for (i in 2011:2045){
 }
 
 ct_inc_45 <- ct_inc_45_temp%>%
-    select(-pop,-year,-`2011`:-`2045`)%>%
+    dplyr::select(-pop,-year,-`2011`:-`2045`)%>%
     gather(year,pop,pop_2010:pop_2045)%>%
     mutate(year = as.numeric(str_remove(year,"pop_")))%>%
     filter(year>2018)%>%
     mutate(incidence_2015 = value)%>%
-    select(-value)%>%
+    dplyr::select(-value)%>%
     ungroup()
 
 ## Output final population and mortality incidence data

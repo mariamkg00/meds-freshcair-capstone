@@ -1,8 +1,11 @@
 library(dplyr)
+library(data.table)
+
+z <- 1
 
 run_extraction_model <- function(input_scenarios) {
   
-  scen_sel <- input_scenarios
+  # scen_sel <- input_scenarios
   
   ## start scenario 
   ## --------------------------------------------------  
@@ -133,14 +136,31 @@ run_extraction_model <- function(input_scenarios) {
     # calculate ccs
     dt_info_z[, upstream_kgCO2e := upstream_kgCO2e_bbl_inno_adj * total_bbls]
     dt_info_z[, upstream_mtCO2e := upstream_kgCO2e/1e3]
-    dt_info_z[, mean_b := solve_mean_b(a, ccs_price_usd_per_kg*1e3, 'extraction'), 
-              by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, 
-                     setback_existing, prod_quota_scenario, excise_tax_scenario)]
-    dt_info_z[, total_cost := solve_tc(a, mean_b, upstream_mtCO2e)]
+    
+    # Added for testing - MP
+    # Check if all columns exist in dt_info_z
+    required_cols <- c("oil_price_scenario", "innovation_scenario", "carbon_price_scenario", "ccs_scenario", 
+                       "setback_scenario", "setback_existing", "prod_quota_scenario", "excise_tax_scenario")
+    if (all(required_cols %in% names(dt_info_z))) {
+      dt_info_z[, mean_b := solve_mean_b(a, ccs_price_usd_per_kg*1e3, 'extraction'), 
+                by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
+                       setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
+    } else {
+      missing_cols <- setdiff(required_cols, names(dt_info_z))
+      stop("The following columns are missing in dt_info_z: ", paste(missing_cols, collapse = ", "))
+    }
+    
+    # Removing for testing - MP
+    # dt_info_z[, mean_b := solve_mean_b(a, ccs_price_usd_per_kg*1e3, 'extraction'), 
+    #           by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, 
+    #                  setback_existing, prod_quota_scenario, excise_tax_scenario)]
+    # dt_info_z[, total_cost := solve_tc(a, mean_b, upstream_mtCO2e)]
+    
+    
     # dt_info[, b := solve_b(a, ccs_price_usd_per_kg*1e3, upstream_mtCO2e)]
     # dt_info[, mean_b := mean(b, na.rm = T), 
     #         by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, prod_quota_scenario, excise_tax_scenario)]
-    # dt_info[, total_cost := solve_tc(a, mean_b, upstream_mtCO2e)]
+    dt_info_z[, total_cost := solve_tc(a, mean_b, upstream_mtCO2e)]
     dt_info_z[, ccs_adj_usd_per_mt := total_cost/upstream_mtCO2e]
     dt_info_z[, ccs_adj_usd_per_kg := total_cost/upstream_kgCO2e]
     dt_info_z[is.na(ccs_adj_usd_per_kg), ccs_adj_usd_per_kg := ccs_price_usd_per_kg] # if no a value (zero emissions), use non-field adjusted ccs price
@@ -450,8 +470,26 @@ run_extraction_model <- function(input_scenarios) {
       ## melt by costs
       dtt_long = melt(dtt, measure.vars = c('cost_new', 'cost_existing'), variable.name = 'cost_type', value.name = 'cost')
       ## rank field (existing and new) costs -- note that multiple fields have same cost
-      dtt_long[, cost_rank := rank(unclass(cost)), by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
-                                                          setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
+      # Removing for testing
+      # dtt_long[, cost_rank := rank(unclass(cost)), by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario,
+      #                                                     setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
+      dtt_long = setDT(dtt_long)
+      dtt_long[, cost_rank := rank(unclass(cost)), by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]    
+      
+      # Replacing above section with this
+      required_cols <- c("oil_price_scenario", "innovation_scenario", "carbon_price_scenario", "ccs_scenario",
+                         "setback_scenario", "setback_existing", "prod_quota_scenario", "excise_tax_scenario",
+                         "cost")
+      
+      if (all(required_cols %in% names(dtt_long))) {
+        dtt_long[, cost_rank := rank(unclass(cost)),
+                 by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario,
+                        setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
+      } else {
+        missing_cols <- setdiff(required_cols, names(dtt_long))
+        stop("The following columns are missing in dtt_long: ", paste(missing_cols, collapse = ", "))
+      }
+      
       ## wide format
       dt_info_rank = dcast(dtt_long, doc_field_code + doc_fieldname + m_capex_imputed + m_opex_imputed_adj + oil_price_scenario + innovation_scenario +  carbon_price_scenario + ccs_scenario +  setback_scenario + setback_existing + prod_quota_scenario + excise_tax_scenario ~ cost_type, 
                            value.var = c('cost', 'cost_rank'))
@@ -459,11 +497,24 @@ run_extraction_model <- function(input_scenarios) {
       setnames(dt_info_rank, 'cost_rank_cost_new', 'cost_new_rank')
       setnames(dt_info_rank, 'cost_rank_cost_existing', 'cost_existing_rank')
       
+      # ## select columns
+      # temp_dt_info_rank = dt_info_rank[, c("doc_field_code","doc_fieldname",
+      #                                      "oil_price_scenario", "innovation_scenario", "carbon_price_scenario", "ccs_scenario", 
+      #                                      "setback_scenario", "setback_existing", "prod_quota_scenario", "excise_tax_scenario",
+      #                                      "cost_existing_rank","cost_new_rank")]
+      
+      # Redoing above section with test
       ## select columns
-      temp_dt_info_rank = dt_info_rank[, c("doc_field_code","doc_fieldname",
-                                           "oil_price_scenario", "innovation_scenario", "carbon_price_scenario", "ccs_scenario", 
-                                           "setback_scenario", "setback_existing", "prod_quota_scenario", "excise_tax_scenario",
-                                           "cost_existing_rank","cost_new_rank")]
+      required_cols <- c("doc_field_code", "doc_fieldname", "oil_price_scenario", "innovation_scenario", 
+                         "carbon_price_scenario", "ccs_scenario", "setback_scenario", "setback_existing", 
+                         "prod_quota_scenario", "excise_tax_scenario", "cost_existing_rank", "cost_new_rank")
+      
+      if (all(required_cols %in% names(dt_info_rank))) {
+        temp_dt_info_rank <- dt_info_rank[, required_cols, with = FALSE]
+      } else {
+        missing_cols <- setdiff(required_cols, names(dt_info_rank))
+        stop("The following columns are missing in dt_info_rank: ", paste(missing_cols, collapse = ", "))
+      }
       
       # set up copy of dataframe for newly predicted wells for time t
       # use this for production in time t and projecting future prod for this vintage
@@ -967,8 +1018,24 @@ run_extraction_model <- function(input_scenarios) {
         # calculate ccs
         info_next_year[, upstream_kgCO2e := upstream_kgCO2e_bbl_inno_adj * total_bbls]
         info_next_year[, upstream_mtCO2e := upstream_kgCO2e / 1e3]
-        info_next_year[, mean_b := solve_mean_b(a, ccs_price_usd_per_kg * 1e3, 'extraction'), 
-                       by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
+        
+        # removing for testing - MP
+        # info_next_year[, mean_b := solve_mean_b(a, ccs_price_usd_per_kg * 1e3, 'extraction'), 
+        #                by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
+        
+        # added for testing - MP
+        required_cols <- c("oil_price_scenario", "innovation_scenario", "carbon_price_scenario", "ccs_scenario", 
+                           "setback_scenario", "setback_existing", "prod_quota_scenario", "excise_tax_scenario")
+        
+        if (all(required_cols %in% names(info_next_year))) {
+          info_next_year[, mean_b := solve_mean_b(a, ccs_price_usd_per_kg * 1e3, 'extraction'), 
+                         by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
+                                setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
+        } else {
+          missing_cols <- setdiff(required_cols, names(info_next_year))
+          stop("The following columns are missing in info_next_year: ", paste(missing_cols, collapse = ", "))
+        }
+        
         info_next_year[, total_cost := solve_tc(a, mean_b, upstream_mtCO2e)]
         
         
