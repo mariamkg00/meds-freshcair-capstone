@@ -1,0 +1,22 @@
+
+```{r}
+exposure <- ct_exposure
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+exposure_summary <- exposure %>%
+  group_by(year, disadvantaged) %>%
+  summarise(avg_pm25 = mean(total_pm25, na.rm = TRUE))
+
+ggplot(exposure_summary, aes(x = year, y = avg_pm25, color = disadvantaged)) +
+  geom_line() +
+  labs(title = "Year-over-Year Average PM2.5 Exposure",
+       x = "Year", y = "Average PM2.5",
+       color = "Disadvantaged") +
+  theme_minimal()
+```
+

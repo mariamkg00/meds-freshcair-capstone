@@ -15,7 +15,7 @@ save_external <- 1
 ## path names, ## UPDATE THESE WITH NEW RUNS!!!!!
 # extraction_folder_path <- 'outputs/predict-production/extraction_2022-11-15/revision-sb-test/'
 # extraction_folder_name <- 'subset_target_scens/'
-external_path <- 'data/processed/extraction_2024-02-29/revision-setbacks/'
+external_path <- 'data/processed/extraction_2024-04-14/revision-setbacks/'
 
 
 ## current date
@@ -145,5 +145,14 @@ prod <- ggplot(state_subset_all, aes(x = year, y = total_prod_bbl / 1e6, color =
   facet_wrap(~oil_price_scenario)
 
 plotly::ggplotly(prod)
+
+# ## production v2 -- MP
+# prod2 <- ggplot(state_subset_all[setback_scenario != "no_setback"], 
+#                aes(x = year, y = total_prod_bbl / 1e6, color = target_policy, group = scen_id)) +
+#   geom_line() +
+#   facet_wrap(~oil_price_scenario) +
+#   labs(y = "Production (million bbl)")
+# 
+# plotly::ggplotly(prod2)
 
 

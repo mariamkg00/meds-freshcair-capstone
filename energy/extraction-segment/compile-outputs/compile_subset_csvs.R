@@ -22,7 +22,7 @@ external_path <- '/capstone/freshcair/meds-freshcair-capstone/data/processed' # 
 
 if(external_save == 1) {
   
-  compiled_path = paste0(main_path_external, 'data/processed/extraction_2024-04-08/')
+  compiled_path = paste0(main_path_external, 'data/processed/extraction_2024-04-14/')
 } else {
   
   compiled_path  = paste0(academic_out_path, extraction_folder)
@@ -33,7 +33,7 @@ if(external_save == 1) {
 field_path     = paste0(compiled_path, 'field-results/')
 state_path     = paste0(compiled_path , 'state-results/')
 state_hs_path  = paste0(compiled_path , 'state-results/health_sens/')
-county_save_path    = paste0(compiled_path, 'county-results/')
+county_path    = paste0(compiled_path, 'county-results/')
 ct_path        = paste0(compiled_path, 'census-tract-results/')
 ct_hs_path     = paste0(compiled_path, 'health-county-results/')
 

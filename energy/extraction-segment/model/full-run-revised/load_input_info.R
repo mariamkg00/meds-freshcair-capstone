@@ -161,7 +161,7 @@ ghg_factors = fread(file.path('data/intermediate-zenodo/intermediate/extraction-
 ## -----------------------------------------------------------
 
 # load n wells in setbacks and setback coverage file -- need to fix our version
-n_wells_setbacks = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/n_wells_area.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
+n_wells_setbacks = fread(file.path('data/processed/n_wells_area.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 ## setback applies to existing wells
 n_wells_setbacks[, setback_existing := 1]

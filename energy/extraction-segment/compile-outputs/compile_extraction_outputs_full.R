@@ -12,6 +12,7 @@ library(openxlsx)
 library(furrr)
 library(future)
 library(dplyr)
+library(sf)
 
 
 ## model output location
@@ -26,7 +27,7 @@ main_path_external     <- '/capstone/freshcair/meds-freshcair-capstone/'
 sp_data_path     <- paste0(main_path, "data/input/gis/")
 
 ## UPDATE THESE WITH NEW RUNS!!!!!
-extraction_folder_path <- 'data/processed/extraction_2024-04-08'
+extraction_folder_path <- 'data/processed/extraction_2024-04-14'
 extraction_folder_name <- 'revision-setbacks/'
 data_path  <-'data/processed/'
 
@@ -37,10 +38,10 @@ inmap_ex_path  <- paste0(main_path, "data/processed/extraction")
 if(save_external == 1) {
   
   ## UPDATE THIS WITH NEW RUNS!!!!!
-  extraction_path <- paste0('data/processed/extraction_2024-04-08/revision-setbacks/')
+  extraction_path <- paste0('data/processed/extraction_2024-04-14/revision-setbacks/')
   
-  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-04-08/academic-out/'), showWarnings = FALSE)
-  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-04-08/')
+  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-04-14/academic-out/'), showWarnings = FALSE)
+  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-04-14/')
 
 } else {
   

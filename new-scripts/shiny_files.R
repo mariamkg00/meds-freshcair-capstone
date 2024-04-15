@@ -60,7 +60,7 @@ wells_loc_map <- mapview(ca, layer.name = "California", alpha.regions = 0.5, hom
           col.regions = well_colors["Plugged"], pointShape = 21, pointSize = 0.03, pointFill = "black") +
   mapview(unknown_wells, zcol = "WellStatus", crs = ca_crs, layer.name = "Unknown Wells", legend = TRUE,
           col.regions = well_colors["Unknown"], pointShape = 21, pointSize = 0.03, pointFill = "black") +
-  mapview(abandoned_wells, zcol = "WellStatus", crs = ca_crs, layer.name = "Abandoned Wells", legend = TRUE,
+  mapview(canceled_wells, zcol = "WellStatus", crs = ca_crs, layer.name = "Abandoned Wells", legend = TRUE,
           col.regions = well_colors["Abandoned"], pointShape = 21, pointSize = 0.03, pointFill = "black")
 
 wells_loc_map

@@ -1,11 +1,9 @@
 library(dplyr)
 library(data.table)
 
-z <- 1
-
 run_extraction_model <- function(input_scenarios) {
   
-  # scen_sel <- input_scenarios
+  scen_sel <- input_scenarios
   
   ## start scenario 
   ## --------------------------------------------------  
