@@ -53,5 +53,5 @@ energy/figures-and-results/compare-diagnostic-scenarios.R
 # adding data folder
 data/
 
-/outputs
+outputs/
 
