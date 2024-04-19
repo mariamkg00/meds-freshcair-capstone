@@ -256,15 +256,45 @@ ggplot(top_counties_active_wells_over_time, aes(x = year, y = ActiveWells, color
 coverage <- read_csv('data/processed/setback_coverage_R.csv') %>% 
   janitor::clean_names()
 
-# Adding km covered by field
+# Adding sq miles covered in each field
 coverage <- coverage %>% 
-  mutate(area_sq_mi = round(area_sq_mi * rel_coverage, digits = 6))
+  mutate(area_sq_mi = round(area_sq_mi * rel_coverage, digits = 6)) %>% 
+  mutate(covered_sq_mi = area_sq_mi * rel_coverage)
 
-# Num of wells and sq miles of field
-field_summary <- coverage %>%
-  group_by(doc_field_code, name) %>%
-  summarize(total_area_sq_mi = sum(area_sq_mi),
-            total_wells = sum(n_wells))
+# Group the data by setback_scenario and calculate the total area_sq_mi for each scenario
+setback_areas <- coverage %>%
+  group_by(setback_scenario) %>%
+  summarise(total_area_sq_mi = sum(area_sq_mi)) 
+
+# Pivot the data to create columns for each setback scenario
+setback_areas_wide <- setback_areas %>%
+  pivot_wider(names_from = setback_scenario, values_from = total_area_sq_mi)
+
+# Add a row with the setback distance for each scenario
+setback_distances <- c(0, 1000, 2500, 3200, 5280)
+setback_areas_wide <- setback_areas_wide %>%
+  mutate(setback_distance = setback_distances)
+
+# Reshape the data to long format for plotting
+setback_areas_long <- setback_areas_wide %>%
+  pivot_longer(
+    cols = -setback_distance,
+    names_to = "setback_scenario",
+    values_to = "total_area_sq_mi"
+  )
+
+# Plot the relationship between setback distance and total area
+library(ggplot2)
+
+ggplot(setback_areas_long, aes(x = setback_distance, y = total_area_sq_mi, color = setback_scenario)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Setback Distance (ft)", y = "Total Area (sq mi)", color = "Setback Scenario") +
+  theme_minimal()
+
+# Print the results
+print(setback_areas_wide)
+  
 
 # Quartile stats for average coverage for each setback distance
 buffer_summary <- coverage %>% 
@@ -344,10 +374,6 @@ ca <- st_as_sf(maps::map("state", plot = FALSE, fill = TRUE)) %>%
   filter(ID == "california") %>%
   st_transform(ca_crs)
 
-interactive_map <- mapview(ca, layer.name = "California", alpha.regions = 0.5) +
-  mapview(wells2, zcol = "WellStatus", crs = ca_crs, layer.name = "Wells", legend = TRUE,
-          col.regions = well_colors, pointShape = 21, pointSize = 3, pointFill = "black")
-
 interactive_map <- mapview(ca, layer.name = "California", alpha.regions = 0.5, homebutton = TRUE, layersControl = TRUE) +
   mapview(active_wells, zcol = "WellStatus", crs = ca_crs, layer.name = "Active Wells", legend = TRUE,
           col.regions = well_colors["Active"], pointShape = 21, pointSize = 0.03, pointFill = "black") +
@@ -403,7 +429,7 @@ wells_by_tract <- st_join(wells, census_tracts, join = st_within)
 # Count wells in each census tract
 wells_count <- wells_by_tract %>%
   group_by(NAME) %>%
-  summarize(total_wells = n()/2)
+  summarize(total_wells = n())
 
 interactive_map <- mapview(wells_by_tract, zcol = "WellStatus", layer.name = "Wells and Census Tracts")
 

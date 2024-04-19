@@ -58,9 +58,9 @@ if(zenodo_repo) {
   dac_bau_dt <- fread(paste0(main_path, dac_bau_file))
 } else {
 ## read in data
-  levels_dt <- fread(paste0(main_path, fig_path, levels_name))
-  npv_dt <- fread(paste0(main_path, fig_path, npv_file))
-  dac_bau_dt <- fread(paste0(main_path, fig_path, dac_bau_file))
+  levels_dt <- fread("data/outputs/state_levels_all_oil.csv")
+  npv_dt <- fread("data/outputs/npv_x_metric_all_oil.csv")
+  dac_bau_dt <- fread("data/outputs/dac_bau_health_labor_all_oil.csv")
 }
 
 ## filter out carbon + setback
@@ -108,7 +108,7 @@ sd_fig6a <- levels_dt %>%
          target_label, ghg_2045_perc, ghg_2045_perc_reduction, year, metric, value) %>%
   rbind(sd_fig6a_bau)
 
-fwrite(sd_fig6a, paste0(source_data_path, "fig6a.csv"))
+fwrite(sd_fig6a, paste0("data/outputs/fig6a.csv"))
 
 
 ## figures
@@ -272,7 +272,7 @@ sd_fig6b <- sd_cumul_ghg %>%
   select(oil_price_scenario, policy_intervention, target_label, ghg_2045_perc, ghg_2045_perc_reduction, cumul_ghg) %>%
   unique()
 
-fwrite(sd_fig6b, paste0(source_data_path, "fig6b.csv"))
+fwrite(sd_fig6b, paste0("data/outputs/fig6b.csv"))
 
 
 ## figures
@@ -420,7 +420,7 @@ sd_fig6cd <- npv_dt %>%
   rename(category = title) %>%
   arrange(category, policy_intervention)
 
-fwrite(sd_fig6cd, paste0(source_data_path, "fig6cd.csv"))
+fwrite(sd_fig6cd, paste0("data/outputs/fig6cd.csv"))
 
 
 ## figure
@@ -537,7 +537,7 @@ sd_fig6ef <- dac_bau_dt %>%
   rename(DAC_value = value,
          category = facet_lab)
 
-fwrite(sd_fig6ef, paste0(source_data_path, "fig6ef.csv"))
+fwrite(sd_fig6ef, paste0("data/outputs/fig6ef.csv"))
 
 
 ## version 1: relative to BAU
@@ -666,32 +666,36 @@ fig6 <- plot_grid(
 
 ## save figure 6
 ggsave(fig6,
-       filename = file.path(main_path, save_path, 'figure6-ref-case.png'),
+       filename = file.path('outputs/figure6-ref-case.png'),
        width = 180,
        height = 210,
        units = "mm",)
 
-ggsave(fig6,
-       filename = file.path(main_path, save_path, 'figure6-ref-case.pdf'),
-       width = 180,
-       height = 210,
-       units = "mm",
-       device = 'pdf')
+# Removed for now - MP
+# ggsave(fig6,
+#        filename = file.path(main_path, save_path, 'figure6-ref-case.pdf'),
+#        width = 180,
+#        height = 210,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure6-ref-case.pdf'),
-            outfile = paste0(main_path, save_path, 'figure6-ref-case.pdf'))
+# Removed for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure6-ref-case.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure6-ref-case.pdf'))
 
 
-## save fig 6 legend
-ggsave(legends,
-       filename = file.path(main_path, fig_path, 'figure6-ref-case-l.pdf'),
-       width = 150,
-       height = 25,
-       units = "mm",
-       device = 'pdf')
+# Remove for now - MP
+# ## save fig 6 legend
+# ggsave(legends,
+#        filename = file.path(main_path, fig_path, 'figure6-ref-case-l.pdf'),
+#        width = 150,
+#        height = 25,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, fig_path, 'figure6-ref-case-l.pdf'),
-            outfile = paste0(main_path, fig_path, 'figure6-ref-case-l.pdf'))
+# Remove for now - MP
+# embed_fonts(paste0(main_path, fig_path, 'figure6-ref-case-l.pdf'),
+#             outfile = paste0(main_path, fig_path, 'figure6-ref-case-l.pdf'))
 
 
 

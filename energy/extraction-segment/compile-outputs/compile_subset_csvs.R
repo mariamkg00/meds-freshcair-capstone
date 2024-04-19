@@ -2,6 +2,7 @@
 ## September 16, 2021
 ## create csv versions of outputs
 ## Revised: Mar 1 2024 by Haejin 
+## Updated 4/14/24 - MP
 
 ## libraries
 library(data.table)
@@ -109,8 +110,8 @@ state_subset_all     <- rbindlist(state_out_list)
 state_hs_subset_all  <- rbindlist(state_hs_out_list)
 
 fwrite(ct_subset_all, paste0(ct_path, "subset_census_tract_results.csv"))
-fwrite(ct_hs_subset_all, paste0(ct_hs_path, "subset_county_hs_results.csv"))
+fwrite(ct_hs_subset_all, paste0(ct_hs_path, "subset_county_hs_results.csv")) # include health census 
 fwrite(county_subset_all, paste0(county_path, "subset_county_results.csv"))
 fwrite(state_subset_all, paste0(state_path, "subset_state_results.csv"))
-fwrite(state_hs_subset_all, paste0(state_hs_path, "subset_state_hs_results.csv"))
+fwrite(state_hs_subset_all, paste0(state_hs_path, "subset_state_hs_results.csv")) # include health census
 

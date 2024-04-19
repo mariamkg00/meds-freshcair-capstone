@@ -1,0 +1,525 @@
+---
+title: "Predictive Model Development"
+author: "FreshCAir"
+date: 2024-04-17
+output:
+  pdf_document:
+    toc: true
+    number_sections: true
+---
+
+# Overview
+The purpose of this script is to compile features from various data sets to build the predictive model of new well entry.
+
+## Setup
+
+```{r, message=FALSE, include=FALSE}
+# Install packages
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(randomForest)
+library(pdp)
+library(caret)
+library(partykit)
+library(party)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Set directory
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+# Read in field production data
+cum_prod <- read_csv('data/processed/asset-year_cumulative_sum_production.csv')
+
+# Read in well exits data
+well_exits <- read_csv('data/processed/well_exits.csv')
+well_exits_rule <- read_csv('data/processed/well_exits_under_rule.csv')
+
+# Poisson coefficients
+poiss_coef <- read.csv('data/intermediate-zenodo/intermediate/extraction-model/exit_regression_coefficients.csv')
+```
+
+# Exploratory Analayis
+
+## Total Production Over Time
+
+```{r}
+# Ensure year column is numeric
+cum_prod$year <- as.numeric(cum_prod$year)
+
+# Calculate total production by year
+prod_summary <- cum_prod %>%
+  group_by(year) %>%
+  dplyr::summarise(total_production = sum(production, na.rm = TRUE))
+
+# Plot total prod over time
+ggplot(prod_summary, aes(x = year, y = total_production)) +
+  geom_line() +
+  labs(x = "Year", y = "Total Oil Production", title = "Total Oil Production over Time") +
+  scale_x_continuous(breaks = seq(min(prod_summary$year), max(prod_summary$year), by = 10)) +
+  theme_minimal() 
+```
+
+## Total Exits by Year
+
+```{r}
+# Well exits plot
+yearly_exits <- well_exits %>%
+  group_by(exit_year) %>%
+  dplyr::summarise(total_exits = sum(well_exits, na.rm = TRUE))
+
+ggplot(yearly_exits, aes(x = exit_year, y = total_exits)) +
+  geom_col() +
+  labs(
+    title = "Well Exits by Year",
+    x = "Exit Year",
+    y = "Total Well Exits"
+  )
+```
+
+
+```{r}
+# Well exits over time
+yearly_exits_rule <- well_exits_rule %>% 
+  group_by(exit_year) %>% 
+  dplyr::summarise(total_exits = sum(n_exits_field, na.rm=TRUE))
+
+ggplot(yearly_exits_rule, aes(x = exit_year, y = total_exits)) +
+  geom_col() +
+  labs(
+    title = "Total Well Exits Over Time",
+    x = "Exit Year",
+    y = "Total Well Exits"
+  )
+```
+
+
+# Ranom Forest Implementation
+
+```{r, warning=FALSE, message=FALSE}
+# Read in data
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+entry_df <- read_csv(file.path("data/processed/entry_df_final_revised.csv"))
+```
+
+
+## Wrangling Entry Data
+
+```{r, warning=FALSE, warning=FALSE}
+# From entry.R to update the data to have all the features
+# Calculating missing columns that are used in analysis ------
+# m_cumsum_div_my_prod
+entry_df <- entry_df %>%
+  group_by(doc_field_code) %>%
+  mutate(m_cumsum_div_my_prod = cumsum(doc_prod) / max(doc_prod)) %>%
+  ungroup()
+
+# totex_capex
+entry_df <- entry_df %>%
+  mutate(totex_capex = capex_imputed + opex_imputed)
+
+# wm_capex_imputed, wm_opex_imputed, wm_totex
+entry_df <- entry_df %>%
+  group_by(doc_field_code) %>%
+  mutate(wm_capex_imputed = weighted.mean(capex_imputed, doc_prod, na.rm = TRUE),
+         wm_opex_imputed = weighted.mean(opex_imputed, doc_prod, na.rm = TRUE),
+         wm_totex = wm_capex_imputed + wm_opex_imputed) %>%
+  ungroup()
+
+# Data preparation
+entry_df <- entry_df %>%
+  filter(!grepl("Gas", doc_fieldname) & year != 1977) %>%
+  rename(depl = m_cumsum_div_my_prod,
+         topfield = top_field) %>%
+  mutate(capex_per_bbl_nom = as.numeric(capex_per_bbl_nom),
+         opex_per_bbl_nom = as.numeric(opex_per_bbl_nom),
+         capex_imputed = as.numeric(capex_imputed),
+         opex_imputed = as.numeric(opex_imputed))
+
+# Create field rank and categories
+entry_df <- entry_df %>%
+  group_by(year) %>%
+  mutate(rank = dense_rank(desc(doc_prod))) %>%
+  ungroup() %>%
+  group_by(doc_field_code) %>%
+  mutate(field_rank = max(rank)) %>%
+  ungroup() %>%
+  mutate(nontop_field_categ = ifelse(topfield == 0 & year == 2019, ntile(-field_rank, 10) + 10 + 1, NA)) %>%
+  group_by(doc_field_code) %>%
+  mutate(field_categ = max(nontop_field_categ, na.rm = TRUE)) %>%
+  ungroup() %>%
+  mutate(field_categ = ifelse(topfield > 0, topfield, field_categ))
+```
+
+## Build Random Forest
+
+### Bagging function
+```{r}
+# bagging_rf <- function(formula, train_data, test_data, num_iterations = 10) {
+#   # Set the number of bagging iterations
+#   num_iterations <- num_iterations
+# 
+#   # Initialize a list to store the predictions from each bagging iteration
+#   bagging_predictions <- vector("list", num_iterations)
+# 
+#   # Perform bagging on the training set
+#   for (i in 1:num_iterations) {
+#     # Create a bootstrap sample of the training data
+#     bootstrap_sample <- train_data[sample(nrow(train_data), replace = TRUE), ]
+# 
+#     # Train a random forest model on the bootstrap sample
+#     rf_model <- randomForest(formula, data = bootstrap_sample, importance = TRUE, ntree = 500, mtry = 3)
+# 
+#     # Make predictions on the test set
+#     new_wells_pred <- predict(rf_model, newdata = test_data)
+# 
+#     # Store the predictions in the list
+#     bagging_predictions[[i]] <- new_wells_pred
+#   }
+# 
+#   # Combine the predictions from all bagging iterations
+#   bagging_new_wells_pred <- rowMeans(do.call(cbind, bagging_predictions))
+# 
+#   return(bagging_new_wells_pred)
+# }
+```
+
+
+### A Simple Implementation
+```{r}
+# Reading in Poisson predictions
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+new_wells_pred_revised <- read_csv("data/intermediate-zenodo/new_wells_pred_revised.csv") %>% 
+  rename(new_wells_poisson = new_wells_pred)
+
+wells_by_year_revised <- new_wells_pred_revised %>%
+  group_by(year) %>%
+  summarise(new_wells_poisson = sum(new_wells_poisson),
+            new_wells_actual = sum(new_wells))
+
+# Train-Test Split
+set.seed(123)
+train_indices <- createDataPartition(entry_df$n_new_wells, p = 0.8, list = FALSE)
+train_data <- entry_df[train_indices, ]
+test_data <- entry_df[-train_indices, ]
+
+# Define the formula for the models
+rf_formula <- as.formula(n_new_wells ~ brent + capex_imputed + opex_imputed + depl)
+
+# Random Forest
+rf_model <- randomForest(rf_formula, data = train_data, importance = TRUE, ntree = 500, mtry = 4)
+test_data$new_wells_pred_rf <- predict(rf_model, newdata = test_data)
+rmse_rf <- sqrt(mean((test_data$n_new_wells - test_data$new_wells_pred_rf)^2, na.rm = TRUE))
+print(paste("RMSE of Random Forest on test set:", rmse_rf))
+
+# Applying to full dataset:
+entry_df$new_wells_pred_rf <- predict(rf_model, newdata = entry_df)
+
+```
+
+### Bagged
+
+```{r}
+# Set the number of bagging iterations
+num_iterations <- 10
+
+# Initialize a list to store the predictions from each bagging iteration
+bagging_predictions <- vector("list", num_iterations)
+
+# Perform bagging on the training set
+for (i in 1:num_iterations) {
+  # Create a bootstrap sample of the training data
+  bootstrap_sample <- train_data[sample(nrow(train_data), replace = TRUE), ]
+  
+  # Train a random forest model on the bootstrap sample
+  rf_model <- randomForest(rf_formula, data = bootstrap_sample, importance = TRUE, ntree = 500, mtry = 3)
+  
+  # Make predictions on the test set
+  new_wells_pred <- predict(rf_model, newdata = test_data)
+  
+  # Store the predictions in the list
+  bagging_predictions[[i]] <- new_wells_pred
+}
+
+# Combine the predictions from all bagging iterations
+bagging_new_wells_pred <- rowMeans(do.call(cbind, bagging_predictions))
+
+# Add the bagging predictions to the test_data data frame
+test_data$new_wells_pred_bagging <- bagging_new_wells_pred
+
+# Calculate RMSE on the test set
+rmse_bagging <- sqrt(mean((test_data$n_new_wells - test_data$new_wells_pred_bagging)^2, na.rm = TRUE))
+print(paste("RMSE of Bagged Random Forest on test set:", rmse_bagging))
+```
+
+
+## Tuned RF
+```{r}
+# Set up the parameter grid for random search
+param_grid <- expand.grid(
+  mtry = c(2, 3, 4),
+  splitrule = c("variance", "extratrees"),
+  min.node.size = sample(1:10, 5, replace = TRUE)
+)
+
+# Create the random search control
+ctrl <- trainControl(
+  method = "repeatedcv",
+  number = 5,
+  repeats = 3,
+  search = "random"
+)
+
+# Train the random forest model with random search
+set.seed(123)
+rf_model_tuned <- train(
+  rf_formula,
+  data = train_data,
+  method = "ranger",
+  trControl = ctrl,
+  tuneGrid = param_grid,
+  importance = "permutation"
+)
+
+# Print the best hyperparameters and model performance
+print(rf_model_tuned$bestTune)
+print(rf_model_tuned$results)
+
+# Make predictions on the test set using the tuned model
+test_data$new_wells_pred_rf_tuned <- predict(rf_model_tuned, newdata = test_data)
+
+# Calculate RMSE on the test set
+rmse_rf_tuned <- sqrt(mean((test_data$n_new_wells - test_data$new_wells_pred_rf_tuned)^2, na.rm = TRUE))
+print(paste("RMSE of Random Forest (Tuned) on test set:", rmse_rf_tuned))
+```
+
+
+# Model Comparison
+
+```{r, warning=FALSE, message=F}
+# Reading in Poisson predictions
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+new_wells_pred_revised <- read_csv("data/intermediate-zenodo/new_wells_pred_revised.csv") %>% 
+  rename(new_wells_poisson = new_wells_pred)
+
+# Convert doc_field_code to character in new_wells_pred_revised
+entry_df$doc_field_code <- as.numeric(new_wells_pred_revised$doc_field_code)
+
+# Join the data frames
+new_wells_pred_revised <- new_wells_pred_revised %>%
+  left_join(entry_df, by = c("doc_field_code", "year")) 
+
+rmse_poiss <- sqrt(mean((entry_df$new_wells - entry_df$new_wells_poisson)^2, na.rm = TRUE))
+print(paste("RMSE of Poisson", rmse_poiss))
+```
+
+
+```{r}
+# Create a data frame with the RF predicted and actual new wells by year
+wells_by_year <- new_wells_pred_revised %>%
+  group_by(year) %>%
+  summarise(new_wells_pred_rf = sum(new_wells_pred_rf),
+            new_wells_actual = sum(n_new_wells),
+            new_wells_poisson = sum(new_wells_poisson))
+
+# # Rename the new_wells_actual column in wells_by_year_revised
+# wells_by_year_revised <- wells_by_year_revised %>%
+#   rename(original_new_wells_actual = new_wells_actual)
+# 
+# # Join Poisson results 
+# wells_by_year <- wells_by_year %>%
+#   left_join(wells_by_year_revised, by = "year")
+
+# # Join Bagged RF results
+# wells_by_year <- wells_by_year %>%
+#   left_join(entry_df %>%
+#               group_by(year) %>%
+#               summarise(new_wells_pred_bagging = sum(new_wells_pred_bagging)) %>%
+#               ungroup(),
+#             by = "year")
+
+# # Reorder the columns to move new_wells_actual to the second position
+# wells_by_year <- wells_by_year %>%
+#   dplyr::select(year, new_wells_actual, new_wells_pred_rf, new_wells_poisson, everything())
+
+# Calculate the difference between RF predicted and actual values
+wells_by_year$difference_rf <- wells_by_year$new_wells_pred_rf - wells_by_year$new_wells_actual
+
+# Calculate the difference between predicted and Poisson values
+wells_by_year$difference_pois <- wells_by_year$new_wells_poisson - wells_by_year$new_wells_actual
+
+# Calculate summary statistics
+compare_new_well_results_summary <- wells_by_year %>%
+  summarise(
+    mae_rf = mean(abs(difference_rf)),
+    mse_rf = mean(difference_rf^2),
+    rmse_rf = sqrt(mean(difference_rf^2)),
+    mae_poiss = mean(abs(difference_pois)),
+    mse_poiss = mean(difference_pois^2),
+    rmse_poiss = sqrt(mean(difference_pois^2))
+  )
+
+# # Print the summary statistics
+print(compare_new_well_results_summary)
+```
+
+## Model Comparison Plot
+
+```{r}
+# Plot the predicted and actual new wells by year
+pred_actual_new_wells_yoy <- ggplot(wells_by_year, aes(x = year)) +
+  geom_line(aes(y = new_wells_pred_rf, color = "Random Forest"), size = 0.8, linetype = "solid") +
+  geom_point(aes(y = new_wells_pred_rf, color = "Random Forest"), size = 2) +
+  geom_line(aes(y = new_wells_actual, color = "Actual"), size = 0.8, linetype = "dashed") +
+  geom_point(aes(y = new_wells_actual, color = "Actual"), size = 2) +
+  geom_line(aes(y = new_wells_poisson, color = "Poisson"), size = 0.8, linetype = "longdash") +
+  geom_point(aes(y = new_wells_poisson, color = "Poisson"), size = 2) +
+  labs(
+    title = "Predicted vs Actual Number of New Wells by Year",
+    x = "Year",
+    y = "Number of New Wells",
+    color = "Legend"
+  ) +
+  scale_color_manual(
+    values = c("black", "orange", "blue"),
+    labels = c("Actual", "Poisson", "Random Forest"),
+    name = "Legend"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.position = "bottom",
+    legend.text = element_text(size = 12)
+  ) +
+  theme_bw()
+
+pred_actual_new_wells_yoy
+
+ggsave("outputs/pred_actual_new_wells_yoy.png", pred_actual_new_wells_yoy, width = 10, height = 6, dpi = 300)
+```
+
+# RF Separating Top 10 Fields
+```{r}
+# Separate top 10 fields from the rest
+top_10_fields <- entry_df %>%
+  group_by(doc_field_code) %>%
+  summarise(total_prod = sum(doc_prod)) %>%
+  arrange(desc(total_prod)) %>%
+  dplyr::slice(1:10) %>%
+  pull(doc_field_code)
+
+top_10_data <- entry_df %>%
+  filter(doc_field_code %in% top_10_fields)
+
+other_data <- entry_df %>%
+  filter(!doc_field_code %in% top_10_fields)
+
+# Create separate formulas for top 10 fields and other fields
+top_10_formula <- as.formula(n_new_wells ~ brent + capex_imputed + opex_imputed + depl)
+other_formula <- as.formula(n_new_wells ~ brent + capex_imputed + opex_imputed + depl)
+
+# Train separate random forest models
+top_10_model <- randomForest(top_10_formula, data = top_10_data, importance = TRUE, ntree = 500, mtry = 3)
+other_model <- randomForest(other_formula, data = other_data, importance = TRUE, ntree = 500, mtry = 3)
+
+# Make predictions using the trained models
+top_10_pred <- predict(top_10_model, newdata = top_10_data)
+other_pred <- predict(other_model, newdata = other_data)
+
+# Combine predictions
+# Make predictions using the trained models
+entry_df <- entry_df %>%
+  mutate(new_wells_pred_top10 = ifelse(doc_field_code %in% top_10_fields,
+                                       predict(top_10_model, newdata = entry_df %>% filter(doc_field_code %in% top_10_fields)),
+                                       0))
+
+entry_df <- entry_df %>%
+  mutate(new_wells_pred_other = ifelse(!doc_field_code %in% top_10_fields,
+                                       predict(other_model, newdata = entry_df %>% filter(!doc_field_code %in% top_10_fields)),
+                                       0))
+```
+
+
+# Graphing Function
+```{r}
+# Function to plot wells by field
+plot_field_wells <- function(field_data) {
+  field_name <- unique(field_data$doc_fieldname)
+  
+  ggplot(field_data, aes(x = year)) +
+    geom_line(aes(y = new_wells_pred_top10), color = "blue", linetype = "solid") +
+    geom_point(aes(y = new_wells_pred_top10), color = "blue") +
+    geom_line(aes(y = n_new_wells), color = "red", linetype = "dashed") +
+    geom_point(aes(y = n_new_wells), color = "red") +
+    labs(title = paste("Actual vs Predicted New Wells for", field_name),
+         x = "Year", y = "Number of New Wells") +
+    scale_color_manual(values = c("blue", "red"),
+                       labels = c("Predicted", "Actual"),
+                       name = "") +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, size = 16),
+          axis.title = element_text(size = 14),
+          axis.text = element_text(size = 12),
+          legend.position = "bottom",
+          legend.text = element_text(size = 12))
+}
+```
+
+# Graphing Top Fields
+
+```{r}
+# Get the names of the top 10 fields
+top_10_fields <- entry_df %>%
+  group_by(doc_field_code) %>%
+  summarise(total_prod = sum(doc_prod)) %>%
+  arrange(desc(total_prod)) %>%
+  dplyr::slice(1:10) %>%
+  pull(doc_field_code)
+
+top_10_field_names <- entry_df %>%
+  filter(doc_field_code %in% top_10_fields) %>%
+  select(doc_field_code, doc_fieldname) %>%
+  distinct() %>%
+  pull(doc_fieldname)
+
+# Create a list of data frames for each field
+field_data_list <- entry_df %>%
+  group_by(doc_fieldname) %>%
+  group_split()
+
+# Plot for top 10 fields
+for (field_name in top_10_field_names) {
+  field_data <- entry_df %>%
+    filter(trimws(doc_fieldname) == field_name)
+  
+  if (nrow(field_data) > 0) {
+    print(plot_field_wells(field_data))
+  } else {
+    message("No data found for field: ", field_name)
+  }
+}
+```
+
+# Individual Non-Top 10 Plots
+
+```{r}
+# # Plot for all other fields
+# other_fields_data <- entry_df %>%
+#   filter(!doc_field_code %in% top_10_fields) %>%
+#   group_by(doc_fieldname) %>%
+#   group_split()
+# 
+# if (length(other_fields_data) > 0) {
+#   for (field_data in other_fields_data) {
+#     if (nrow(field_data) > 0) {
+#       field_name <- unique(field_data$doc_fieldname)
+#       print(plot_field_wells(field_data))
+#     }
+#   }
+# } else {
+#   message("No data found for other fields")
+# }
+```
+

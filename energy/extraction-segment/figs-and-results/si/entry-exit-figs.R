@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## March 8, 2022
 ## well entry and exit figures
+## Updated 4/14/24 - MP
 
 library(data.table)
 library(tidyverse)
@@ -29,7 +30,7 @@ prod_file           <- 'well_prod_m_processed.csv'
 #          doc_field_code = str_sub(doc_field_code, start= -3)) 
 
 ## final model, nominal
-pred_wells_fm <- read_csv(paste0(data_path, "new_wells_pred_revised.csv")) %>%
+pred_wells_fm <- read_csv(paste0("data/intermediate-zenodo/new_wells_pred_revised.csv")) %>%
   mutate(doc_field_code = paste0("00", doc_field_code),
          doc_field_code = as.character(str_sub(doc_field_code, start= -3))) 
 
@@ -51,7 +52,7 @@ pred_wells_fm_real <- read_csv(paste0(data_path, "new_wells_pred_revised_real.cs
 
 
 # load historic production
-well_prod_org <- fread(paste0(main_path, "/data/stocks-flows/processed/", prod_file), colClasses = c('api_ten_digit' = 'character',
+well_prod_org <- fread(paste0("data/processed/well_prod_m_processed.csv"), colClasses = c('api_ten_digit' = 'character',
                                                                                                  'doc_field_code' = 'character'))
 
 well_prod <- well_prod_org[year == 2019]

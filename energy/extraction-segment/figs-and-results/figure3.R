@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## December 6, 2021
 ## Academic paper figure 3
+## Updated 4/14/24 - MP
 
 ## libraries
 library(data.table)
@@ -39,8 +40,8 @@ if(zenodo_repo) {
   ## paths
   main_path <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
   fig_path <- 'outputs/academic-out/extraction/figures/nature-energy-revision/final/'
-  save_path <- paste0(fig_path, "figs/")
-  source_data_path <- paste0(main_path, 'nature-energy/source-data/')
+  # save_path <- paste0(fig_path, "figs/")
+  # source_data_path <- paste0(main_path, 'nature-energy/source-data/')
   
 }
 
@@ -58,9 +59,9 @@ if(zenodo_repo) {
   npv_dt <- fread(paste0(main_path, npv_file))
   dac_bau_dt <- fread(paste0(main_path, dac_bau_file))
 } else {
-  npv_dt <- fread(paste0(main_path, fig_path, npv_file))
+  npv_dt <- fread("data/outputs/npv_x_metric_all_oil.csv")
   # dac_dt <- fread(paste0(main_path, fig_path, dac_file))
-  dac_bau_dt <- fread(paste0(main_path, fig_path, dac_bau_file))
+  dac_bau_dt <- fread("data/outputs/dac_bau_health_labor_all_oil.csv")
   # dac_pop_dt <- fread(paste0(main_path, fig_path, dac_pop_file))
   # carbon_px <- fread(paste0("/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/project-materials/scenario-inputs/", carbon_px_file))
   
@@ -86,7 +87,7 @@ npv_dt[, measure_unit := fifelse(unit == "value_billion", "2019 USD billion", "2
 
 npv_dt <- npv_dt[target != 'no_target']
 
-npv_dt$target <- factor(npv_dt$target, levels = c('setback_1000ft', 'setback_2500ft', 'setback_5280ft',
+npv_dt$target <- factor(npv_dt$target, levels = c('setback_1000ft', 'setback_2500ft', 'setback_3200ft', 'setback_5280ft',
                                                         '90perc_reduction'))
 
 
@@ -131,6 +132,10 @@ npv_dt$policy_intervention <- factor(npv_dt$policy_intervention, levels = c("car
 #                                                             "NPV per avoided GHG MtCO2e\n(2020 USD million / MtCO2e)",
 #                                                             "DAC share"))
 
+# Added for testing - MP
+setback_npv <- npv_dt %>% 
+  filter(policy_intervention == "setback (all wells)")
+
 ## create source data
 sd_fig3 <- npv_dt %>%
   filter(target != 'BAU',
@@ -141,7 +146,7 @@ sd_fig3 <- npv_dt %>%
          ghg_2045_perc_reduction, target_label, title, unit, value) %>%
   mutate(unit = ifelse(unit == "value_billion", "billion_usd_2019", "million_usd_2019_per_ghg"))
 
-fwrite(sd_fig3, paste0(source_data_path, "fig3/fig3a-f.csv"))
+fwrite(sd_fig3, paste0("data/outputs/fig3a-f.csv"))
 
 
 # fig
@@ -168,20 +173,22 @@ fig_benefit_x_metric <- ggplot(npv_dt %>% filter(target != 'BAU',
 
 ## save figure 3
 ggsave(fig_benefit_x_metric,
-       filename = file.path(main_path, save_path, 'figure3-sb-all.png'),
+       filename = file.path('outputs/figure3-sb-all.png'),
        width = 180,
        height = 150,
        units = "mm",)
 
-ggsave(fig_benefit_x_metric,
-       filename = file.path(main_path, save_path, 'figure3-sb-all.pdf'),
-       width = 180,
-       height = 150,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig_benefit_x_metric,
+#        filename = file.path('outputs/figure3-sb-all.pdf'),
+#        width = 180,
+#        height = 150,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure3-sb-all.pdf'),
-            outfile = paste0(main_path, save_path, 'figure3-sb-all.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure3-sb-all.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure3-sb-all.pdf'))
 
 
 ## sb only applies to new wells:
@@ -208,20 +215,22 @@ fig_benefit_x_metric_sb <- ggplot(npv_dt %>% filter(target != 'BAU',
 
 ## save figure 3
 ggsave(fig_benefit_x_metric_sb,
-       filename = file.path(main_path, save_path, 'figure3-sb-new.png'),
+       filename = file.path('outputs/figure3-sb-new.png'),
        width = 180,
        height = 150,
        units = "mm",)
 
-ggsave(fig_benefit_x_metric_sb,
-       filename = file.path(main_path, save_path, 'figure3-sb-new.pdf'),
-       width = 180,
-       height = 150,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig_benefit_x_metric_sb,
+#        filename = file.path(main_path, save_path, 'figure3-sb-new.pdf'),
+#        width = 180,
+#        height = 150,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure3-sb-new.pdf'),
-            outfile = paste0(main_path, save_path, 'figure3-sb-new.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure3-sb-new.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure3-sb-new.pdf'))
 
 
 ## revised version, make them separately
@@ -450,15 +459,17 @@ ggsave(fig3_plot_grid2,
        height = 150,
        units = "mm",)
 
-ggsave(fig3_plot_grid2,
-       filename = file.path(main_path, save_path, 'figure3-ref-case.pdf'),
-       width = 180,
-       height = 150,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig3_plot_grid2,
+#        filename = file.path(main_path, save_path, 'figure3-ref-case.pdf'),
+#        width = 180,
+#        height = 150,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure3-ref-case.pdf'),
-            outfile = paste0(main_path, save_path, 'figure3-ref-case.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure3-ref-case.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure3-ref-case.pdf'))
 
 
 
@@ -683,20 +694,22 @@ fig3_plot_grid2_l <- plot_grid(
 
 ## save figure 3
 ggsave(fig3_plot_grid2_l,
-       filename = file.path(main_path, save_path, 'figure3-low.png'),
+       filename = file.path('outputs/figure3-low.png'),
        width = 180,
        height = 150,
        units = "mm")
 
-ggsave(fig3_plot_grid2_l,
-       filename = file.path(main_path, save_path, 'figure3-low.pdf'),
-       width = 180,
-       height = 150,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig3_plot_grid2_l,
+#        filename = file.path(main_path, save_path, 'figure3-low.pdf'),
+#        width = 180,
+#        height = 150,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure3-low.pdf'),
-            outfile = paste0(main_path, save_path, 'figure3-low.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure3-low.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure3-low.pdf'))
 
 
 ## high 
@@ -873,20 +886,22 @@ fig3_plot_grid2_h <- plot_grid(
 
 ## save figure 3
 ggsave(fig3_plot_grid2_h,
-       filename = file.path(main_path, save_path, 'figure3-high.png'),
+       filename = file.path('outputs/figure3-high.png'),
        width = 180,
        height = 150,
        units = "mm")
 
-ggsave(fig3_plot_grid2_h,
-       filename = file.path(main_path, save_path, 'figure3-high.pdf'),
-       width = 180,
-       height = 150,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig3_plot_grid2_h,
+#        filename = file.path(main_path, save_path, 'figure3-high.pdf'),
+#        width = 180,
+#        height = 150,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure3-high.pdf'),
-            outfile = paste0(main_path, save_path, 'figure3-high.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure3-high.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure3-high.pdf'))
 
 
 
@@ -981,7 +996,7 @@ sd_fig5 <- dac_bau_dt %>%
          DAC_value = value) %>%
   arrange(metric)
 
-fwrite(sd_fig5, paste0(source_data_path, "fig5/fig5ab.csv"))
+fwrite(sd_fig5, paste0("data/outputs/fig5ab.csv"))
 
 
 ## version 1: relative to BAU
@@ -1112,15 +1127,17 @@ ggsave(fig4_plot_grid2,
        height = 60,
        units = "mm")
 
-ggsave(fig4_plot_grid2,
-       filename = file.path(main_path, save_path, 'figure5-refcase-relBAU.pdf'),
-       width = 95,
-       height = 60,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig4_plot_grid2,
+#        filename = file.path(main_path, save_path, 'figure5-refcase-relBAU.pdf'),
+#        width = 95,
+#        height = 60,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure5-refcase-relBAU.pdf'),
-            outfile = paste0(main_path, save_path, 'figure5-refcase-relBAU.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure5-refcase-relBAU.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure5-refcase-relBAU.pdf'))
 
 ## sb only applies to new wells
 ## ------------------------------------------------
@@ -1231,15 +1248,17 @@ ggsave(fig4_plot_grid2_sb,
        height = 130,
        units = "mm")
 
-ggsave(fig4_plot_grid2_sb,
-       filename = file.path(main_path, save_path, 'figure5-comparison.pdf'),
-       width = 130,
-       height = 130,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig4_plot_grid2_sb,
+#        filename = file.path(main_path, save_path, 'figure5-comparison.pdf'),
+#        width = 130,
+#        height = 130,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure5-comparison.pdf'),
-            outfile = paste0(main_path, save_path, 'figure5-comparison.pdf'))
+# Removing for now
+# embed_fonts(paste0(main_path, save_path, 'figure5-comparison.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure5-comparison.pdf'))
 
 
 
@@ -1357,15 +1376,17 @@ ggsave(fig4_plot_grid2_h,
        height = 70,
        units = "mm")
 
-ggsave(fig4_plot_grid2_h,
-       filename = file.path(main_path, save_path, 'figure4-high-relBAU.pdf'),
-       width = 100,
-       height = 70,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig4_plot_grid2_h,
+#        filename = file.path(main_path, save_path, 'figure4-high-relBAU.pdf'),
+#        width = 100,
+#        height = 70,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure4-high-relBAU.pdf'),
-            outfile = paste0(main_path, save_path, 'figure4-high-relBAU.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure4-high-relBAU.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure4-high-relBAU.pdf'))
 
 ## low
 
@@ -1478,15 +1499,17 @@ ggsave(fig4_plot_grid2_l,
        height = 70,
        units = "mm")
 
-ggsave(fig4_plot_grid2_l,
-       filename = file.path(main_path, save_path, 'figure4-low-relBAU.pdf'),
-       width = 100,
-       height = 70,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig4_plot_grid2_l,
+#        filename = file.path(main_path, save_path, 'figure4-low-relBAU.pdf'),
+#        width = 100,
+#        height = 70,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure4-low-relBAU.pdf'),
-            outfile = paste0(main_path, save_path, 'figure4-low-relBAU.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure4-low-relBAU.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure4-low-relBAU.pdf'))
 
 
 
@@ -1714,7 +1737,7 @@ fig_carbon_sb <- ggplot(csb_npv_dt %>%
   facet_wrap(~ measure, ncol = 2, scales = "free") +
   scale_color_manual(values = c("Carbon tax + 0ft setback" = "#95F9C3",
                                 "Carbon tax + 1000ft setback (new wells)" = "#73C9AC",
-                                "Carbon tax + 2500ft setback (new wells)" = "#3B7C87", 
+                                "Carbon tax + 2500ft setback (new wells)" = "#3B7C87",
                                 "Carbon tax + 5280ft setback (new wells)" = "#0B3866")) +
   # scale_y_continuous(expand = c(0, 0), limits = c(-15, 10)) +
   # scale_x_continuous(limits = c(0, NA)) +

@@ -1,9 +1,21 @@
+## Updated 4/14/24 - MP
+
 library(dplyr)
 library(data.table)
+
+scen_list = fread(file.path('data/processed/scenario_id_list_targets.csv'), header = T)
+
+## filter for scenarios to run
+selected_scens <- scen_list[subset_scens == 1]
 
 run_extraction_model <- function(input_scenarios) {
   
   scen_sel <- input_scenarios
+  
+  # Added for testing - MP
+  scen_sel = selected_scens
+  
+  z = 5
   
   ## start scenario 
   ## --------------------------------------------------  
@@ -254,7 +266,7 @@ run_extraction_model <- function(input_scenarios) {
     prod_existing_vintage_z[, doc_fieldname := NULL]
     
     for (i in seq_along(pred_years)) {
-      
+      i = 1
       t = pred_years[i]
       
       # print(t)
@@ -488,7 +500,7 @@ run_extraction_model <- function(input_scenarios) {
         stop("The following columns are missing in dtt_long: ", paste(missing_cols, collapse = ", "))
       }
       
-      ## wide format
+      ## wide format -- this is where the issue is, test different ways to write and what its doing explicitly
       dt_info_rank = dcast(dtt_long, doc_field_code + doc_fieldname + m_capex_imputed + m_opex_imputed_adj + oil_price_scenario + innovation_scenario +  carbon_price_scenario + ccs_scenario +  setback_scenario + setback_existing + prod_quota_scenario + excise_tax_scenario ~ cost_type, 
                            value.var = c('cost', 'cost_rank'))
       ## rename

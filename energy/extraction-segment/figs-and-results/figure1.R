@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## December 6, 2021
 ## fig 1: map of CA
+## Updated 4/14/24 - MP
 
 
 library(tidyverse)
@@ -81,13 +82,13 @@ california <- states %>% filter(ID == "california") %>%
 ## ------------------
 
 ## fields include in model
-model_fields <- st_read(paste0(main_path, "outputs/academic-out/extraction/", extract_fields)) %>% 
+model_fields <- st_read('data/processed/extraction_fields.shp') %>% 
   st_transform(ca_crs) %>%
   select(doc_field_code = dc_fld_)
 
 
 ## well prod
-well_prod <- fread(paste0(main_path, "/data/stocks-flows/processed/", prod_file), colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                                                  'doc_field_code' = 'character'))
 
 field_prod <- well_prod[year == 2019, .(prod_2019 = sum(OilorCondensateProduced, na.rm = T)), by = .(doc_field_code)]
@@ -128,7 +129,7 @@ field_df[, prod_2019 := fifelse(is.na(prod_2019), 0, prod_2019)]
 
 
 ## fields
-field_boundaries <- st_read(file.path(main_path, "data/GIS/raw/field-boundaries/DOGGR_Admin_Boundaries_Master.shp")) %>% 
+field_boundaries <- st_read("data/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp") %>% 
   st_transform(ca_crs) %>%
   select(doc_field_code = FIELD_CODE)
 
@@ -151,15 +152,15 @@ sd_1a <- field_df_long %>%
   st_drop_geometry() %>%
   mutate(doc_field_code = paste0("x", doc_field_code))
 
-fwrite(sd_1a, paste0(source_data_path, "fig1a.csv"))
+fwrite(sd_1a, paste0("data/outputs/fig1a.csv"))
 
 ## counties boundaries
-county_boundaries <- st_read(file.path(main_path, "data/GIS/raw/CA_Counties/CA_Counties_TIGER2016.shp")) %>% 
+county_boundaries <- st_read(file.path("data/inputs/gis/CA_Counties/CA_Counties_TIGER2016.shp")) %>% 
   st_transform(ca_crs) %>%
   dplyr::select(adj_county_name = NAME)
 
 ## counties, no islands
-CA_counties <- st_read(paste0(main_path, "data/GIS/raw/CA_counties_noislands/CA_Counties_TIGER2016_noislands.shp")) %>%
+CA_counties <- st_read("data/inputs/gis/CA_counties_noislands/CA_Counties_TIGER2016_noislands.shp") %>%
   st_transform(ca_crs)
 
 ## remove islands
@@ -172,13 +173,13 @@ county_19 <- merge(as_tibble(county_prod), county_boundaries,
                    all.x = T)
 
 ## census tracts
-census_tracts <- st_read(file.path(main_path, "data/GIS/raw/census-tract/tl_2019_06_tract.shp")) %>% 
+census_tracts <- st_read(file.path("data/inputs/gis/census-tract/tl_2019_06_tract.shp")) %>% 
   st_transform(ca_crs) %>%
   rename(census_tract = GEOID) %>%
   select(census_tract, ALAND)
 
 ## DAC and CES
-dac_ces <- read_xlsx(paste0(main_path, 'data/health/raw/ces3results.xlsx'))
+dac_ces <- read_xlsx('data/inputs/health/ces3results.xlsx')
 
 ## dac
 dac_ces <- dac_ces %>%
@@ -356,47 +357,50 @@ map_fig_a <- ggdraw(fig1_map, clip = "on") +
 #   )
 
 ggsave(map_fig_a,
-       filename = file.path(main_path, fig_path, 'figure1a.png'),
+       filename = file.path('outputs/figure1a.png'),
        width = 90,
        height = 110,
        dpi = 300,
        units = "mm")
 
-ggsave(map_fig_a,
-       filename = file.path(main_path, fig_path, 'figure1a.pdf'),
-       width = 90,
-       height = 110,
-       units = "mm",
-       dpi = 300,
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(map_fig_a,
+#        filename = file.path('outputs/figure1a.pdf'),
+#        width = 90,
+#        height = 110,
+#        units = "mm",
+#        dpi = 300,
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, fig_path, 'figure1a.pdf'),
-            outfile = paste0(main_path, fig_path, 'figure1a.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, fig_path, 'figure1a.pdf'),
+#             outfile = paste0(main_path, fig_path, 'figure1a.pdf'))
 
 
+# Removing for now - MP
 ## save legends
-ggsave(dac_legend,
-       filename = file.path(main_path, fig_path, 'figure1a_dacl.pdf'),
-       # width = 90,
-       # height = 110,
-       units = "mm",
-       dpi = 300,
-       device = 'pdf')
+# ggsave(dac_legend,
+#        filename = file.path('outputs/figure1a_dacl.pdf'),
+#        # width = 90,
+#        # height = 110,
+#        units = "mm",
+#        dpi = 300,
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, fig_path, 'figure1a_dacl.pdf'),
-            outfile = paste0(main_path, fig_path, 'figure1a_dacl.pdf'))
+# embed_fonts(paste0(main_path, fig_path, 'figure1a_dacl.pdf'),
+#             outfile = paste0(main_path, fig_path, 'figure1a_dacl.pdf'))
 
-## save legends
-ggsave(oil_prod_legend,
-       filename = file.path(main_path, fig_path, 'figure1a_oill.pdf'),
-       # width = 90,
-       # height = 110,
-       units = "mm",
-       dpi = 300,
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, fig_path, 'figure1a_oill.pdf'),
-            outfile = paste0(main_path, fig_path, 'figure1a_oill.pdf'))
+# ## save legends
+# ggsave(oil_prod_legend,
+#        filename = file.path(main_path, fig_path, 'figure1a_oill.pdf'),
+#        # width = 90,
+#        # height = 110,
+#        units = "mm",
+#        dpi = 300,
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'figure1a_oill.pdf'),
+#             outfile = paste0(main_path, fig_path, 'figure1a_oill.pdf'))
 
 
 
@@ -405,7 +409,7 @@ embed_fonts(paste0(main_path, fig_path, 'figure1a_oill.pdf'),
 ## --------------------------------------------------
 
 ## final model
-pred_wells_fm <- read_csv(paste0(data_path, "new_wells_pred_revised.csv")) %>%
+pred_wells_fm <- read_csv("data/intermediate-zenodo/new_wells_pred_revised.csv") %>%
   mutate(doc_field_code = paste0("00", doc_field_code),
          doc_field_code = as.character(str_sub(doc_field_code, start= -3))) 
 
@@ -454,7 +458,7 @@ sd_1b <- state_df %>%
   arrange(label_name) %>%
   rename(category = label_name)
 
-fwrite(sd_1b, paste0(source_data_path, "fig1b.csv"))
+fwrite(sd_1b, paste0("data/outputs/fig1b.csv"))
 
 
 ## state no hold out
@@ -491,22 +495,23 @@ state_fig_fs <-
 
 ## save
 ggsave(state_fig_fs,
-       filename = file.path(main_path, fig_path, 'figure1b.png'),
+       filename = file.path('outputs/figure1b.png'),
        width = 55,
        height = 55,
        dpi = 300,
        units = "mm")
 
-ggsave(state_fig_fs,
-       filename = file.path(main_path, fig_path, 'figure1b.pdf'),
-       width = 55,
-       height = 55,
-       units = "mm",
-       dpi = 300,
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(state_fig_fs,
+#        filename = file.path(main_path, fig_path, 'figure1b.pdf'),
+#        width = 55,
+#        height = 55,
+#        units = "mm",
+#        dpi = 300,
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, fig_path, 'figure1b.pdf'),
-            outfile = paste0(main_path, fig_path, 'figure1b.pdf'))
+# embed_fonts(paste0(main_path, fig_path, 'figure1b.pdf'),
+#             outfile = paste0(main_path, fig_path, 'figure1b.pdf'))
 
 
 
@@ -534,29 +539,30 @@ ylim_hl <- c(disp_hl_df$Y[1], disp_hl_df$Y[2])
 
 
 
-
-ct_out <- readRDS(paste0(main_path, ct_out_path, ct_file))
-
-ct_2019 <- ct_out[year == 2019]
-ct_2019[, pop_x_pm25 := total_pm25 * pop]
-ct_2019 <- ct_2019[, .(scen_id, census_tract, disadvantaged, year, pop, total_pm25, pop_x_pm25)]
-
-ct_2019 <- census_tracts %>%
-  left_join(ct_2019) %>%
-  filter(census_tract %in% ct_out$census_tract)
+# Dont have this file 
+# ct_out <- readRDS(paste0(main_path, ct_out_path, ct_file))
+# 
+# ct_2019 <- ct_out[year == 2019]
+# ct_2019[, pop_x_pm25 := total_pm25 * pop]
+# ct_2019 <- ct_2019[, .(scen_id, census_tract, disadvantaged, year, pop, total_pm25, pop_x_pm25)]
+# 
+# ct_2019 <- census_tracts %>%
+#   left_join(ct_2019) %>%
+#   filter(census_tract %in% ct_out$census_tract)
 
 ## save version for source data
 ## ---------------------------------------
 
-sd_1c <- ct_2019 %>% 
-  st_drop_geometry() %>%
-  select(-ALAND, -scen_id, -pop, - total_pm25, -year, -disadvantaged) %>%
-  mutate(census_tract = paste0("x", census_tract)) %>%
-  rename(population_weighted_pm25 = pop_x_pm25) %>%
-  mutate(description = "population-weighted PM2.5 concentration",
-        unit = "micrograms per meters cubed")
-
-fwrite(sd_1c, paste0(source_data_path, "fig1/fig1c.csv"))
+# Dont have this info - MP
+# sd_1c <- ct_2019 %>% 
+#   st_drop_geometry() %>%
+#   select(-ALAND, -scen_id, -pop, - total_pm25, -year, -disadvantaged) %>%
+#   mutate(census_tract = paste0("x", census_tract)) %>%
+#   rename(population_weighted_pm25 = pop_x_pm25) %>%
+#   mutate(description = "population-weighted PM2.5 concentration",
+#         unit = "micrograms per meters cubed")
+# 
+# fwrite(sd_1c, paste0(source_data_path, "fig1/fig1c.csv"))
 
 
 ## health map
@@ -619,36 +625,37 @@ ct_health_map <- ggplot() +
 
 ## save
 ggsave(ct_health_map,
-       filename = file.path(main_path, fig_path, 'fig1d.png'),
+       filename = file.path('outputs/fig1d.png'),
        width = 55,
        height = 55,
        dpi = 300,
        units = "mm")
 
-ggsave(ct_health_map,
-       filename = file.path(main_path, fig_path, 'fig1d.pdf'),
-       width = 55,
-       height = 55,
-       units = "mm",
-       dpi = 300,
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, fig_path, 'fig1d.pdf'),
-            outfile = paste0(main_path, fig_path, 'fig1d.pdf'))
-
-## save legend
-legend_d <- get_legend(ct_health_map)
-
-ggsave(legend_d,
-       filename = file.path(main_path, fig_path, 'fig1d_legend.pdf'),
-       width = 55,
-       height = 55,
-       units = "mm",
-       dpi = 300,
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, fig_path, 'fig1d_legend.pdf'),
-            outfile = paste0(main_path, fig_path, 'fig1d_legend.pdf'))
+# Removing for now - MP
+# ggsave(ct_health_map,
+#        filename = file.path(main_path, fig_path, 'fig1d.pdf'),
+#        width = 55,
+#        height = 55,
+#        units = "mm",
+#        dpi = 300,
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'fig1d.pdf'),
+#             outfile = paste0(main_path, fig_path, 'fig1d.pdf'))
+# 
+# ## save legend
+# legend_d <- get_legend(ct_health_map)
+# 
+# ggsave(legend_d,
+#        filename = file.path(main_path, fig_path, 'fig1d_legend.pdf'),
+#        width = 55,
+#        height = 55,
+#        units = "mm",
+#        dpi = 300,
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'fig1d_legend.pdf'),
+#             outfile = paste0(main_path, fig_path, 'fig1d_legend.pdf'))
 
 
 ## labor
@@ -719,39 +726,41 @@ labor_map <- ggplot() +
 
 ## save
 ggsave(labor_map,
-       filename = file.path(main_path, fig_path, 'fig1e.png'),
+       filename = file.path('outputs/fig1e.png'),
        width = 44,
        height = 55,
        dpi = 300,
        units = "mm")
 
-ggsave(labor_map,
-       filename = file.path(main_path, fig_path, 'fig1e.pdf'),
-       width = 44,
-       height = 55,
-       units = "mm",
-       dpi = 300,
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, fig_path, 'fig1e.pdf'),
-            outfile = paste0(main_path, fig_path, 'fig1e.pdf'))
+# Removing for now - MP
+# ggsave(labor_map,
+#        filename = file.path(main_path, fig_path, 'fig1e.pdf'),
+#        width = 44,
+#        height = 55,
+#        units = "mm",
+#        dpi = 300,
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'fig1e.pdf'),
+#             outfile = paste0(main_path, fig_path, 'fig1e.pdf'))
 
 
 ## get legend
 
 legend_e <- get_legend(labor_map)
 
-## legend
-ggsave(legend_e,
-       filename = file.path(main_path, fig_path, 'fig1e_l.pdf'),
-       width = 44,
-       height = 55,
-       units = "mm",
-       dpi = 300,
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, fig_path, 'fig1e_l.pdf'),
-            outfile = paste0(main_path, fig_path, 'fig1e_l.pdf'))
+# Removing for now - MP
+# ## legend
+# ggsave(legend_e,
+#        filename = file.path(main_path, fig_path, 'fig1e_l.pdf'),
+#        width = 44,
+#        height = 55,
+#        units = "mm",
+#        dpi = 300,
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'fig1e_l.pdf'),
+#             outfile = paste0(main_path, fig_path, 'fig1e_l.pdf'))
 
 
 
@@ -805,11 +814,11 @@ embed_fonts(paste0(main_path, fig_path, 'fig1e_l.pdf'),
 ## -----------------------------------------------------------
 
 #load and process cross-walk between fields and clusters 
-extraction_field_clusters_10km <- read_csv(paste0(main_path,"data/health/source_receptor_matrix/extraction_fields_clusters_10km.csv",sep="")) %>%
+extraction_field_clusters_10km <- read_csv(paste0("data/intermediate-zenodo/intermediate/extraction-model/extraction_fields_clusters_10km.csv",sep="")) %>%
   select(OUTPUT_FID, INPUT_FID) %>%
   rename(id = OUTPUT_FID, input_fid = INPUT_FID)
 
-extraction_fields_xwalk <- foreign::read.dbf(paste0(main_path, "data/health/source_receptor_matrix/extraction_fields_xwalk_id.dbf", sep = "")) %>%
+extraction_fields_xwalk <- foreign::read.dbf(paste0("data/intermediate-zenodo/intermediate/extraction-model/extraction_fields_xwalk_id.dbf", sep = "")) %>%
   rename(input_fid = id, doc_field_code = dc_fld_)
 
 extraction_xwalk <- extraction_field_clusters_10km %>%
@@ -823,7 +832,7 @@ cluster_fields <- extraction_xwalk %>%
   filter(id == cluster_numb)
 
 #Census tracts
-CA_ct <- st_read(paste0(main_path, "data/GIS/raw/census-tract/tl_2019_06_tract.shp")) %>%
+CA_ct <- st_read("data/inputs/gis/census-tract/tl_2019_06_tract.shp") %>%
   st_transform(ca_crs)
 
 #Site vector
@@ -833,11 +842,12 @@ read_extraction <- function(buff_site){
   
   bsite <- buff_site
   
-  nh3<-read_csv(paste0(main_path, 'data/', inmapExFiles,"/nh3/srm_nh3_field",bsite,".csv",sep=""))%>%mutate(poll="nh3")
-  nox<-read_csv(paste0(main_path, 'data/', inmapExFiles,"/nox/srm_nox_field",bsite,".csv",sep=""))%>%mutate(poll="nox")
-  pm25<-read_csv(paste0(main_path, 'data/', inmapExFiles,"/pm25/srm_pm25_field",bsite,".csv",sep=""))%>%mutate(poll="pm25")
-  sox<-read_csv(paste0(main_path, 'data/', inmapExFiles,"/sox/srm_sox_field",bsite,".csv",sep=""))%>%mutate(poll="sox")
-  voc<-read_csv(paste0(main_path, 'data/', inmapExFiles,"/voc/srm_voc_field",bsite,".csv",sep=""))%>%mutate(poll="voc")
+  # Removing sep=""
+  nh3<-read_csv(paste0("data/processed/extraction/census-tract/nh3/srm_nh3_field",bsite,".csv"))%>%mutate(poll="nh3")
+  nox<-read_csv(paste0("data/processed/extraction/census-tract/nox/srm_nox_field",bsite,".csv"))%>%mutate(poll="nox")
+  pm25<-read_csv(paste0("data/processed/extraction/census-tract/pm25/srm_pm25_field",bsite,".csv"))%>%mutate(poll="pm25")
+  sox<-read_csv(paste0("data/processed/extraction/census-tract/sox/srm_sox_field",bsite,".csv"))%>%mutate(poll="sox")
+  voc<-read_csv(paste0("data/processed/extraction/census-tract/voc/srm_voc_field",bsite,".csv"))%>%mutate(poll="voc")
   
   all_polls<-rbind(nh3,nox,pm25,sox,voc)
   
@@ -926,7 +936,7 @@ ggplot() + geom_sf(data = county_crop) + geom_sf(data = test, color = "red")
   mutate(description = "PM2.5 concentration",
          unit = "micrograms per meters cubed")
 
-fwrite(sd_1d, paste0(source_data_path, "fig1/fig1d.csv"))
+fwrite(sd_1d, "data/outputs/fig1d.csv")
 
 
 ## counties
@@ -937,7 +947,7 @@ fwrite(sd_1d, paste0(source_data_path, "fig1/fig1d.csv"))
 # 
 # LA_contour_cropped <- st_crop(LAcontour, xmin = -119.4, xmax = 117.46, ymin = 32, ymax = 34.84)
 
-## extraction clusters
+## extraction clusters -- Dont have this file?
 extraction_clusters <- st_read(paste0(main_path, "outputs/academic-out/extraction/extraction_fields_clusters_10km.shp")) %>%
   st_transform(ca_crs)
 
@@ -1014,47 +1024,48 @@ figc_no_legend <- total_pm25 +
 
   
 ggsave(total_pm25,
-       filename = file.path(main_path, fig_path, 'figc/fig1c.png'),
+       filename = file.path('outputs/fig1c.png'),
        width = 50,
        height = 55,
        dpi = 300,
        units = "mm")
 
-ggsave(total_pm25,
-       filename = file.path(main_path, fig_path, 'figc/fig1c.pdf'),
-       width = 50,
-       height = 55,
-       dpi = 300,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(total_pm25,
+#        filename = file.path(main_path, fig_path, 'figc/fig1c.pdf'),
+#        width = 50,
+#        height = 55,
+#        dpi = 300,
+#        units = "mm",
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'figc/fig1c.pdf'),
+#             outfile = paste0(main_path, fig_path, 'figc/fig1c.pdf'))
+# 
+# ## no legend
+# ggsave(figc_no_legend,
+#        filename = file.path(main_path, fig_path, 'figc/fig1c_nl.pdf'),
+#        width = 50,
+#        height = 55,
+#        dpi = 300,
+#        units = "mm",
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'figc/fig1c_nl.pdf'),
+#             outfile = paste0(main_path, fig_path, 'figc/fig1c_nl.pdf'))
 
-embed_fonts(paste0(main_path, fig_path, 'figc/fig1c.pdf'),
-            outfile = paste0(main_path, fig_path, 'figc/fig1c.pdf'))
 
-## no legend
-ggsave(figc_no_legend,
-       filename = file.path(main_path, fig_path, 'figc/fig1c_nl.pdf'),
-       width = 50,
-       height = 55,
-       dpi = 300,
-       units = "mm",
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, fig_path, 'figc/fig1c_nl.pdf'),
-            outfile = paste0(main_path, fig_path, 'figc/fig1c_nl.pdf'))
-
-
-## legend
-ggsave(legend_c,
-       filename = file.path(main_path, fig_path, 'figc/fig1c_legend.pdf'),
-       # width = 50,
-       # height = 55,
-       dpi = 300,
-       units = "mm",
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, fig_path, 'figc/fig1c_legend.pdf'),
-            outfile = paste0(main_path, fig_path, 'figc/fig1c_legend.pdf'))
+# ## legend
+# ggsave(legend_c,
+#        filename = file.path(main_path, fig_path, 'figc/fig1c_legend.pdf'),
+#        # width = 50,
+#        # height = 55,
+#        dpi = 300,
+#        units = "mm",
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'figc/fig1c_legend.pdf'),
+#             outfile = paste0(main_path, fig_path, 'figc/fig1c_legend.pdf'))
 
 
 
@@ -1115,22 +1126,23 @@ total_pm25_v2 <- ggplot() +
 
 
 ggsave(total_pm25_v2,
-       filename = file.path(main_path, fig_path, 'fig1c_v2.png'),
+       filename = file.path('outputs/fig1c_v2.png'),
        width = 50,
        height = 55,
        dpi = 300,
        units = "mm")
 
-ggsave(total_pm25_v2,
-       filename = file.path(main_path, fig_path, 'fig1c_v2.pdf'),
-       width = 50,
-       height = 55,
-       dpi = 300,
-       units = "mm",
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, fig_path, 'fig1c_v2.pdf'),
-            outfile = paste0(main_path, fig_path, 'fig1c_v2.pdf'))
+# Removing for now - MP
+# ggsave(total_pm25_v2,
+#        filename = file.path(main_path, fig_path, 'fig1c_v2.pdf'),
+#        width = 50,
+#        height = 55,
+#        dpi = 300,
+#        units = "mm",
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'fig1c_v2.pdf'),
+#             outfile = paste0(main_path, fig_path, 'fig1c_v2.pdf'))
 
 
 
@@ -1157,7 +1169,7 @@ fig1be <- plot_grid(
 )
 
 ggsave(fig1be,
-       filename = file.path(main_path, fig_path, 'fig1_be.png'),
+       filename = file.path('outputs/fig1_be.png'),
        width = 100,
        height = 110,
        units = "mm")
@@ -1179,21 +1191,21 @@ fig1_all <- plot_grid(
 )
 
 ggsave(fig1_all,
-       filename = file.path(main_path, fig_path, 'fig1_all.png'),
+       filename = file.path('outputs/fig1_all.png'),
        width = 180,
        height = 110,
        units = "mm")
 
-
-ggsave(fig1_all,
-       filename = file.path(main_path, fig_path, 'fig1_all.pdf'),
-       width = 12,
-       height = 7.5,
-       units = "in",
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, fig_path, 'fig1_all.pdf'),
-            outfile = paste0(main_path, fig_path, 'fig1_all.pdf'))
+# Removing for now - MP
+# ggsave(fig1_all,
+#        filename = file.path(main_path, fig_path, 'fig1_all.pdf'),
+#        width = 12,
+#        height = 7.5,
+#        units = "in",
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, fig_path, 'fig1_all.pdf'),
+#             outfile = paste0(main_path, fig_path, 'fig1_all.pdf'))
 
 
 

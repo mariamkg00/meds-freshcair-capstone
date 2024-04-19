@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## December 6, 2021
 ## make outputs for figs
+## Updated 4/14/24 - MP
 
 ## libraries
 library(data.table)
@@ -21,8 +22,8 @@ if(zenodo_repo) {
 }
 
 ## date of results (defines the folder to pull from if using original save conventions)
-energy_result_date <- "2022-11-15"
-comp_result_date <- "2022-12-27"
+energy_result_date <- "2022-04-14"
+comp_result_date <- "2022-04-14"
 
 ## set paths
 if(zenodo_repo) {
@@ -89,7 +90,7 @@ if(zenodo_repo) {
 scc_df_filt <- scc_df[discount_rate == 'three_perc_avg', .(year, social_cost_co2)]
 
 ## Create population by year time series
-ct_population <- fread(paste0(main_path, benmap_path, "ct_inc_45.csv"), stringsAsFactors  = FALSE) %>%
+ct_population <- fread("data/processed/ct_inc_45.csv", stringsAsFactors  = FALSE) %>%
   mutate(ct_id = paste0(stringr::str_sub(gisjoin, 2, 3),
                         stringr::str_sub(gisjoin, 5, 7),
                         stringr::str_sub(gisjoin, 9, 14))) %>%
@@ -135,7 +136,7 @@ VSL_2019 <- VSL_2015 * cpi2019 / cpi2015 #(https://fred.stlouisfed.org/series/CP
 income_elasticity_mort <- 0.4
 
 ## for monetary mortality impact
-growth_rates <- read.csv(paste0(main_path, benmap_path, "growth_rates.csv"), stringsAsFactors = FALSE) %>%
+growth_rates <- read.csv("data/inputs/health/growth_rates.csv", stringsAsFactors = FALSE) %>%
   filter(year > 2018) %>%
   mutate(growth = ifelse(year == 2019, 0, growth_2030),
          cum_growth = cumprod(1 + growth)) %>%
@@ -159,7 +160,7 @@ ghg_2019 <- as.numeric(hist_ghg[, value][1])
 
 
 ## read inputs
-state_out <- fread(paste0(state_save_path, "subset_state_results.csv"))
+state_out <- fread("data/processed/extraction_2024-04-14/state-results/subset_state_results.csv")
 
 
 
@@ -300,7 +301,7 @@ state_levels <- merge(state_levels, ghg_2045,
                       all.x = T)
 
 
-fwrite(state_levels, paste0(save_info_path, 'state_levels_all_oil.csv'))
+fwrite(state_levels, paste0('data/outputs/state_levels_all_oil.csv'))
 
 
 ## -----------------------------------------------------------------------
@@ -469,7 +470,7 @@ npv_x_metric[, target_label := fifelse(policy_intervention == "BAU", target,
                                        fifelse(target == "90perc_reduction", "90%", target_label))]
 
 
-fwrite(npv_x_metric, paste0(save_info_path, 'npv_x_metric_all_oil.csv'))
+fwrite(npv_x_metric, paste0('data/outputs/npv_x_metric_all_oil.csv'))
 
 # ## -------------------------------------
 # ## cumulative difference BAU
@@ -492,7 +493,7 @@ fwrite(npv_x_metric, paste0(save_info_path, 'npv_x_metric_all_oil.csv'))
 ## -------------------------------------------------------------
 
 ## labor, county
-labor_out <- fread(paste0(county_save_path, county_out_file))
+labor_out <- fread('data/processed/extraction_2024-04-14/county-results/subset_county_results.csv')
 # labor_out <- fread(paste0(extraction_folder_path, 'county-results/subset_county_results.csv'))
 
 
@@ -557,7 +558,7 @@ labor_dac_bind[, category := "Employment"]
 ## Health DAC
 ##----------------------------------------------------
 
-health_out <- fread(paste0(ct_save_path, 'subset_census_tract_results.csv'))
+health_out <- fread("data/processed/extraction_2024-04-14/census-tract-results/subset_census_tract_results.csv")
 # health_out <- fread(paste0(extraction_folder_path, 'census-tract-results/subset_census_tract_results.csv'))
 
 
@@ -639,7 +640,7 @@ dac_df <- merge(dac_df, ghg_2045,
                       all.x = T)
 
 
-fwrite(dac_df, paste0(save_info_path, 'dac_health_labor_all_oil.csv'))
+fwrite(dac_df, paste0('data/outputs/dac_health_labor_all_oil.csv'))
 
 
 
@@ -780,7 +781,7 @@ dac_bau_df <- merge(dac_bau_df, ghg_2045,
                 all.x = T)
 
 
-fwrite(dac_bau_df, paste0(save_info_path, 'dac_bau_health_labor_all_oil.csv'))
+fwrite(dac_bau_df, paste0('data/outputs/dac_bau_health_labor_all_oil.csv'))
 
 # ##-----------------------------------------------------------------------------
 # ## create version with health sensitivity (srm at county level)

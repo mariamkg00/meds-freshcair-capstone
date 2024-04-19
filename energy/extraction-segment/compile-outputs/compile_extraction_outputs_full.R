@@ -2,6 +2,7 @@
 ## Tracey Mangin
 ## September 2, 2021
 ## Compile extraction outputs (site and county, include 2019) -- use individual rds files
+## Updated 4/14/24 - MP
 
 ## libraries
 library(data.table)

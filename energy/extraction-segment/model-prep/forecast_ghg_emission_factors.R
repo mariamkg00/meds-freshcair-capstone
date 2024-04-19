@@ -7,7 +7,7 @@ setwd('/capstone/freshcair/meds-freshcair-capstone/')
 
 # inputs ------------
 
-res_path        = 'data/OPGEE'
+res_path        = 'data/inputs/OPGEE' # add data to this folder
 prod_file       = 'data/processed/crude_prod_x_field_revised.csv'
 entry_file      = 'data/processed/entry_df_final_revised.csv'
 inj_file        = 'data/processed/injection-by-well-type-per-field-per-year_1977-2018_revised.csv'

@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## December 6, 2021
 ## Academic paper figure 2
+# Updated 4/14/24 - MP
 
 ## libraries
 library(data.table)
@@ -11,6 +12,7 @@ library(scales)
 library(broom)
 library(cowplot)
 library(extrafont)
+library(dplyr)
 
 ## define if you are using zenodo repo for inputs (if yes, set to TRUE)
 zenodo_repo <- FALSE
@@ -46,7 +48,7 @@ source_data_path <- paste0(main_path, 'nature-energy/source-data/')
 levels_name <- 'state_levels_all_oil.csv'
 
 ## read in data
-levels_dt <- fread(paste0(main_path, fig_path, levels_name))
+levels_dt <- fread("data/outputs/state_levels_all_oil.csv")
 
 ## filter out carbon + setback
 levels_dt <- levels_dt[!policy_intervention %in% c('carbon tax & setback', 'excise tax & setback')]
@@ -98,10 +100,61 @@ sd_fig2ab <- levels_dt %>%
          target != "setback_1000ft",
          setback_existing == 0,
          year > 2019) %>%
-  select(oil_price_scenario, policy_intervention, target, target_policy, 
+  dplyr::select(oil_price_scenario, policy_intervention, target, target_policy, 
          target_label, ghg_2045_perc, ghg_2045_perc_reduction, year, metric, value)
 
-fwrite(sd_fig2ab, paste0(source_data_path, "fig2/fig2ab.csv"))
+fwrite(sd_fig2ab, "data/outputs/fig2ab.csv", append=FALSE)
+
+### Added for testing - MP --------
+
+# Filter for the specified metrics
+filtered_data_1 <- levels_dt %>%
+  filter(metric %in% c("total_state_bbl", "total_state_ghg_MtCO2"))
+
+# Check the number of rows after filtering for metrics
+print(nrow(filtered_data_1))
+
+# Filter for the reference case oil price scenario
+filtered_data_2 <- filtered_data_1 %>%
+  filter(oil_price_scenario == "reference case")
+
+# Check the number of rows after filtering for the oil price scenario
+print(nrow(filtered_data_2))
+
+# Filter out setback_1000ft target
+filtered_data_3 <- filtered_data_2 %>%
+  filter(target != "setback_1000ft")
+
+# Check the number of rows after filtering out setback_1000ft target
+print(nrow(filtered_data_3))
+
+# Filter for setback_existing == 0
+filtered_data_4 <- filtered_data_3 %>%
+  filter(setback_existing == 0)
+
+# Check the number of rows after filtering for setback_existing
+print(nrow(filtered_data_4))
+
+# Filter for years greater than 2019
+filtered_data_5 <- filtered_data_4 %>%
+  filter(year > 2019)
+
+# Check the number of rows after filtering for years greater than 2019
+print(nrow(filtered_data_5))
+
+ggplot(filtered_data_5, aes(x = year, y = value, color = policy_intervention, linetype = target_label)) +
+  geom_line() +
+  facet_wrap(~ metric, scales = "free_y")
+
+ggsave(filtered_data_5,
+       filename = paste0('outputs/fig2_prod_v2'),
+       width = 180,
+       height = 185,
+       units = "mm")
+
+
+
+### End of testing ---------
 
 
 ## version 2, categorical colors for policy
@@ -392,9 +445,29 @@ sd_cumul_ghg <- levels_dt[(metric == "total_state_ghg_MtCO2" &
 sd_fig2c <- sd_cumul_ghg %>%
   filter(oil_price_scenario == "reference case",
          setback_existing == 0) %>%
-  select(oil_price_scenario:cumul_ghg) %>%
+  select(oil_price_scenario:cumul_ghg) 
   
-fwrite(sd_fig2c, paste0(source_data_path, "fig2/fig2c.csv"))
+fwrite(sd_fig2c, "data/outputs/fig2c.csv", append=FALSE)
+
+### Added for testing - MP --------------
+cumul_ghg_filtered <- cumul_ghg %>%
+  filter(oil_price_scenario == "reference case" & setback_existing == 0)
+
+print(cumul_ghg_filtered)
+
+cumul_ghg_filtered_plot <- ggplot(cumul_ghg_filtered, aes(x = ghg_2045_perc * -100, y = cumul_ghg, color = policy_intervention)) +
+  geom_point(size = 2, alpha = 0.8) +
+  labs(x = "GHG emissions reduction target (%, 2045 vs 2019)",
+       y = "Cumulative GHG emissions (MtCO2e)",
+       color = "Policy intervention") +
+  theme_minimal()
+
+ggsave(cumul_ghg_filtered_plot, 
+       filename = 'outputs/cumul_ghg_filtered_plot.png', 
+       width = 180,
+       height = 185,
+       units = "mm")
+### End of testing - MP  --------------
 
 ## figure
 ghg_cumul_fig_v2 <- ggplot(cumul_ghg %>% 
@@ -574,32 +647,36 @@ fig2_v2_combine <- plot_grid(
 
 
 ggsave(fig2_v2_combine,
-       filename = paste0(main_path, save_path, 'figure2-ref-case.png'),
+       filename = paste0('outputs/figure2-ref-case.png'),
        width = 180,
        height = 185,
        units = "mm")
 
-ggsave(fig2_v2_combine,
-       filename = paste0(main_path, save_path, 'figure2-ref-case.pdf'),
-       width = 180,
-       height = 185,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig2_v2_combine,
+#        filename = paste0(main_path, save_path, 'figure2-ref-case.pdf'),
+#        width = 180,
+#        height = 185,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure2-ref-case.pdf'),
-            outfile = paste0(main_path, save_path, 'figure2-ref-case.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure2-ref-case.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure2-ref-case.pdf'))
 
 
 
-ggsave(fig2_v2_combine,
-       filename = paste0(main_path, save_path, 'figure2-ref-case-test.pdf'),
-       width = 88,
-       height = 95,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(fig2_v2_combine,
+#        filename = paste0(main_path, save_path, 'figure2-ref-case-test.pdf'),
+#        width = 88,
+#        height = 95,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure2-ref-case-test.pdf'),
-            outfile = paste0(main_path, save_path, 'figure2-ref-case-test.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure2-ref-case-test.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure2-ref-case-test.pdf'))
 
 # ##
 # fig2_v2_combine_sb <- plot_grid(
@@ -800,20 +877,22 @@ low_px_fig <- plot_grid(
 
 
 ggsave(low_px_fig,
-       filename = file.path(main_path, save_path, 'figure2-low.png'),
+       filename = file.path('outputs/figure2-low.png'),
        width = 180,
        height = 185,
        units = "mm")
 
-ggsave(low_px_fig,
-       filename = file.path(main_path, save_path, 'figure2-low.pdf'),
-       width = 180,
-       height = 185,
-       units = "mm",
-       device = 'pdf')
+# Removing for now - MP
+# ggsave(low_px_fig,
+#        filename = file.path(main_path, save_path, 'figure2-low.pdf'),
+#        width = 180,
+#        height = 185,
+#        units = "mm",
+#        device = 'pdf')
 
-embed_fonts(paste0(main_path, save_path, 'figure2-low.pdf'),
-            outfile = paste0(main_path, save_path, 'figure2-low.pdf'))
+# Removing for now - MP
+# embed_fonts(paste0(main_path, save_path, 'figure2-low.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure2-low.pdf'))
 
 
 
@@ -987,18 +1066,19 @@ high_px_fig <- plot_grid(
 
 
 ggsave(high_px_fig,
-       filename = file.path(main_path, save_path, 'figure2-high.png'),
+       filename = file.path('outputs/figure2-high.png'),
        width = 180,
        height = 185,
        units = "mm")
 
-ggsave(high_px_fig,
-       filename = file.path(main_path, save_path, 'figure2-high.pdf'),
-       width = 180,
-       height = 185,
-       units = "mm",
-       device = 'pdf')
-
-embed_fonts(paste0(main_path, save_path, 'figure2-high.pdf'),
-            outfile = paste0(main_path, save_path, 'figure2-high.pdf'))
+# Removing for now - MP
+# ggsave(high_px_fig,
+#        filename = file.path(main_path, save_path, 'figure2-high.pdf'),
+#        width = 180,
+#        height = 185,
+#        units = "mm",
+#        device = 'pdf')
+# 
+# embed_fonts(paste0(main_path, save_path, 'figure2-high.pdf'),
+#             outfile = paste0(main_path, save_path, 'figure2-high.pdf'))
 

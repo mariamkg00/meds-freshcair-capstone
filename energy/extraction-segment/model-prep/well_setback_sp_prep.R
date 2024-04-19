@@ -4,6 +4,9 @@
 ##revised : Feb 14, 2024 by Haejin / Feb 25, 2024 Haejin 
 ## Updated 3/13/24 MP
 
+# adding test argument
+sf_use_s2(FALSE)
+
 # comment out and add your own machine's file path
 home <- "/capstone/freshcair/meds-freshcair-capstone" #### revise filepath
 ft_path <- "/data/proprietery-data/FracTrackerSetbackdata.gdb" #### revise filepath
@@ -157,11 +160,15 @@ sr_ps <- sf::st_read(dsn = file.path(home, ft_path), layer = "PrivSchoolsCA_1") 
   dplyr::select(fac_type)
 
 # ## schools (polygons) - removing for now MP
-# sr_s <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolPropCA_1") %>%
-#   st_transform(ca_crs) %>%
-#   dplyr::filter(st_geometry_type(.) != "MULTISURFACE") %>%  # MP added
-#   mutate(fac_type = "school") %>%
-#   dplyr::select(fac_type) 
+sr_s <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolPropCA_1") %>%
+  st_transform(ca_crs) %>%
+  mutate(fac_type = "school") %>%
+  dplyr::select(fac_type)   
+  
+sr_s <- sr_s %>% 
+  mutate(validity = st_is_valid(sr_s)) %>% 
+  filter(!is.na(validity)) %>% 
+  st_make_valid()
 
 # ##### MP TESTING
 # 
@@ -203,14 +210,14 @@ sr_ps <- sf::st_read(dsn = file.path(home, ft_path), layer = "PrivSchoolsCA_1") 
 # }
 # 
 # ### END MP TESTING 
+
 # sr_s <- st_union(sr_s) # st_union <- convert multipolygon to polygon
 
-# ## SchoolsCA_Sabins_1 -- having an issue reading these in so commenting out for now - MP
-# sr_sca <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolsCA_Sabins_1") %>%
-#   st_transform(ca_crs) %>%
-#   dplyr::filter(st_geometry_type(.) != "MULTISURFACE") %>%  # MP added
-#   mutate(fac_type = "school") %>%
-#   dplyr::select(fac_type)
+# ## SchoolsCA_Sabins_1 
+sr_sca <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolsCA_Sabins_1") %>%
+  st_transform(ca_crs) %>%
+  mutate(fac_type = "school") %>%
+  dplyr::select(fac_type)
 
 # sandy's checks
 # ensure that everything is read in: looks ok 19 SR objects
@@ -243,7 +250,7 @@ sr_pts <- rbind(sr_pg,
                 sr_ach,
                 sr_caach,
                 sr_ps,
-                #sr_sca,
+                sr_sca,
                 sr_pcc)
 
 # st_union()'s help file
@@ -325,6 +332,8 @@ ft_meter_val <- 0.3048
 create_buffer <- function(dist_ft) {
   
 buff_dist_ft_name <- paste0(buffer_dist_ft, "ft")
+
+dist_ft <- 3200
   
   dist_m <- dist_ft * ft_meter_val
   
@@ -336,18 +345,17 @@ buff_dist_ft_name <- paste0(buffer_dist_ft, "ft")
   plot(pt_buff_tmp, xlim = xcheck, ylim = ycheck)
   plot(sr_pts, xlim = xcheck, ylim = ycheck, add = TRUE, pch = 16, cex = .5)
   
-  # Commenting out for now - MP
-  # schl_buff_tmp <- sr_s %>% 
-  #   st_buffer(dist = dist_m) %>%
-  #   st_union()
+ # Issue was here
+  schl_buff_tmp <- sr_s %>%
+    st_buffer(dist = dist_m) %>% 
+    st_union()
   
   dwelling_buff_tmp <- simp_sr_dwell %>%
     st_buffer(dist = dist_m) %>%
     st_union()
   
   # Commenting out for now - MP
-  #out_tmp1 <- st_union(pt_buff_tmp, schl_buff_tmp)
-  out_tmp1 <- st_union(pt_buff_tmp)
+  out_tmp1 <- st_union(pt_buff_tmp, schl_buff_tmp)
   
   out_tmp2 <- st_union(dwelling_buff_tmp, out_tmp1)
   
@@ -358,12 +366,12 @@ buff_dist_ft_name <- paste0(buffer_dist_ft, "ft")
   # plot(sr_s, xlim = xcheck, ylim = ycheck, add = TRUE, col = "blue")
   
   # Write dsn path - MP
-  dsn_path <- paste0("data/processed/buffer_", buff_dist_ft_name, ".shp")
+  dsn_path <- paste0("data/processed/new_buffer_", buff_dist_ft_name, ".shp")
   print(dsn_path)
   print(length(dsn_path))
   
   ## save output
-  st_write(out_tmp2, dsn = dsn_path) # MP updated
+  st_write(out_tmp2, dsn = dsn_path) 
   
 }
 
@@ -391,7 +399,7 @@ geometry_types <- sapply(objects, function(obj) {
 # Print the results
 print(geometry_types)
 
-setback3200 <- st_read('data/processed/buffer_5280ft.shp')
+setback3200 <- st_read('data/processed/buffer_3200ft.shp')
 
 setback3200_crs <- st_transform(setback3200, st_crs(ca))
 
@@ -400,11 +408,6 @@ ggplot() +
   geom_sf(data = setback3200_crs, color = "blue", size = 3) + # Add points
   theme_minimal() +
   labs(title = "Sensitive Receptors in California")
-
-tm_shape(ca) +
-  tm_polygons(col = "beige", border.col = "black") + # Plot CA shapefile
-  tm_shape(setback5280_crs) +
-  tm_borders(col = "blue", lwd = 3)  # Assuming setback5280_crs are borders; adjust according to actual geometry
 
 
 

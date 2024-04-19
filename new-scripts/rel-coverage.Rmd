@@ -1,0 +1,124 @@
+```{r}
+library(janitor)
+library(tidyverse)
+library(here)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(broom)
+library(ggpubr)
+library(minpack.lm)
+```
+
+
+```{r}
+### Setback coverage by buffer ---------------------- ----------------------
+
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+# Read in setback coverage data
+coverage <- read_csv(here('data/processed/setback_coverage_R.csv')) %>% 
+  janitor::clean_names()
+
+# Adding sq miles covered in each field
+coverage <- coverage %>% 
+  mutate(area_sq_mi = round(area_sq_mi * rel_coverage, digits = 6)) %>% 
+  mutate(covered_sq_mi = area_sq_mi * rel_coverage)
+
+# Group the data by setback_scenario and calculate the total area_sq_mi for each scenario
+setback_areas <- coverage %>%
+  group_by(setback_scenario) %>%
+  summarise(total_area_sq_mi = sum(area_sq_mi)) 
+
+# Pivot the data to create columns for each setback scenario
+setback_areas_wide <- setback_areas %>%
+  pivot_wider(names_from = setback_scenario, values_from = total_area_sq_mi)
+
+# Plot the relationship between setback distance and total area
+library(ggplot2)
+
+ggplot(setback_areas_long, aes(x = setback_distance, y = total_area_sq_mi, color = setback_scenario)) +
+  geom_line() +
+  geom_point() +
+  labs(x = "Setback Distance (ft)", y = "Total Area (sq mi)", color = "Setback Scenario") +
+  theme_minimal()
+
+# Print the results
+print(setback_areas_wide)
+
+# Quartile stats for average coverage for each setback distance
+buffer_summary <- coverage %>% 
+  group_by(setback_scenario) %>% 
+  summarise(
+    n = n(),
+    min = min(rel_coverage),
+    q1 = quantile(rel_coverage, 0.25),
+    median = median(rel_coverage),
+    mean = mean(rel_coverage),
+    q3 = quantile(rel_coverage, 0.75),
+    max = max(rel_coverage),
+    sd = sd(rel_coverage)
+  ) %>%
+  ungroup() %>%
+  mutate(across(where(is.numeric), round, 3))
+
+print(buffer_summary)
+
+# Box plot of relative coverage by setback
+ggplot(coverage, aes(x = setback_scenario, y = rel_coverage)) +
+  geom_boxplot() +
+  labs(x = "Setback Scenario", y = "Relative Coverage") +
+  theme_minimal()
+
+# Violin plot of relative coverage by setback 
+ggplot(coverage, aes(x = setback_scenario, y = rel_coverage)) +
+  geom_violin() +
+  labs(x = "Setback Scenario", y = "Relative Coverage") +
+  theme_minimal()
+
+# Ridge plot of relative coverage by setback
+ggplot(coverage, aes(x = rel_coverage, y = setback_scenario, fill = setback_scenario)) +
+  geom_density_ridges(alpha = 0.6) +
+  labs(x = "Relative Coverage", y = "Setback Scenario") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# Box plot of relative coverage 
+ggplot(coverage, aes(x = rel_coverage, fill = setback_scenario)) +
+  geom_histogram(binwidth = 0.1, alpha = 0.7, position = "identity") +
+  labs(x = "Relative Coverage", y = "Count", fill = "Setback Scenario") +
+  theme_minimal() +
+  facet_wrap(~setback_scenario, ncol = 1) +
+  scale_fill_discrete(name = "Setback Scenario") +
+  theme(legend.position = "none")
+```
+```{r}
+# Create a data frame with the setback distances and corresponding values
+coverage_data <- data.frame(
+  distance = c(0, 1000, 2500, 3200, 5280),
+  value = c(setback_areas_wide$no_setback, setback_areas_wide$setback_1000,
+            setback_areas_wide$setback_2500, setback_areas_wide$setback_3200,
+            setback_areas_wide$setback_5280)
+)
+
+# Fit a linear model and get the equation
+lm_fit <- lm(value ~ distance, data = coverage_data)
+lm_eq <- substitute(italic(y) == SLOPE * italic(x) + INTERCEPT,
+                    list(SLOPE = round(coef(lm_fit)[2], 2),
+                         INTERCEPT = round(coef(lm_fit)[1], 2)))
+
+# Plot the data points and fit a best-fit line
+ggplot(coverage_data, aes(x = distance, y = value)) +
+  geom_point(size = 3, color = "steelblue") +
+  geom_smooth(method = "lm", se = FALSE, color = "firebrick", linewidth = 1.2,
+              formula = y ~ x) +
+  labs(x = "Setback Distance", y = "Coverage (sq miles)",
+       title = "Best-Fit Line for Setback Coverage") +
+  theme_pubr() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.title = element_text(face = "bold"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+```
+
+

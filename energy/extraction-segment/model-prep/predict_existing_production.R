@@ -2,6 +2,7 @@
 ## september 22, 2020
 ## predict production from existing wells without exit
 # Updated 2/28/24 MP
+# Updated 4/7/28
 
 # inputs ------
 setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
