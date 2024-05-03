@@ -35,9 +35,6 @@ cum_prod <- read_csv('data/processed/asset-year_cumulative_sum_production.csv')
 # Read in well exits data
 well_exits <- read_csv('data/processed/well_exits.csv')
 well_exits_rule <- read_csv('data/processed/well_exits_under_rule.csv')
-
-# Poisson coefficients
-poiss_coef <- read.csv('data/intermediate-zenodo/intermediate/extraction-model/exit_regression_coefficients.csv')
 ```
 
 # Exploratory Analayis
@@ -102,7 +99,6 @@ ggplot(yearly_exits_rule, aes(x = exit_year, y = total_exits)) +
 setwd('/capstone/freshcair/meds-freshcair-capstone')
 entry_df <- read_csv(file.path("data/processed/entry_df_final_revised.csv"))
 ```
-
 
 ## Wrangling Entry Data
 
@@ -205,6 +201,13 @@ train_data <- entry_df[train_indices, ]
 test_data <- entry_df[-train_indices, ]
 
 # Define the formula for the models
+
+# brent - brent benchmark oil price in nominal USD per barrel 
+# capital expenditure: major purchases used to acquire non consumable goods 
+# operational expenditure : day to day expenses to keep oil field functioning 
+# depl: depletion 
+# outcome variable: number of new wells 
+
 rf_formula <- as.formula(n_new_wells ~ brent + capex_imputed + opex_imputed + depl)
 
 # Random Forest
@@ -215,7 +218,88 @@ print(paste("RMSE of Random Forest on test set:", rmse_rf))
 
 # Applying to full dataset:
 entry_df$new_wells_pred_rf <- predict(rf_model, newdata = entry_df)
+```
 
+```{r message = FALSE}
+library(here) #easy file paths
+library(tidyverse) #data wrangling
+library(tidymodels) #modeling
+library(xgboost) #package for boosted trees
+library(ranger) #package for random forest
+library(patchwork)
+# mariam and haejin's model 
+data_split <- initial_split(data = entry_df, prop = 0.8, strata = n_new_wells)
+
+train <- training(data_split)
+
+test <- testing(data_split)
+
+
+
+# cross validation to tune parameters, splitting data into 10 folds for a 5-fold cross validation
+cv_folds <- vfold_cv(train, v = 5)
+
+
+
+# recipe generation
+
+n_wells_recipe <- recipe(n_new_wells ~ brent + capex_imputed + opex_imputed + depl, data = train) %>% 
+  step_normalize(all_numeric_predictors())
+
+# making a model 
+
+randomf_model <- rand_forest(mtry = tune(), trees = tune()) %>% 
+  set_engine('ranger') %>% 
+  set_mode("regression")
+
+
+# generate workflow
+
+rf_wf <- workflow() %>% 
+  add_model(randomf_model) %>% 
+  add_recipe(n_wells_recipe)
+
+
+
+# parameter tuning 
+
+rf_wf_tune <- rf_wf %>% 
+  tune_grid(resamples = cv_folds, grid = 10)
+
+collect_metrics(rf_wf_tune)
+
+
+autoplot(rf_wf_tune)+
+  theme_bw()
+
+
+rf_best <- show_best(rf_wf_tune, n = 1, metric = 'rmse')
+
+print(rf_best)
+
+
+
+# finalize workflow 
+rf_final <- finalize_workflow(rf_wf, select_best(rf_wf_tune, metric = 'rmse'))
+
+
+
+# fitting model to the training dataset 
+train_rf_fit <- fit(rf_final, train)
+
+
+# predicting after fitting
+
+test_predict_rf <- predict(train_rf_fit, test) %>% 
+  bind_cols(test)
+
+rmse <- sqrt(mean((predictions - test_data$target)^2))
+
+(test_predict_rf$.pred) - (test_predict_rf$n_new_wells) 
+
+rmse <- sqrt(mean((test_predict_rf$.pred - test_predict_rf$n_new_wells)^2, na.rm = TRUE))
+
+print(rmse)
 ```
 
 ### Bagged
@@ -252,6 +336,7 @@ test_data$new_wells_pred_bagging <- bagging_new_wells_pred
 rmse_bagging <- sqrt(mean((test_data$n_new_wells - test_data$new_wells_pred_bagging)^2, na.rm = TRUE))
 print(paste("RMSE of Bagged Random Forest on test set:", rmse_bagging))
 ```
+
 
 
 ## Tuned RF
@@ -307,11 +392,9 @@ new_wells_pred_revised <- read_csv("data/intermediate-zenodo/new_wells_pred_revi
 entry_df$doc_field_code <- as.numeric(new_wells_pred_revised$doc_field_code)
 
 # Join the data frames
-new_wells_pred_revised <- new_wells_pred_revised %>%
-  left_join(entry_df, by = c("doc_field_code", "year")) 
+new_wells_pred_revised <- entry_df %>%
+  left_join(new_wells_pred_revised, by = c("doc_field_code", "year")) 
 
-rmse_poiss <- sqrt(mean((entry_df$new_wells - entry_df$new_wells_poisson)^2, na.rm = TRUE))
-print(paste("RMSE of Poisson", rmse_poiss))
 ```
 
 
@@ -319,19 +402,15 @@ print(paste("RMSE of Poisson", rmse_poiss))
 # Create a data frame with the RF predicted and actual new wells by year
 wells_by_year <- new_wells_pred_revised %>%
   group_by(year) %>%
-  summarise(new_wells_pred_rf = sum(new_wells_pred_rf),
+  summarise(new_wells_rf = sum(new_wells_pred_rf),
             new_wells_actual = sum(n_new_wells),
             new_wells_poisson = sum(new_wells_poisson))
 
 # # Rename the new_wells_actual column in wells_by_year_revised
 # wells_by_year_revised <- wells_by_year_revised %>%
 #   rename(original_new_wells_actual = new_wells_actual)
-# 
-# # Join Poisson results 
-# wells_by_year <- wells_by_year %>%
-#   left_join(wells_by_year_revised, by = "year")
 
-# # Join Bagged RF results
+# # Join tuned RF results
 # wells_by_year <- wells_by_year %>%
 #   left_join(entry_df %>%
 #               group_by(year) %>%
@@ -344,7 +423,7 @@ wells_by_year <- new_wells_pred_revised %>%
 #   dplyr::select(year, new_wells_actual, new_wells_pred_rf, new_wells_poisson, everything())
 
 # Calculate the difference between RF predicted and actual values
-wells_by_year$difference_rf <- wells_by_year$new_wells_pred_rf - wells_by_year$new_wells_actual
+wells_by_year$difference_rf <- wells_by_year$new_wells_rf - wells_by_year$new_wells_actual
 
 # Calculate the difference between predicted and Poisson values
 wells_by_year$difference_pois <- wells_by_year$new_wells_poisson - wells_by_year$new_wells_actual
@@ -397,7 +476,7 @@ pred_actual_new_wells_yoy <- ggplot(wells_by_year, aes(x = year)) +
 
 pred_actual_new_wells_yoy
 
-ggsave("outputs/pred_actual_new_wells_yoy.png", pred_actual_new_wells_yoy, width = 10, height = 6, dpi = 300)
+# ggsave("outputs/pred_actual_new_wells_yoy.png", pred_actual_new_wells_yoy, width = 10, height = 6, dpi = 300)
 ```
 
 # RF Separating Top 10 Fields
@@ -522,4 +601,5 @@ for (field_name in top_10_field_names) {
 #   message("No data found for other fields")
 # }
 ```
+
 

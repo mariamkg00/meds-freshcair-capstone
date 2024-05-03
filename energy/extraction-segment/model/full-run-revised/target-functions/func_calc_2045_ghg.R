@@ -5,9 +5,7 @@
 
 calc_2045_ghg <- function(inputs, scen) {
   
-  
   # calculate depletion in 2020 -----
-  
   
   depl_2019_z = inputs[year == 2020, .(doc_field_code,  oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
                                        setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
@@ -162,7 +160,6 @@ calc_2045_ghg <- function(inputs, scen) {
   prod_existing_vintage_z[, doc_fieldname := NULL]
   
   for (i in seq_along(pred_years)) {
-    
     t = pred_years[i]
     
     # print(t)
@@ -376,11 +373,25 @@ calc_2045_ghg <- function(inputs, scen) {
     ## melt by costs
     dtt_long = melt(dtt, measure.vars = c('cost_new', 'cost_existing'), variable.name = 'cost_type', value.name = 'cost')
     ## rank field (existing and new) costs -- note that multiple fields have same cost
-    dtt_long[, cost_rank := rank(unclass(cost)), by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
+    ### THIS IS WHERE PROBLEM IS
+    # removed for testing
+    setDT(dtt_long)
+    dtt_long[, cost_rank := rank(unclass(cost)), by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario,
                                                         setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
     ## wide format
-    dt_info_rank = dcast(dtt_long, doc_field_code + doc_fieldname + m_capex_imputed + m_opex_imputed_adj + oil_price_scenario + innovation_scenario +  carbon_price_scenario + ccs_scenario +  setback_scenario +  setback_existing + prod_quota_scenario + excise_tax_scenario ~ cost_type, 
-                         value.var = c('cost', 'cost_rank'))
+    # dt_info_rank = dcast(dtt_long, doc_field_code + doc_fieldname + m_capex_imputed + m_opex_imputed_adj + oil_price_scenario + innovation_scenario +  carbon_price_scenario + ccs_scenario +  setback_scenario +  setback_existing + prod_quota_scenario + excise_tax_scenario ~ cost_type, 
+    #                      value.var = c('cost', 'cost_rank'))
+    # converting above code to tidyverse 
+    dt_info_rank <- dtt_long %>%
+      pivot_wider(
+        id_cols = c(doc_field_code, doc_fieldname, m_capex_imputed, m_opex_imputed_adj,
+                    oil_price_scenario, innovation_scenario, carbon_price_scenario,
+                    ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario,
+                    excise_tax_scenario),
+        names_from = cost_type,
+        values_from = c(cost, cost_rank)
+      ) %>%
+      as.data.table()
     ## rename
     setnames(dt_info_rank, 'cost_rank_cost_new', 'cost_new_rank')
     setnames(dt_info_rank, 'cost_rank_cost_existing', 'cost_existing_rank')
@@ -699,7 +710,7 @@ calc_2045_ghg <- function(inputs, scen) {
                                                                'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario', 
                                                                'oil_price_usd_per_bbl', 'm_new_wells_pred'),
                                measure.vars = as.character(2020:2045), variable.name = 'year', value.name = 'production_bbl')
-    
+    setDT(new_wells_prod_long)
     new_wells_prod_long[, year := as.numeric(as.character(year))]
     
     

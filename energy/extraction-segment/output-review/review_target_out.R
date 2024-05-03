@@ -1,6 +1,7 @@
 ## Tracey Mangin
 ## February 2, 2022
 ## Check targets
+## Updated 5/2/24 - MP
 
 ## libraries
 library(data.table)
@@ -15,7 +16,7 @@ save_external <- 1
 ## path names, ## UPDATE THESE WITH NEW RUNS!!!!!
 # extraction_folder_path <- 'outputs/predict-production/extraction_2022-11-15/revision-sb-test/'
 # extraction_folder_name <- 'subset_target_scens/'
-external_path <- 'data/processed/extraction_2024-04-17/revision-setbacks/'
+external_path <- 'data/processed/extraction_2024-05-02/revision-setbacks/'
 
 
 ## current date

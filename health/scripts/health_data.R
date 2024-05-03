@@ -14,7 +14,7 @@ options(java.parameters = "-Xmx8000m")
 
 packages=c("xlsx", "gdata", "dplyr","tidyr", "stringr", "fuzzyjoin", "stringr", 
            "ggplot2", "stargazer", "plm", "cowplot", "sf", "lwgeom","data.table", 
-           "here", "dplyr")
+           "here", "dplyr", "arsenal")
 
 lapply(1:length(packages), function(x) 
   ifelse((require(packages[x],character.only=TRUE)==FALSE),install.packages(packages[x]),
@@ -60,8 +60,8 @@ age_group_ct <- ct_ca %>%
 
 # UPDATED - MP
 cdof_raw <- fread("data/inputs/health/CDOF_p2_Age_1yr_Nosup.csv", stringsAsFactors = FALSE, blank.lines.skip = TRUE)%>%
-  dplyr::select(-Column1:-Column16331)%>%
-  gather(year,pop,'2010':'2060')%>%
+  dplyr::select(-V54:-V16344)%>%
+  gather(year,pop,'V3':'V53')%>%
   mutate(pop = as.numeric(str_replace(pop,",","")),
          County = str_replace(County," County",""),
          year = as.numeric(year),
@@ -188,6 +188,8 @@ ct_inc_45 <- ct_inc_45_temp%>%
 # UPDATED - MP
 write.csv(ct_inc_45,file = "data/processed/ct_inc_45.csv", row.names = FALSE)
 ct_inc_45 <- fread("data/processed/ct_inc_45.csv", stringsAsFactors = FALSE)
+
+
 
 ## Census tract level for labor team
 

@@ -6,12 +6,15 @@
 # modified by Tracey Mangin
 ##################################################################
 # revise : Feb 14, 2024 by Haejin 
-# Updated 4/7 MP
+# Updated 4/25/24 - MP
 
-# comment out and add your own machine's file path
+# Update with your machine's directory
 wd               <- "/capstone/freshcair/meds-freshcair-capstone"
-buffer_path        <- "data/processed"
-data_directory     <- "/capstone/freshcair/meds-freshcair-capstone/inputs/extraction"
+buffer_path        <- "data/proprietery-data/setback-buffers/"
+wells_dir     <- "data/proprietery-data/AllWells_gis/"
+doggr_path <- "data/inputs/gis/field-boundaries/"
+save_path <- "data/processed/setback-cov/"
+save_path_prop <- "data/proprietery-data/setback-cov/"
 
 # Set working directory 
 setwd(wd)
@@ -42,31 +45,32 @@ ca <- st_as_sf(map("state", plot = FALSE, fill = TRUE)) %>%
 ################################# READ DATA AND TRANSFORM
 
 # Updated - MP
-buff1000 <- sf::st_read("data/processed/buffer_1000ft.shp")
+buff1000 <- sf::st_read(paste0(buffer_path, "buffer_1000ft.shp"))
 
 # Updated - MP
-buff2500 <- sf::st_read("data/processed/buffer_2500ft.shp")
+buff2500 <- sf::st_read(paste0(buffer_path, "buffer_2500ft.shp"))
 
 # Added - MP
-buff3200 <- sf::st_read("data/processed/buffer_3200ft.shp")
+buff3200 <- sf::st_read(paste0(buffer_path, "buffer_3200ft.shp"))
 
 # Updated - MP
-buff5280 <- sf::st_read("data/processed/buffer_5280ft.shp") 
+buff5280 <- sf::st_read(paste0(buffer_path, "buffer_5280ft.shp")) 
 
 # transform to NAD83(NSRS2007) / California Albers as well for wells and field boundaries -- Updated MP
-wells <- sf::st_read("data/proprietery-data/AllWells_gis/Wells_All.shp") %>% 
+wells <- sf::st_read(paste0(wells_dir, "Wells_All.shp")) %>% 
   st_transform(ca_crs) %>%
   dplyr::select(API, WellStatus) %>%
   unique()
 
 # Updated - MP
-wells2 <- sf::st_read("data/proprietery-data/AllWells_gis/Wells_All.shp") %>% 
+wells2 <- sf::st_read(paste0(wells_dir, "Wells_All.shp")) %>% 
   st_transform(ca_crs) %>%
   dplyr::select(API, WellStatus, FieldName) %>%
   unique()
 
 # Updated - MP
-boundaries <- st_read("data/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp") %>% st_transform(3488) # update
+boundaries <- st_read(paste0(doggr_path, "DOGGR_Admin_Boundaries_Master.shp")) %>% 
+  st_transform(3488) 
 
 ## monthly well production -- Updated - MP
 well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
@@ -239,7 +243,7 @@ ggplot(data = buff3200) +
 #   summarize(n_in = sum(in_setback_orig))
 
 # save output
-write_csv(wells_within_df_all, file.path("data/processed/wells_in_setbacks_revised.csv")) 
+write_csv(wells_within_df_all, file.path(paste0(save_path_prop, "wells_in_setbacks_revised.csv"))) 
 
 ## make maps
 
@@ -363,7 +367,7 @@ View(field_boundaries2 %>%
        ungroup())
 
 ## add number of wells to each field
-n_wells <- sf::st_read("data/proprietery-data/AllWells_gis/Wells_All.shp") %>% 
+n_wells <- sf::st_read(paste0(wells_dir, "Wells_All.shp")) %>% 
   st_drop_geometry() %>%
   filter(!WellStatus %in% c("Abeyance")) %>%
   group_by(FieldName) %>%
@@ -391,7 +395,7 @@ field_boundaries3 <- field_boundaries2 %>%
 # save output
 
 # Updated - MP
-write_csv(field_boundaries3, "data/processed/setback_coverage_R.csv")
+write_csv(field_boundaries3, paste0(save_path, "setback_coverage_R.csv"))
 
 
 ## save maps for examining
@@ -409,7 +413,7 @@ coverage_map <-
   mapview(wells2, layer.name = "Wells", label = 'WellStatus', cex = 0.3, alpha = 0, legend = FALSE)
   
 # save output -- Updated - MP
-mapshot(coverage_map, url = "data/processed/coverage_map.html", selfcontained = F) 
+mapshot(coverage_map, url = paste0(save_path, "coverage_map.html"), selfcontained = F) 
 
 
 

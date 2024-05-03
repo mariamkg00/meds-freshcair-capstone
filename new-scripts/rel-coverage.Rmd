@@ -7,7 +7,7 @@ library(ggplot2)
 library(tidyr)
 library(broom)
 library(ggpubr)
-library(minpack.lm)
+library(sf)
 ```
 
 
@@ -119,6 +119,25 @@ ggplot(coverage_data, aes(x = distance, y = value)) +
         axis.title = element_text(face = "bold"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
+```
+
+
+
+```{r, warning=FALSE}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+# Testing new receptor setbacks vs old
+# Read in the old 3200ft shapefile
+old_3200 <- st_read('data/processed/buffer_3200ft.shp')
+new_3200 <- st_read('data/processed/final_buffer_3200ft.shp')
+```
+
+```{r}
+
+```
+
+```{r}
+total_diff_area <- sum(st_area(diff_area))
+print(total_diff_area)
 ```
 
 

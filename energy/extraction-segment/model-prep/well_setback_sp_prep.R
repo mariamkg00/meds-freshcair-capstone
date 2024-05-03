@@ -2,15 +2,15 @@
 ## May 7, 2021
 ## prep FrackTracker data for analysis
 ##revised : Feb 14, 2024 by Haejin / Feb 25, 2024 Haejin 
-## Updated 3/13/24 MP
+## Cleaned 4/25/24 - MP
 
 # adding test argument
-sf_use_s2(FALSE)
+# sf_use_s2(FALSE)
 
-# comment out and add your own machine's file path
-home <- "/capstone/freshcair/meds-freshcair-capstone" #### revise filepath
-ft_path <- "/data/proprietery-data/FracTrackerSetbackdata.gdb" #### revise filepath
-save_path <- paste0(home, "/data/processed/") #### revise filepath
+# Update home based on your working directory
+home <- "/capstone/freshcair/meds-freshcair-capstone" 
+ft_path <- "/data/proprietery-data/FracTrackerSetbackdata.gdb" 
+save_path <- paste0(home, "/data/proprietery-data/setback-buffers/") 
 setwd(home)
 
 # load packages
@@ -53,12 +53,16 @@ layer_vec <- c("SetbackOutlines_SR_Dwellings_082220", "PlaygroundsinCities", "Da
 ## dwellings
 sr_dwellings <- sf::st_read(dsn = file.path(home, ft_path), layer = "SetbackOutlines_SR_Dwellings_082220")
 
-# Remove MULTISURFACE types (just first row) - MP
-sr_dwellings <- sr_dwellings %>%
-  filter(st_geometry_type(.) != "MULTISURFACE")
-
 sr_dwellings <- sr_dwellings %>% 
   st_transform(ca_crs) 
+
+# Added - mp
+sr_dwellings <- sr_dwellings %>% 
+  st_transform(ca_crs) %>% 
+  mutate(validity = st_is_valid(sr_dwellings)) %>% 
+  filter(!is.na(validity)) %>% 
+  st_make_valid()
+
 sr_dwellings <- sf::st_cast(sr_dwellings, "MULTIPOLYGON") 
 sr_dwellings <- st_union(sr_dwellings)  
 
@@ -168,50 +172,10 @@ sr_s <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolPropCA_1") %>
 sr_s <- sr_s %>% 
   mutate(validity = st_is_valid(sr_s)) %>% 
   filter(!is.na(validity)) %>% 
-  st_make_valid()
+  st_make_valid() 
 
-# ##### MP TESTING
-# 
-# # Step 1: Check for invalid geometries
-# invalid_geoms <- st_is_valid(sr_s, NA_on_error = FALSE) == FALSE
-# 
-# # Print the number of invalid geometries
-# cat("Number of invalid geometries:", sum(invalid_geoms), "\n")
-# 
-# # Step 2: Repair invalid geometries
-# # Only proceed if there are invalid geometries
-# if (any(invalid_geoms)) {
-#   sr_s$Shape <- st_make_valid(sr_s$Shape)
-#   
-#   # Alternatively, if you want to replace the entire sf object considering all geometries:
-#   # sr_s <- st_make_valid(sr_s)
-# }
-# 
-# # Check again to ensure all geometries are now valid
-# all_valid_post_repair <- all(st_is_valid(sr_s, NA_on_error = FALSE))
-# 
-# # Print the status of geometries after repair
-# cat("All geometries valid after repair:", all_valid_post_repair, "\n")
-# 
-# #####
-  
-# Removing for now, need to figure out how to read polygons since the rest of the data are points- MP ?????
-# sr_s <- sf::st_cast(sr_s, "MULTIPOLYGON") # we can see any false geometries format
+sr_s <- st_union(sr_s) # st_union <- convert multipolygon to polygon
 
-# ### MP TESTING
-# 
-# invalid <- st_is_valid(sr_s, NA_on_error = FALSE) == FALSE
-# if (any(invalid)) {
-#   print(paste("Invalid geometries at positions:", which(invalid)))
-# }
-# 
-# if (any(invalid)) {
-#   sr_s <- st_make_valid(sr_s)
-# }
-# 
-# ### END MP TESTING 
-
-# sr_s <- st_union(sr_s) # st_union <- convert multipolygon to polygon
 
 # ## SchoolsCA_Sabins_1 
 sr_sca <- sf::st_read(dsn = file.path(home, ft_path), layer = "SchoolsCA_Sabins_1") %>%
@@ -326,14 +290,12 @@ mapview(sr_dwellings, layer.name = "dwellings")
 ## create an sf object for each buffer
 ## ----------------------------------------
 
-buffer_dist_ft <- c(3200)
+buffer_dist_ft <- c(1000, 2500, 3200, 5280)
 ft_meter_val <- 0.3048
 
 create_buffer <- function(dist_ft) {
   
-buff_dist_ft_name <- paste0(buffer_dist_ft, "ft")
-
-dist_ft <- 3200
+  buff_dist_ft_name <- paste0(dist_ft, "ft")
   
   dist_m <- dist_ft * ft_meter_val
   
@@ -354,62 +316,22 @@ dist_ft <- 3200
     st_buffer(dist = dist_m) %>%
     st_union()
   
-  # Commenting out for now - MP
   out_tmp1 <- st_union(pt_buff_tmp, schl_buff_tmp)
   
   out_tmp2 <- st_union(dwelling_buff_tmp, out_tmp1)
   
   # uncomment to check
-  plot(out_tmp2, xlim = xcheck, ylim = ycheck)
-  plot(sr_pts, xlim = xcheck, ylim = ycheck, add = TRUE, pch = 16, cex = .5)
-  plot(simp_sr_dwell, xlim = xcheck, ylim = ycheck, add = TRUE, col = "red")
+  # plot(out_tmp2, xlim = xcheck, ylim = ycheck)
+  # plot(sr_pts, xlim = xcheck, ylim = ycheck, add = TRUE, pch = 16, cex = .5)
+  # plot(simp_sr_dwell, xlim = xcheck, ylim = ycheck, add = TRUE, col = "red")
   # plot(sr_s, xlim = xcheck, ylim = ycheck, add = TRUE, col = "blue")
-  
-  # Write dsn path - MP
-  dsn_path <- paste0("data/processed/new_buffer_", buff_dist_ft_name, ".shp")
-  print(dsn_path)
-  print(length(dsn_path))
-  
+
   ## save output
-  st_write(out_tmp2, dsn = dsn_path) 
+  st_write(out_tmp2, dsn = paste0(save_path, "test_buffer_", buff_dist_ft_name, ".shp")) 
   
 }
 
 purrr::map(buffer_dist_ft, create_buffer) 
-
-
-### MP testing ------------
-
-# Get names of objects starting with "sr"
-object_names <- ls(pattern = "^sr")
-
-# Retrieve the objects 
-objects <- mget(object_names, envir = .GlobalEnv)
-
-# Extract and display geometry types correctly
-geometry_types <- sapply(objects, function(obj) {
-  if ("sf" %in% class(obj)) { # Check if the object is an sf object
-    geom_types <- st_geometry_type(obj, by_geometry = FALSE) # Get geometry types
-    return(unique(as.character(geom_types))) # Ensure unique types are returned as character strings
-  } else {
-    return("Not an sf object") 
-  }
-})
-
-# Print the results
-print(geometry_types)
-
-setback3200 <- st_read('data/processed/buffer_3200ft.shp')
-
-setback3200_crs <- st_transform(setback3200, st_crs(ca))
-
-ggplot() +
-  geom_sf(data = ca, fill = "beige", color = "black") + # Plot CA shapefile
-  geom_sf(data = setback3200_crs, color = "blue", size = 3) + # Add points
-  theme_minimal() +
-  labs(title = "Sensitive Receptors in California")
-
-
 
 
 

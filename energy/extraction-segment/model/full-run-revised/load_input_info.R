@@ -1,7 +1,7 @@
 ## Tracey Mangin
 ## February 1, 2022
 ## model: load input info
-## Updated 2/28/24 - MP
+## Updated 5/2/24 - MP
 
 setwd('/capstone/freshcair/meds-freshcair-capstone')
 
@@ -21,7 +21,6 @@ setwd('/capstone/freshcair/meds-freshcair-capstone')
 # forecast_path     = paste0(main_path, extract_path)
 # entry_path        = paste0(main_path, extract_path)
 # stocks_flows_path = paste0(main_path, extract_path)
-# exist_prod_path   = paste0(main_path, extract_path)
 # setback_path      = paste0(main_path, extract_path)
 # decline_path      = paste0(main_path, extract_path)
 # peak_path         = paste0(main_path, extract_path)
@@ -149,18 +148,18 @@ ccs_scens[, ccs_scenario := factor(ccs_scenario, levels = c('no ccs', 'high CCS 
 ## load price data -- Updated - MP
 price_data = fread(file.path('data/processed/field_capex_opex_forecast_revised.csv'), header = T)
 
-## load resource data -- Updated but stole from Zenodo - MP
-resource_data = fread(file.path("data/intermediate-zenodo/intermediate/extraction-model/field_resource_revised.csv"), header = T)
+# Updated - MP
+resource_data = fread(file.path("data/processed/field_resource_revised.csv"), header = T)
 resource_data = resource_data[, c('doc_field_code', 'resource')]
 
-## oad ghg factors -- Updated but stole from Zenodo - MP
-ghg_factors = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/ghg_emissions_x_field_2018-2045.csv'), header = T)
+## oad ghg factors -- Updated - MP
+ghg_factors = fread(file.path('data/processed/ghg_emissions_x_field_2018-2045.csv'), header = T)
 # ghg_factors = ghg_factors[, .(doc_field_code, doc_fieldname, upstream_kgCO2e_bbl)]
 
 ## adjust setback files to include setback toggle
 ## -----------------------------------------------------------
 
-# load n wells in setbacks and setback coverage file -- need to fix our version
+# load n wells in setbacks and setback coverage file 
 n_wells_setbacks = fread(file.path('data/processed/n_wells_area.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 ## setback applies to existing wells
@@ -191,7 +190,7 @@ n_wells_setbacks <- rbind(n_wells_setbacks, n_wells_setbacks0)
 
 
 ## load setback scenarios -- Updated - MP
-setback_scens = fread(file.path("data/processed/setback_coverage_R.csv"), header = T, colClasses = c('doc_field_code' = 'character'))
+setback_scens = fread(file.path("data/processed/setback-cov/setback_coverage_R.csv"), header = T, colClasses = c('doc_field_code' = 'character'))
 setback_scens[, scen_area_m2 := orig_area_m2 *  (1 - rel_coverage)]
 setback_scens <- setback_scens[, c("doc_field_code", "setback_scenario", "orig_area_m2", "scen_area_m2", "rel_coverage")]
 setnames(setback_scens, 'rel_coverage', 'area_coverage')
@@ -283,7 +282,7 @@ coefs_dt = fread(file.path('data/intermediate-zenodo/intermediate/extraction-mod
 coefs_dt = unique(coefs_dt)
 
 # load decline parameters -- Updated - MP
-decline_dt = fread(file.path('data/processed/forecasted_decline_parameters_2020_2045.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
+decline_dt = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/forecasted_decline_parameters_2020_2045.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 # load peak production for each field
 peak_dt = fread(file.path('data/processed/field-year_peak-production_yearly.csv'), header = T, colClasses = c('doc_field_code' = 'character'))

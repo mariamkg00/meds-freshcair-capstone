@@ -3,6 +3,8 @@
 ## September 2, 2021
 ## Compile extraction outputs (site and county, include 2019) -- use individual rds files
 ## Updated 4/14/24 - MP
+## Updated 4/24/24 - MP
+## Updated 5/2/24 - MP
 
 ## libraries
 library(data.table)
@@ -14,6 +16,7 @@ library(furrr)
 library(future)
 library(dplyr)
 library(sf)
+library(dplyr)
 
 
 ## model output location
@@ -28,7 +31,7 @@ main_path_external     <- '/capstone/freshcair/meds-freshcair-capstone/'
 sp_data_path     <- paste0(main_path, "data/input/gis/")
 
 ## UPDATE THESE WITH NEW RUNS!!!!!
-extraction_folder_path <- 'data/processed/extraction_2024-04-14'
+extraction_folder_path <- 'data/processed/extraction_2024-05-02'
 extraction_folder_name <- 'revision-setbacks/'
 data_path  <-'data/processed/'
 
@@ -39,10 +42,10 @@ inmap_ex_path  <- paste0(main_path, "data/processed/extraction")
 if(save_external == 1) {
   
   ## UPDATE THIS WITH NEW RUNS!!!!!
-  extraction_path <- paste0('data/processed/extraction_2024-04-14/revision-setbacks/')
+  extraction_path <- paste0('data/processed/extraction_2024-05-02/revision-setbacks/')
   
-  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-04-14/academic-out/'), showWarnings = FALSE)
-  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-04-14/')
+  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-05-02/academic-out/'), showWarnings = FALSE)
+  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-05-02/')
 
 } else {
   
@@ -95,19 +98,19 @@ dir.create(health_county_save_path, showWarnings = FALSE)
 dac_ces <- read_xlsx(paste0(main_path, 'data/inputs/health/ces3results.xlsx'))
 
 ces_county <- dac_ces %>%
-  select(`Census Tract`, `California County`) %>%
-  rename(census_tract = `Census Tract`,
-         county = `California County`) %>%
+  dplyr::select("Census Tract", "California County") %>%
+  dplyr::rename(census_tract = "Census Tract",
+         county = "California County") %>%
   mutate(census_tract = paste0("0", census_tract, sep="")) 
 
 ## income -- cencus tract
-med_house_income <- fread(paste0(main_path, "data/inputs/gis/census-tract/ca-median-house-income.csv"), stringsAsFactors = F) # not exist -------
+med_house_income <- fread(paste0(main_path, "data/inputs/gis/census-tract/ca-median-house-income.csv"), stringsAsFactors = F) 
 med_house_income[, census_tract := paste0("0", GEOID)]
 med_house_income <- med_house_income[, .(census_tract, estimate)]
 setnames(med_house_income, "estimate", "median_hh_income")
 
 ## income -- county
-county_income <- fread('data/inputs/gis/census-tract/ca-median-house-income-county.csv', stringsAsFactors = F) # not exist -----
+county_income <- fread('data/inputs/gis/census-tract/ca-median-house-income-county.csv', stringsAsFactors = F) 
 county_income <- county_income[, .(county, estimate)]
 setnames(county_income, "estimate", "median_hh_income")
 
@@ -128,17 +131,18 @@ ghg_2019 <- as.numeric(hist_ghg[, value][1])
 
 
 ## ghg factors
-ghg_factors = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/ghg_emissions_x_field_2018-2045.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
+ghg_factors = fread(file.path('data/processed/ghg_emissions_x_field_2018-2045.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 ghg_factors_2019 = ghg_factors[year == 2019, c('doc_field_code', 'year', 'upstream_kgCO2e_bbl')]
 
 ## oil prices
 oilpx_scens = read_excel(path = file.path('data/inputs/extraction/oil_price_projections_revised.xlsx'), 
                          sheet = "real") %>%
-  select(1:4) %>%
+  dplyr::select(1:4) %>%
   setDT()
 colnames(oilpx_scens) = c('year', 'reference_case', 'high_oil_price', 'low_oil_price')
 oilpx_scens = melt(oilpx_scens, measure.vars = c('reference_case', 'high_oil_price', 'low_oil_price'), 
                    variable.name = 'oil_price_scenario', value.name = 'oil_price_usd_per_bbl')
+setDT(oilpx_scens)
 oilpx_scens[, oil_price_scenario := gsub('_', ' ', oil_price_scenario)]
 oilpx_scens[, oil_price_scenario := factor(oil_price_scenario, levels = c('reference case', 'high oil price', 'low oil price'))]
 oilpx_scens <- oilpx_scens[year >= 2019]
@@ -153,7 +157,7 @@ setorderv(oilpx_scens, c('oil_price_scenario', 'year'))
 
 total_multipliers_ext <- read_xlsx('data/processed/ica_multipliers_v2.xlsx', sheet = 'ica_total') %>% 
   filter((county != "Statewide" & segment == "extraction") | is.na(segment)==T) %>% 
-  rename(dire_emp_mult = direct_emp, 
+  dplyr::rename(dire_emp_mult = direct_emp, 
          indi_emp_mult = indirect_emp, 
          indu_emp_mult = induced_emp,
          dire_comp_mult = direct_comp, 
@@ -176,35 +180,35 @@ county_lut <- well_prod %>%
 ## field name look up 
 fname_lut <- well_prod %>%
   dplyr::select(doc_field_code, doc_fieldname) %>%
-  unique()
+  unique() 
 
 ## get relative county production (most recent year of nonzero production available for each field)
 prod_x_county <- well_prod %>%
   left_join(county_lut) %>%
-  group_by(doc_field_code, doc_fieldname, year, adj_county_name) %>%
-  summarise(prod = sum(OilorCondensateProduced, na.rm = T)) %>%
+  dplyr::group_by(doc_field_code, doc_fieldname, year, adj_county_name) %>%
+  dplyr::summarise(prod = sum(OilorCondensateProduced, na.rm = T)) %>%
   ungroup() %>%
-  group_by(doc_field_code, year) %>%
+  dplyr::group_by(doc_field_code, year) %>%
   mutate(field_total = sum(prod, na.rm = T)) %>%
   ungroup() %>%
   mutate(rel_prod = prod / field_total,
          rel_prod = ifelse(is.na(rel_prod) & prod == 0 & field_total == 0, 0, rel_prod)) %>%
   filter(rel_prod > 0) %>%
-  group_by(doc_field_code) %>%
+  dplyr::group_by(doc_field_code) %>%
   filter(year == max(year)) %>%
   ungroup() %>%
-  select(doc_field_code, adj_county_name, rel_prod)
+  dplyr::select(doc_field_code, adj_county_name, rel_prod)
 
 ## how many fields with positive prod?
 # View(field_out[, c(prod = sum(total_prod_bbl, na.rm = T)), by = doc_field_code][V1 > 0])
 
 ## calculate 2019 production, emissions, revenue
 init_prod <- well_prod %>%
-  filter(year == 2019) %>%
-  select(doc_field_code, doc_fieldname, year, OilorCondensateProduced) %>%
-  group_by(doc_field_code, doc_fieldname, year) %>%
-  summarise(total_prod_bbl = sum(OilorCondensateProduced, na.rm = T)) %>%
-  ungroup()
+  dplyr::filter(year == 2019) %>%
+  dplyr::select(doc_field_code, doc_fieldname, year, OilorCondensateProduced) %>%
+  dplyr::group_by(doc_field_code, doc_fieldname, year) %>%
+  dplyr::summarise(total_prod_bbl = sum(OilorCondensateProduced, na.rm = T)) %>%
+  dplyr::ungroup()
 
 setDT(init_prod)
 
@@ -212,6 +216,9 @@ setDT(init_prod)
 init_prod <- merge(init_prod, ghg_factors_2019,
                    by = c('doc_field_code', 'year'),
                    all.x = T)
+
+# Added - MP
+setDT(init_prod)
 
 init_prod[, total_ghg_kgCO2e := total_prod_bbl * upstream_kgCO2e_bbl]
 
@@ -259,10 +266,10 @@ read_extraction <- function(buff_field){
 
 srm_all_pollutants_extraction <- future_map_dfr(fields_vector, read_extraction) %>% 
   bind_rows() %>%
-  rename(weighted_totalpm25 = totalpm25_aw)%>%
-  select(-totalpm25) %>%
+  dplyr::rename(weighted_totalpm25 = totalpm25_aw)%>%
+  dplyr::select(-totalpm25) %>%
   spread(poll, weighted_totalpm25) %>%
-  rename(weighted_totalpm25nh3 = nh3,
+  dplyr::rename(weighted_totalpm25nh3 = nh3,
          weighted_totalpm25nox = nox,
          weighted_totalpm25pm25 = pm25,
          weighted_totalpm25sox = sox,
@@ -297,10 +304,10 @@ read_extraction_county <- function(buff_field){
 
 srm_all_pollutants_extraction_c <- future_map_dfr(fields_vector, read_extraction_county) %>% 
   bind_rows() %>%
-  rename(weighted_totalpm25 = totalpm25_aw)%>%
-  select(-totalpm25) %>%
+  dplyr::rename(weighted_totalpm25 = totalpm25_aw)%>%
+  dplyr::select(-totalpm25) %>%
   spread(poll, weighted_totalpm25) %>%
-  rename(weighted_totalpm25nh3 = nh3,
+  dplyr::rename(weighted_totalpm25nh3 = nh3,
          weighted_totalpm25nox = nox,
          weighted_totalpm25pm25 = pm25,
          weighted_totalpm25sox = sox,
@@ -314,11 +321,11 @@ srm_all_pollutants_extraction_c <- future_map_dfr(fields_vector, read_extraction
 #load and process cross-walk between fields and clusters -- removed sep="" 
 extraction_field_clusters_10km <- read.csv('data/intermediate-zenodo/intermediate/extraction-model/extraction_fields_clusters_10km.csv') %>%
   dplyr::select(OUTPUT_FID, INPUT_FID) %>%
-  rename(id = OUTPUT_FID, input_fid = INPUT_FID)
+  dplyr::rename(id = OUTPUT_FID, input_fid = INPUT_FID)
 
 # Removed sep=""
 extraction_fields_xwalk <- foreign::read.dbf('data/intermediate-zenodo/intermediate/extraction-model/extraction_fields_xwalk_id.dbf') %>%
-  rename(input_fid = id, doc_field_code = dc_fld_)
+  dplyr::rename(input_fid = id, doc_field_code = dc_fld_)
 
 ## Add Old Wilmington to xwalk
 oldw_df <- data.table(NAME = "Old Wilmington (ABD)",
@@ -334,8 +341,8 @@ extraction_xwalk <- extraction_field_clusters_10km %>%
 ## (2.1) Load demographic data
 # Disadvantaged community definition
 ces3 <- read.csv('data/inputs/health/ces3_data.csv', stringsAsFactors = FALSE) %>%
-  select(census_tract, population, CES3_score, disadvantaged) %>%
-  mutate(census_tract = paste0("0", census_tract, sep="")) %>%
+  dplyr::select(census_tract, population, CES3_score, disadvantaged) %>%
+  dplyr::mutate(census_tract = paste0("0", census_tract, sep="")) %>%
   as.data.table()
 
 ## add counties
@@ -350,16 +357,16 @@ ct_inc_pop_45 <- fread('data/processed/ct_inc_45.csv', stringsAsFactors  = FALSE
   mutate(ct_id = paste0(stringr::str_sub(gisjoin, 2, 3),
                         stringr::str_sub(gisjoin, 5, 7),
                         stringr::str_sub(gisjoin, 9, 14))) %>%
-  select(ct_id, lower_age, upper_age, year, pop, incidence_2015) %>%
+  dplyr::select(ct_id, lower_age, upper_age, year, pop, incidence_2015) %>%
   as.data.table()
 
 ## census tract, population > 29
 ct_pop_time <- ct_inc_pop_45 %>%
-  filter(lower_age > 29) %>%
-  group_by(ct_id, year) %>%
-  summarize(ct_pop = sum(pop, na.rm = T)) %>%
+  dplyr::filter(lower_age > 29) %>%
+  dplyr::group_by(ct_id, year) %>%
+  dplyr::summarise(ct_pop = sum(pop, na.rm = T)) %>%
   ungroup() %>%
-  rename(census_tract = ct_id) %>%
+  dplyr::rename(census_tract = ct_id) %>%
   as.data.table()
 
 ## dac share over time
@@ -370,11 +377,11 @@ ct_pop_time <- merge(ct_pop_time, ces3,
 ## census-tract level population-weighted incidence rate (for age>29)
 ct_inc_pop_45_weighted <- ct_inc_pop_45 %>%
   filter(lower_age > 29) %>%
-  group_by(ct_id, year) %>%
-  mutate(ct_pop = sum(pop, na.rm = T),
+  dplyr::group_by(ct_id, year) %>%
+  dplyr::mutate(ct_pop = sum(pop, na.rm = T),
          share = pop/ct_pop,
          weighted_incidence = sum(share * incidence_2015, na.rm = T)) %>%
-  summarize(weighted_incidence = unique(weighted_incidence),
+  dplyr::summarise(weighted_incidence = unique(weighted_incidence),
             pop = unique(ct_pop)) %>%
   ungroup() %>%
   as.data.table()
@@ -383,14 +390,14 @@ ct_inc_pop_45_weighted <- ct_inc_pop_45 %>%
 county_inc_pop_45_weighted <- ct_inc_pop_45 %>%
   left_join(ces_county, by = c("ct_id" = "census_tract")) %>%
   filter(lower_age > 29) %>%
-  group_by(county, lower_age, upper_age, year, incidence_2015) %>%
-  summarise(pop = sum(pop, na.rm = T)) %>%
+  dplyr::group_by(county, lower_age, upper_age, year, incidence_2015) %>%
+  dplyr::summarise(pop = sum(pop, na.rm = T)) %>%
   ungroup() %>%
-  group_by(county, year) %>%
-  mutate(county_pop = sum(pop, na.rm = T),
+  dplyr::group_by(county, year) %>%
+  dplyr::mutate(county_pop = sum(pop, na.rm = T),
          share = pop/county_pop,
          weighted_incidence = sum(share * incidence_2015, na.rm = T)) %>%
-  summarize(weighted_incidence = unique(weighted_incidence),
+  dplyr::summarise(weighted_incidence = unique(weighted_incidence),
             pop = unique(county_pop)) %>%
   ungroup() %>%
   as.data.table()
@@ -399,13 +406,14 @@ county_inc_pop_45_weighted <- ct_inc_pop_45 %>%
 ## county pop
 county_pop <- ct_inc_pop_45_weighted %>%
   left_join(ces_county, by = c('ct_id' = 'census_tract')) %>%
-  group_by(county, year) %>%
-  summarise(county_pop = sum(pop)) %>%
+  dplyr::group_by(county, year) %>%
+  dplyr::summarise(county_pop = sum(pop)) %>%
   ungroup() %>%
   filter(!is.na(county))
 
 ## DAC proportion
 county_dac <- dcast(ct_pop_time, county + census_tract + year ~ disadvantaged, value.var = "ct_pop")
+setDT(county_dac)
 county_dac <- county_dac[!is.na(county)]
 county_dac[, Yes := fifelse(is.na(Yes), 0, Yes)]
 county_dac[, No := fifelse(is.na(No), 0, No)]
@@ -416,7 +424,7 @@ county_dac <- county_dac[, .(dac_share = weighted.mean(dac_share, total_pop, na.
 ## county geoids
 county_ids <- st_read('data/inputs/gis/CA_counties_noislands/CA_Counties_TIGER2016_noislands.shp') %>%
   st_transform(crs=3310) %>%
-  select(GEOID, county = NAME) %>%
+  dplyr::select(GEOID, county = NAME) %>%
   st_drop_geometry() %>%
   unique()
 
@@ -428,9 +436,9 @@ se <- 0.0009628
 ## for monetary mortality impact - growth in income for use in WTP function
 growth_rates <- read.csv('data/inputs/health/growth_rates.csv', stringsAsFactors = FALSE) %>%
   filter(year > 2018) %>%
-  mutate(growth = ifelse(year == 2019, 0, growth_2030),
+  dplyr::mutate(growth = ifelse(year == 2019, 0, growth_2030),
          cum_growth = cumprod(1 + growth)) %>%
-  select(-growth_2030, -growth) %>%
+  dplyr::select(-growth_2030, -growth) %>%
   as.data.table()
 
 #Parameters for monetary health impact
@@ -459,7 +467,6 @@ print(paste("Starting extraction compiling at ", start_time))
 doParallel::registerDoParallel(cores = n_cores)
 
 for (i in 1:length(field_files_to_process)) {
-  
   
   field_file_name <- field_files_to_process[i]
   
@@ -500,6 +507,11 @@ for (i in 1:length(field_files_to_process)) {
                                'ccs_scenario', 'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario',  
                                'year', 'doc_field_code'),
                         all.x = T)
+  
+  # Added - MP
+  full_site_df[, total_ghg_kgCO2e := site_out[match(paste(full_site_df$scen_id, full_site_df$doc_field_code, full_site_df$year), 
+                                                    paste(site_out$scen_id, site_out$doc_field_code, site_out$year)), 
+                                              total_ghg_kgCO2e], on = "site_out"]
   
   ## 2019
   full_site_df_2019 <- full_site_df[year == 2019]
@@ -680,7 +692,7 @@ for (i in 1:length(field_files_to_process)) {
   
   total_clusters <- total_clusters %>%
     right_join(srm_all_pollutants_extraction, by = c("id")) %>%
-    mutate(tot_nh3 = weighted_totalpm25nh3 * nh3,
+    dplyr::mutate(tot_nh3 = weighted_totalpm25nh3 * nh3,
            tot_nox = weighted_totalpm25nox * nox,
            tot_sox = weighted_totalpm25sox * sox,
            tot_pm25 = weighted_totalpm25pm25 * pm25,
@@ -691,13 +703,13 @@ for (i in 1:length(field_files_to_process)) {
   ct_exposure <- total_clusters %>%
     ## Adjust mismatch of census tract ids between inmap and benmap (census ID changed in 2012 
     ## http://www.diversitydatakids.org/sites/default/files/2020-02/ddk_coi2.0_technical_documentation_20200212.pdf)
-    mutate(GEOID = ifelse(GEOID == "06037137000", "06037930401", GEOID)) %>%
-    group_by(GEOID, year, scen_id, oil_price_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, excise_tax_scenario) %>%
-    summarize(total_pm25 = sum(total_pm25, na.rm = T), 
+    dplyr::mutate(GEOID = ifelse(GEOID == "06037137000", "06037930401", GEOID)) %>%
+    dplyr::group_by(GEOID, year, scen_id, oil_price_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, excise_tax_scenario) %>%
+    dplyr::summarise(total_pm25 = sum(total_pm25, na.rm = T), 
               prim_pm25 = sum(prim_pm25, na.rm = T)) %>%
     ungroup() %>%
-    rename(census_tract = GEOID) %>%
-    select(scen_id, oil_price_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, excise_tax_scenario,
+    dplyr::rename(census_tract = GEOID) %>%
+    dplyr::select(scen_id, oil_price_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, excise_tax_scenario,
            census_tract, year, total_pm25)
   
   ## add ces score, income, and dac
@@ -708,7 +720,7 @@ for (i in 1:length(field_files_to_process)) {
   ## add income
   ct_exposure <- merge(ct_exposure, med_house_income,
                        by = c("census_tract"),
-                       all.x = T)
+                       all.x = T) 
   
   
   setorder(ct_exposure, "census_tract", "year")
@@ -735,7 +747,7 @@ for (i in 1:length(field_files_to_process)) {
 
   ## calculate air pollution using emission factors
   total_clusters_sens <- total_clusters_sens %>%
-    mutate(nh3 = total_prod_bbl * 0.00061 / 1000,
+    dplyr::mutate(nh3 = total_prod_bbl * 0.00061 / 1000,
            nox = total_prod_bbl * 0.04611 / 1000,
            pm25 = total_prod_bbl * 0.00165 / 1000,
            sox = total_prod_bbl * 0.01344 / 1000,
@@ -743,7 +755,7 @@ for (i in 1:length(field_files_to_process)) {
 
   total_clusters_sens <- total_clusters_sens %>%
     right_join(srm_all_pollutants_extraction_c, by = c("id")) %>%
-    mutate(tot_nh3 = weighted_totalpm25nh3 * nh3,
+    dplyr::mutate(tot_nh3 = weighted_totalpm25nh3 * nh3,
            tot_nox = weighted_totalpm25nox * nox,
            tot_sox = weighted_totalpm25sox * sox,
            tot_pm25 = weighted_totalpm25pm25 * pm25,
@@ -752,11 +764,11 @@ for (i in 1:length(field_files_to_process)) {
            prim_pm25 = tot_pm25)
 
   ct_exposure_sens <- total_clusters_sens %>%
-    group_by(GEOID, year, scen_id, oil_price_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, excise_tax_scenario) %>%
-    summarize(total_pm25 = sum(total_pm25, na.rm = T),
+    dplyr::group_by(GEOID, year, scen_id, oil_price_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, excise_tax_scenario) %>%
+    dplyr::summarise(total_pm25 = sum(total_pm25, na.rm = T),
               prim_pm25 = sum(prim_pm25, na.rm = T)) %>%
-    ungroup() %>%
-    select(scen_id, oil_price_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, excise_tax_scenario,
+    dplyr::ungroup() %>%
+    dplyr::select(scen_id, oil_price_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, excise_tax_scenario,
            GEOID, year, total_pm25)
 
   ## add county ids
@@ -775,6 +787,7 @@ for (i in 1:length(field_files_to_process)) {
   setcolorder(ct_exposure_sens, c("scen_id", "oil_price_scenario", "carbon_price_scenario", "ccs_scenario", "setback_scenario", "setback_existing",
                              "excise_tax_scenario", "GEOID", "county", "year", "dac_share", "total_pm25"))
 
+  print(colnames(ct_exposure_sens))
   ## save census tract sensitivity outputs (pm2.5 levels, mortality level, cost)
   saveRDS(ct_exposure_sens, paste0(health_county_save_path, scenario_id_tmp, "_ctc_results.rds"))
 
@@ -825,8 +838,8 @@ for(i in 1:length(bau_scens)) {
   scen_tmp <- bau_scens[i]
   
   bau_tmp <- readRDS(paste0(ct_save_path, scen_tmp)) %>%
-    rename(bau_total_pm25 = total_pm25) %>%
-    select(oil_price_scenario, setback_existing, census_tract, year, bau_total_pm25) %>% 
+    dplyr::rename(bau_total_pm25 = total_pm25) %>%
+    dplyr::select(oil_price_scenario, setback_existing, census_tract, year, bau_total_pm25) %>% 
     as.data.table()
   
   bau_out[[i]] <- bau_tmp
@@ -847,7 +860,7 @@ scenarios_to_process <- str_remove_all(field_files_to_process, "_field.rds")
 
 
 for (i in 1:length(scenarios_to_process)) {
-  
+  print(i)
   scen_file_name <- scenarios_to_process[i]
   
   ct_scen_out <- readRDS(paste0(ct_save_path, scen_file_name, "_ct_results.rds"))
@@ -879,21 +892,21 @@ for (i in 1:length(scenarios_to_process)) {
   
   ## Calculate the cost per premature mortality
   ct_incidence <- ct_incidence %>%
-    mutate(VSL_2019 = VSL_2019)%>%
+    dplyr::mutate(VSL_2019 = VSL_2019)%>%
     left_join(growth_rates, by = c("year" = "year"))%>%
-    mutate(VSL = future_WTP(income_elasticity_mort, 
+    dplyr::mutate(VSL = future_WTP(income_elasticity_mort, 
                             (cum_growth-1),
                             VSL_2019),
            cost_2019 = mortality_delta * VSL_2019,
            cost = mortality_delta * VSL)%>%
-    group_by(year) %>%
-    mutate(cost_2019_PV = cost_2019/((1+discount_rate)^(year-2019)),
+    dplyr::group_by(year) %>%
+    dplyr::mutate(cost_2019_PV = cost_2019/((1+discount_rate)^(year-2019)),
            cost_PV = cost/((1+discount_rate)^(year-2019))) %>%
     ungroup()
   
   ## final census tract level health outputs
   ct_incidence <- ct_incidence %>%
-    select(scen_id, census_tract, CES3_score, disadvantaged, median_hh_income, year, weighted_incidence, pop, total_pm25, bau_total_pm25, delta_total_pm25, 
+    dplyr::select(scen_id, census_tract, CES3_score, disadvantaged, median_hh_income, year, weighted_incidence, pop, total_pm25, bau_total_pm25, delta_total_pm25, 
            mortality_delta, mortality_level, cost_2019, cost, cost_2019_PV, cost_PV) %>%
     as.data.table()
   
@@ -948,8 +961,8 @@ for (i in 1:length(scenarios_to_process)) {
     scen_tmp <- bau_scens_sens[i]
     
     bau_tmp <- readRDS(paste0(health_county_save_path, scen_tmp)) %>%
-      rename(bau_total_pm25 = total_pm25) %>%
-      select(oil_price_scenario, setback_existing, GEOID, year, bau_total_pm25) %>% 
+      dplyr::rename(bau_total_pm25 = total_pm25) %>%
+      dplyr::select(oil_price_scenario, setback_existing, GEOID, year, bau_total_pm25) %>% 
       as.data.table()
     
     bau_out_sens[[i]] <- bau_tmp
@@ -962,19 +975,17 @@ for (i in 1:length(scenarios_to_process)) {
   # scenarios_to_process_sens <- str_remove_all(field_files_to_process, "_ctc_field.rds")
   
   for (i in 1:length(scenarios_to_process)) {
-    
     print(i)
     
     scen_file_name_sens <- scenarios_to_process[i]
-    
     ctc_scen_out <- readRDS(paste0(health_county_save_path, scen_file_name_sens, "_ctc_results.rds"))
+    print(colnames(ctc_scen_out))
     setDT(ctc_scen_out)
-    
-    ## calculate delta pm 2.5
+    ## calculate delta pm 2.5 -- ISSUE IS HERE
     delta_extraction_sens <- merge(ctc_scen_out, bau_out_sens,
                               by = c("oil_price_scenario", "setback_existing", "GEOID", "year"),
                               all.x = T)
-    
+
     delta_extraction_sens[, delta_total_pm25 := total_pm25 - bau_total_pm25]
     
     
@@ -985,6 +996,7 @@ for (i in 1:length(scenarios_to_process)) {
       # remove census tracts that are water area only tracts (no population)
       drop_na(scen_id) %>% 
       as.data.table()
+    print("check3")
     
     ## Calculate mortality impact ######################################
     
@@ -996,21 +1008,21 @@ for (i in 1:length(scenarios_to_process)) {
     
     ## Calculate the cost per premature mortality
     ctc_incidence <- ctc_incidence %>%
-      mutate(VSL_2019 = VSL_2019)%>%
+      dplyr::mutate(VSL_2019 = VSL_2019)%>%
       left_join(growth_rates, by = c("year" = "year"))%>%
-      mutate(VSL = future_WTP(income_elasticity_mort, 
+      dplyr::mutate(VSL = future_WTP(income_elasticity_mort, 
                               (cum_growth-1),
                               VSL_2019),
              cost_2019 = mortality_delta * VSL_2019,
              cost = mortality_delta * VSL)%>%
-      group_by(year) %>%
-      mutate(cost_2019_PV = cost_2019/((1+discount_rate)^(year-2019)),
+      dplyr::group_by(year) %>%
+      dplyr::mutate(cost_2019_PV = cost_2019/((1+discount_rate)^(year-2019)),
              cost_PV = cost/((1+discount_rate)^(year-2019))) %>%
       ungroup()
     
     ## final census tract level health outputs
     ctc_incidence <- ctc_incidence %>%
-      select(scen_id, GEOID, county, year, dac_share, weighted_incidence, pop, total_pm25, bau_total_pm25, delta_total_pm25, 
+      dplyr::select(scen_id, GEOID, county, year, dac_share, weighted_incidence, pop, total_pm25, bau_total_pm25, delta_total_pm25, 
              mortality_delta, mortality_level, cost_2019, cost, cost_2019_PV, cost_PV) %>%
       as.data.table()
     
@@ -1038,7 +1050,7 @@ for (i in 1:length(scenarios_to_process)) {
     setDT(state_out)
     
     state_out <- state_out %>%
-      select(scen_id:total_comp) %>%
+      dplyr::select(scen_id:total_comp) %>%
       as.data.table()
     
     state_out <- merge(state_out, ctc_incidence_state,

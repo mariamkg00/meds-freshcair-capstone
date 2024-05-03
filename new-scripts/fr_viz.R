@@ -8,6 +8,8 @@ library(janitor)
 library(sf)
 library(tigris)
 library(forecast)
+library(leaflet)
+library(tmap)
 
 # Read in data
 field_prod <- read.csv('data/processed/annual_field_county_production_proportion_revised.csv')
@@ -137,19 +139,53 @@ county_prod_2019 <- field_prod %>%
 california_counties <- california_counties %>%
   left_join(county_2019_summary, by = c("name" = "county_name"))
 
-buffer_3200 <- st_read(here("data/processed/buffer_3200ft.shp")) 
+buffer_3200 <- st_read(here("data/processed/final_buffer_3200ft.shp")) %>% 
+  st_transform(3488)
+old_buffer_3200 <- st_read(here("data/processed/buffer_3200ft.shp")) %>% 
+  st_transform(3488)
 
 viz2 <- ggplot() +
   geom_sf(data = california_counties, aes(fill = TotalNumberOfActiveWells), color = "white") +
+  geom_sf(data = old_buffer_3200, color = "pink", fill = "pink", alpha = 0.3) +
   geom_sf(data = buffer_3200, color = "red", fill = 'red', alpha = 0.3) + 
   scale_fill_gradient(name = "Number of active wells", 
                       low = "lightblue", high = "darkblue",
                       labels = label_comma()) +
-  labs(title = "Number of Active Wells by County in 2019 with 5,280 Foot Buffer") +
-  coord_sf(xlim = c(-122, -116), ylim = c(32, 38), expand = FALSE) +
+  labs(title = "Number of Active Wells by County in 2019 with 3,200 Foot Buffer") +
   theme_bw()
 
 viz2
+
+tmap_mode("view")
+
+# Define the base map
+base_map <- tm_shape(california_counties) +
+  tm_polygons("TotalNumberOfActiveWells", 
+              style = "jenks", 
+              palette = "YlOrRd",
+              title = "Number of Active Wells",
+              labels = label_comma()) +
+  tm_layout(frame = FALSE)
+
+# Add the buffer layers
+buffer_map <- base_map +
+  tm_shape(old_buffer_3200) +
+  tm_polygons(col = "pink", alpha = 0.3) +
+  tm_shape(buffer_3200) +
+  tm_polygons(col = "red", alpha = 0.3)
+
+# Display the interactive map
+base_map
+  
+leaflet2
+
+diff_area <- st_difference(buffer_3200, old_buffer_3200)
+
+# Plot the difference
+plot(st_geometry(diff_area), main = "Difference in Area")
+
+total_diff_area <- sum(st_area(diff_area))
+print(total_diff_area)
 
 # ggsave("data/processed/viz2.png", viz2, width = 12, height = 8)
 

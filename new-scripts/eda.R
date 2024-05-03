@@ -429,7 +429,7 @@ wells_by_tract <- st_join(wells, census_tracts, join = st_within)
 # Count wells in each census tract
 wells_count <- wells_by_tract %>%
   group_by(NAME) %>%
-  summarize(total_wells = n())
+  summarise(total_wells = n())
 
 interactive_map <- mapview(wells_by_tract, zcol = "WellStatus", layer.name = "Wells and Census Tracts")
 
@@ -452,7 +452,7 @@ census_tracts_with_wells <- census_tracts %>%
 # str(census_tracts_with_wells)
 
 interactive_map_tracts <- mapview(ca, layer.name = "California", alpha.regions = 0.5) +
-  mapview(census_tracts_with_wells, zcol = "total_wells", col.regions = reds, layer.name = "Num of wells", at = seq(0, 40000, 5000, na.rm = TRUE), length.out = 9)
+  mapview(census_tracts_with_wells, zcol = "total_wells", layer.name = "Num of wells", at = seq(0, 40000, 5000, na.rm = TRUE), length.out = 9)
 
 interactive_map_tracts
 
@@ -521,7 +521,7 @@ ggplot(non_kern_county_wells, aes(x = NAME, fill = well_count_category)) +
 well_count_bins <- cut(non_kern_county_wells$total_wells, breaks = c(0, 25, 250, 2500, 9000, Inf), include.lowest = TRUE, labels = c("1-25", "26-250", "251-2500", "2501-11000", "> 11000"))
 
 # Create an interactive map for non-Kern County areas
-non_kern_county_map <- mapview(non_kern_county_wells, zcol = "well_count_category", col.regions = reds, layer.name = "Wells Count", legend = TRUE)
+non_kern_county_map <- mapview(non_kern_county_wells, zcol = "well_count_category", layer.name = "Wells Count", legend = TRUE)
 
 # Display the non-Kern County map
 non_kern_county_map

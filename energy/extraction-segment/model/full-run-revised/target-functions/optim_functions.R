@@ -6,7 +6,6 @@
 ## --------------------------------------------------------------------------  
 
 find_excise_tax <- function(scen_z) {
-  
   # scen_z
   scen_id_z <- scen_z[, scen_id][1]
   target_z <- scen_z[, target][1]

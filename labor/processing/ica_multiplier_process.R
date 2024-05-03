@@ -910,6 +910,8 @@ ica_comp_ext_santaclara <- read_csv('ica-va-ext-santaclara.csv',skip = 1) %>%
 
 #### extraction 
 
+ica_emp_ext_statewide_test <- read_csv('ica-emp-ext-statewide.csv')
+
 ica_emp_ext_statewide <- read_csv('ica-emp-ext-statewide.csv') %>% 
   filter(is.na(...1)==F) %>% 
   mutate(county = "Statewide", segment = "extraction") %>% 

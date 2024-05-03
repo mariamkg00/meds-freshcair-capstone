@@ -163,10 +163,12 @@ scen_sel[, BAU_scen := fifelse((oil_price_scenario == 'reference case' &
                                 setback_scenario == 'no_setback' &
                                 prod_quota_scenario == 'no quota'), 1, 0)]
 
-scen_sel[, target := fifelse(prod_quota_scenario %in% c('setback_1000_quota', 'setback_2500_quota', 'setback_5280_quota'),
+# Updated - MP
+scen_sel[, target := fifelse(prod_quota_scenario %in% c('setback_1000_quota', 'setback_2500_quota', 'setback_3200_quota', 'setback_5280_quota'),
                              str_remove(prod_quota_scenario, "_quota"), "no_target")]
 
-scen_sel[, target := fifelse(target %in% c('setback_1000', 'setback_2500', 'setback_5280'), paste0(target, "ft"), target)]
+# Updated - MP
+scen_sel[, target := fifelse(target %in% c('setback_1000', 'setback_2500', 'setback_3200', 'setback_5280'), paste0(target, "ft"), target)]
 
 
 scen_sel[, target_policy := fifelse(target == "no_target", "no_target_policy", "prod_quota")]
@@ -191,9 +193,10 @@ excise_target_df[, target := str_remove(excise_tax_scenario, pattern = "tax_")]
 
 excise_target_df[, target_policy := "excise_tax"]
 
-## filter for: setback_1000ft, setback_2500ft, setback_5280ft with no_setback
+## filter for: setback_1000ft, setback_2500ft, setback_5280ft with no_setback - Updated MP
 excise_target_df[, keep := fifelse(setback_scenario == "no_setback" & target %in% c('setback_1000ft',
                                                                                     'setback_2500ft',
+                                                                                    'setback_3200ft',
                                                                                     'setback_5280ft'), 1,
                                    fifelse(target == "90perc_reduction", 1, 0))]
 
@@ -227,9 +230,10 @@ carbon_target_df[, target := str_remove(carbon_price_scenario, pattern = "carbon
 
 carbon_target_df[, target_policy := "carbon_tax"]
 
-## filter: setback_1000ft, setback_2500ft, setback_5280ft with no_setback
+## filter: setback_1000ft, setback_2500ft, setback_5280ft with no_setback -- Updated - MP
 carbon_target_df[, keep := fifelse(setback_scenario == "no_setback" & target %in% c('setback_1000ft',
                                                                                     'setback_2500ft',
+                                                                                    'setback_3200ft',
                                                                                     'setback_5280ft'), 1,
                                    fifelse(target == "90perc_reduction", 1, 0))]
 
@@ -264,7 +268,7 @@ scen_sel_toggle <- left_join(setback_toggle, scen_sel) %>%
 ## find scen selection
 ## ------------------------------
 
-## 
+## Updated - MP
 subset_dt = unique(## non-taget (all oil, all setback, all carbon px, no tax, low inno, no ccs, no quota)
   scen_sel_toggle[(innovation_scenario == 'low innovation' &
             carbon_price_scenario == "price floor" &
@@ -276,7 +280,7 @@ subset_dt = unique(## non-taget (all oil, all setback, all carbon px, no tax, lo
    !carbon_price_scenario %in% c("price ceiling", "central SCC") & 
    prod_quota_scenario == 'no quota' &
    ccs_scenario %in% c("no ccs") &
-   excise_tax_scenario %in% c("no tax", "tax_setback_1000ft", "tax_setback_2500ft", "tax_setback_5280ft", "tax_90perc_reduction") &   
+   excise_tax_scenario %in% c("no tax", "tax_setback_1000ft", "tax_setback_2500ft", "tax_setback_3200ft", "tax_setback_5280ft", "tax_90perc_reduction") &   
    target != "no_target")])
 
 
@@ -288,5 +292,5 @@ setcolorder(scen_sel_toggle, c('scen_id', 'oil_price_scenario', 'setback_scenari
                          'carbon_price_scenario', 'ccs_scenario', 'innovation_scenario', 'excise_tax_scenario', 'target', 'target_policy', 'subset_scens', 'BAU_scen'))
 
 
-# fwrite(scen_sel_toggle, file.path(academic_out, 'scenario_id_list_targets.csv'), row.names = F)
-fwrite(scen_sel_toggle, file.path('data/processed/scenario_id_list_targets.csv'), row.names = F)
+# Updated - MP
+fwrite(scen_sel_toggle, file.path('data/processed/scenario_id_list_targets_finalv2.csv'), row.names = F)

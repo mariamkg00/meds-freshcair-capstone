@@ -77,7 +77,6 @@ dt_pred = copy(decline_params)
 # loop to calculate production at each year -----
 
 for (i in seq_along(fullrange) ) {
-  
   y = fullrange[i]
   
   # dt_pred[is.na(b2), col := hypfunc(b1, y - start_year, peak_tot_prod, D)] # meas-note: the updated parameters file only has b now (no b1 or b2 or anything), so you could probably comment out this line and replace mentions of b2 with b and d2 with d
@@ -175,6 +174,7 @@ dt_pred_long_adj <- merge(op_wells_agg, dt_pred_long, by = c('doc_field_code', '
 setcolorder(dt_pred_long_adj, c("doc_field_code", "doc_fieldname", "setback_scenario", "start_year", "no_wells", 
                                 "n_not_setback_active", "year", "production_bbl"))
 
+# Convert dt_pred_long_adj to a data.table
 setDT(dt_pred_long_adj)
 
 ## calculate prod per well, use the number of non-plugged wells
@@ -184,7 +184,7 @@ dt_pred_long_adj[, prod_per_bbl := fifelse(n_active_wells == 0, 0, production_bb
 dt_pred_long_adj[, production_bbl_sb := prod_per_bbl * n_not_setback_active]
 
 ## use production_bbl_sb (rename to production_bbl) & n_not_setback_active (rename to adj_no_wells)
-dt_pred_long_adj <- dt_pred_long_adj[, c('doc_field_code', 'doc_fieldname', 'setback_scenario', 'start_year', 'no_wells', 'n_not_setback_active', 'year', 'production_bbl_sb')]
+dt_pred_long_adj <- dt_pred_long_adj[, .(doc_field_code, doc_fieldname, setback_scenario, start_year, no_wells, n_not_setback_active, year, production_bbl_sb)]
 
 ## rename
 setnames(dt_pred_long_adj, c('n_not_setback_active', 'production_bbl_sb'), c('adj_no_wells', 'production_bbl'))

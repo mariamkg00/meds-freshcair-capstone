@@ -59,6 +59,7 @@ set.seed(228)
 library(data.table)
 library(openxlsx)
 library(tidyverse)
+library(tidyr)
 # Multiprocessing
 library(doParallel)
 library(foreach)
@@ -70,14 +71,22 @@ source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', '
 
 # source function to predict extraction
 source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', 'fun_extraction_model_targets.R'))
+# source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', 'fun_extraction_model_targets_test.R'))
 
 
 ## step 0: load the inputs
 
 scen_id_list = fread(file.path('data/processed/scenario_id_list_targets.csv'), header = T)
+scen_id_list_final = fread(file.path('data/processed/scenario_id_list_targets_finalv2.csv'), header = T)
+scen_id_list_z = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/scenario_id_list_targets-z.csv'), header = T)
 
 ## filter for scenarios to run
 selected_scens <- scen_id_list[subset_scens == 1]
+
+selected_scens_z <- scen_id_list_z[subset_scens == 1]
+
+#
+selected_scens_final <- scen_id_list_final[subset_scens == 1]
 
 # step 1: run extraction model and get outputs -------
 
@@ -86,10 +95,10 @@ start_time <- Sys.time()
 print(paste("Starting extraction model at ", start_time))
 
 # cores
-n_cores <- future::availableCores() - 2
+n_cores <- future::availableCores() - 1
 doParallel::registerDoParallel(cores = n_cores)
 
-run_extraction_model(input_scenarios = selected_scens)
+run_extraction_model(selected_scens_final)
 
 elapsed_time <- Sys.time() - start_time
 print(elapsed_time)

@@ -7,7 +7,7 @@ setwd('/capstone/freshcair/meds-freshcair-capstone/')
 
 # inputs ------------
 
-res_path        = 'data/inputs/OPGEE' # add data to this folder
+res_path        = 'data/proprietery-data/opgee_results/' # add data to this folder
 prod_file       = 'data/processed/crude_prod_x_field_revised.csv'
 entry_file      = 'data/processed/entry_df_final_revised.csv'
 inj_file        = 'data/processed/injection-by-well-type-per-field-per-year_1977-2018_revised.csv'
@@ -20,7 +20,7 @@ out_file        = 'ghg_emissions_x_field_2018-2045.csv' # cheating and stole thi
 hist_file       = 'ghg_emissions_x_field_historic.csv'
 
 # load packages ------
-
+library(dplyr)
 library(data.table)
 library(ggplot2)
 library(hrbrthemes)
@@ -28,8 +28,8 @@ library(extrafont)
 
 # read in results files -----
 
-files_res = list.files(path = file.path(res_path), pattern = 'opgee_doc_results')
-list_res = lapply(file.path(res_path, files_res), fread)
+files_res = list.files(path = res_path, pattern = 'opgee_doc_results', full.names = T)
+list_res = lapply(file.path(files_res), fread)
 dt_res = rbindlist(list_res)
 
 # read in entry file to get full list of fields ------
@@ -87,7 +87,8 @@ fields_sor = unique(dt_res[sor_bbl_bbl > 0, field_name])
 
 # get top 10 producing fields in 2019 ------
 
-dt_prod = fread(file.path(emlab_path, prod_file))
+# Updated - MP
+dt_prod = fread(file.path(prod_file))
 dt_prod[, order := frank(-total_bbls), by = .(year)]
 fields_top10 = dt_prod[year == max(year) & order %in% 1:10]
 
@@ -108,7 +109,9 @@ mean_nonsteam = emfac_nonsteam[, .(upstream_kgCO2e_bbl = mean(upstream_kgCO2e_bb
 pred_steam = data.table(year = seq(2018, 2045, 1))
 lm_steam = lm(upstream_kgCO2e_bbl ~ year, mean_steam)
 pred_steam[, upstream_kgCO2e_bbl := predict(lm_steam, pred_steam)]
-pred_steam[, perc_change := (upstream_kgCO2e_bbl - shift(upstream_kgCO2e_bbl, type = 'lag'))/shift(upstream_kgCO2e_bbl, type = 'lag')]
+#pred_steam[, perc_change := (upstream_kgCO2e_bbl - shift(upstream_kgCO2e_bbl, type = 'lag'))/shift(upstream_kgCO2e_bbl, type = 'lag')]
+# replacing above line with dplyr - MP
+pred_steam[, perc_change := (upstream_kgCO2e_bbl - lag(upstream_kgCO2e_bbl))/lag(upstream_kgCO2e_bbl)]
 pred_steam[, type := 'steam']
 
 # linearly regress emission factors for non-steam fields --------
@@ -116,7 +119,9 @@ pred_steam[, type := 'steam']
 pred_nonsteam = data.table(year = seq(2018, 2045, 1))
 lm_nonsteam = lm(upstream_kgCO2e_bbl ~ year, mean_nonsteam)
 pred_nonsteam[, upstream_kgCO2e_bbl := predict(lm_nonsteam, pred_steam)]
-pred_nonsteam[, perc_change := (upstream_kgCO2e_bbl - shift(upstream_kgCO2e_bbl, type = 'lag'))/shift(upstream_kgCO2e_bbl, type = 'lag')]
+#pred_nonsteam[, perc_change := (upstream_kgCO2e_bbl - shift(upstream_kgCO2e_bbl, type = 'lag'))/shift(upstream_kgCO2e_bbl, type = 'lag')]
+# replacing above line with dplyr - MP
+pred_nonsteam[, perc_change := (upstream_kgCO2e_bbl - lag(upstream_kgCO2e_bbl))/lag(upstream_kgCO2e_bbl)]
 pred_nonsteam[, type := 'non-steam']
 
 # combine all predicted emission factors -------
@@ -243,7 +248,7 @@ final_pred_all_sel = final_pred_all[, .(doc_field_code, doc_fieldname, year, ste
 
 # export file to csv ------
 
-fwrite(final_pred_all_sel, file.path(emlab_path, out_path, out_file), row.names = F)
+fwrite(final_pred_all_sel, file.path(out_path, out_file), row.names = F)
 
 # ------------------------------- plot ---------------------------
 

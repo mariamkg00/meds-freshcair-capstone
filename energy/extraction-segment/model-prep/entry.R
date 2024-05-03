@@ -1,234 +1,298 @@
 # Calepa Carbon Neutrality
 # Set up data to estimate entry model parameters
-#
+
 # Ruiwen Lee
 # Created:   7 Aug 2020
 # Modified: 12 Sep 2020
 # Modified (for paper): 8 Jun 2021
-# Translated to R 4/16/24 - MP
+# Updated 4/25/24 - MP
 
-# Load required packages
+# Initialization
+rm(list = ls())
+options(max.print = 99999)
+
 library(dplyr)
-library(tidyr)
 library(ggplot2)
 library(readr)
-library(lubridate)
+library(stringr)
 library(fixest)
-library(readxl)
-library(stargazer)
-library(broom)
-
-# # Set working directory and paths
-# workDir <- "/Users/rui/Dropbox/ca-transport-supply-decarb/STATA/" # RL's macbook
-# # workDir <- "/Users/emlab/Dropbox/Research/CarbonNeutrality/STATA/" # emLab macbook
-# googleDriveDir <- "/Volumes/GoogleDrive-107971834908030063679/Shared drives/emlab/projects/current-projects/calepa-cn" # on RL's macbook
-
+# library(modelsummary)
 
 setwd('/capstone/freshcair/meds-freshcair-capstone')
 
-# Read the data
+# Start
+
+# Field-asset matching uses wells then nearest asset: entry_df.csv
+# Field-asset matching uses wells then asset of nearest neighbor fields: entry_df_v2
 entry_df <- read_csv(file.path("data/processed/entry_df_final_revised.csv"))
 
-# Calculating missing columns that are used in analysis ------
-# m_cumsum_div_my_prod
-entry_df <- entry_df %>%
-  group_by(doc_field_code) %>%
-  mutate(m_cumsum_div_my_prod = cumsum(doc_prod) / max(doc_prod)) %>%
-  ungroup()
+# Prepare variables
 
-# totex_capex
+# Outcome variables: new_prod new_wells doc_prod
 entry_df <- entry_df %>%
-  mutate(totex_capex = capex_imputed + opex_imputed)
+  rename(new_wells = n_new_wells)
 
-# wm_capex_imputed, wm_opex_imputed, wm_totex
+# Cost variables
 entry_df <- entry_df %>%
-  group_by(doc_field_code) %>%
-  mutate(wm_capex_imputed = weighted.mean(capex_imputed, doc_prod, na.rm = TRUE),
-         wm_opex_imputed = weighted.mean(opex_imputed, doc_prod, na.rm = TRUE),
-         wm_totex = wm_capex_imputed + wm_opex_imputed) %>%
-  ungroup()
-
-# Data preparation
-entry_df <- entry_df %>%
-  filter(!grepl("Gas", doc_fieldname) & year != 1977) %>%
-  rename(depl = m_cumsum_div_my_prod,
-         topfield = top_field) %>%
   mutate(capex_per_bbl_nom = as.numeric(capex_per_bbl_nom),
          opex_per_bbl_nom = as.numeric(opex_per_bbl_nom),
          capex_imputed = as.numeric(capex_imputed),
          opex_imputed = as.numeric(opex_imputed))
 
-# Create field rank and categories
+# Field depletion variables
+entry_df <- entry_df %>%
+  rename(depl = m_cumsum_div_my_prod)
+
+# Top 10 producing fields in 2019
+entry_df <- entry_df %>%
+  rename(topfield = top_field)
+
+entry_df$topfield <- factor(entry_df$topfield, levels = 0:10, labels = c("Non-top fields", "Belridge South", "Midway-Sunset", "Kern River", "Cymric", "Wilmington", "Lost Hills", "San Ardo", "Elk Hills", "Coalinga", "Poso Creek"))
+
+# Rank all fields by 2019 production
 entry_df <- entry_df %>%
   group_by(year) %>%
   mutate(rank = dense_rank(desc(doc_prod))) %>%
   ungroup() %>%
   group_by(doc_field_code) %>%
-  mutate(field_rank = max(rank)) %>%
-  ungroup() %>%
-  mutate(nontop_field_categ = ifelse(topfield == 0 & year == 2019, ntile(-field_rank, 10) + 10 + 1, NA)) %>%
-  group_by(doc_field_code) %>%
-  mutate(field_categ = max(nontop_field_categ, na.rm = TRUE)) %>%
-  ungroup() %>%
-  mutate(field_categ = ifelse(topfield > 0, topfield, field_categ))
+  mutate(field_rank = max(rank))
 
-# # Convert variables to real price (for revisions to paper 11/29/2022) -- not needed!
+# Create new categories for low-producing fields
+entry_df <- entry_df %>%
+  mutate(nontop_field_categ = ifelse(topfield == 0, cut(field_rank, breaks = quantile(field_rank[topfield == 0], probs = seq(0, 1, 0.1), na.rm = TRUE), labels = 10:1, include.lowest = TRUE), NA)) %>%
+  group_by(doc_field_code) %>%
+  mutate(field_categ = ifelse(topfield > 0, topfield, max(nontop_field_categ, na.rm = TRUE))) %>%
+  ungroup()
+
+summary(entry_df$field_categ)
+
+write_rds(entry_df, file.path("data/processed/entry_revised.rds"))
+
+# # Convert vars to real price (for revisions to paper 11/29/2022)
+# # real prices weren't eventually used but these changes to entry.do were updated anyway
+# 
+# # Import CPI series
 # cpi <- read_excel(file.path(googleDriveDir, "data/stocks-flows/raw/BLS-CPI-U.xlsx"), sheet = "Annual")
+# cpi <- cpi %>%
+#   rename_all(tolower)
+# 
+# entry_df <- left_join(entry_df, cpi, by = "year")
 # entry_df <- entry_df %>%
-#   left_join(cpi, by = "year") %>%
 #   mutate(brent_2019 = brent / cpi * cpi2019,
 #          capex_imputed_2019 = capex_imputed / cpi * cpi2019,
 #          opex_imputed_2019 = opex_imputed / cpi * cpi2019)
-
-# Plots to look at data
-# Histograms
-ggplot(entry_df %>% filter(n_new_wells > 0), aes(x = n_new_wells)) +
-  geom_histogram(binwidth = 1, boundary = 0, fill = "steelblue", color = "white") +
-  labs(title = "Histogram of New Wells (Non-zero Values)", x = "Number of New Wells", y = "Frequency") +
-  scale_x_continuous(breaks = seq(0, max(entry_df$n_new_wells), by = 5))
-ggsave(file.path(docDir, "histograms/new_well.pdf"))
-
-# Create a new variable 'n_new_wells_cat' that categorizes the number of new wells -- new
-entry_df_grouped <- entry_df %>%
-  mutate(n_new_wells_cat = case_when(
-    n_new_wells == 0 ~ "0",
-    n_new_wells >= 1 & n_new_wells <= 5 ~ "1-5",
-    n_new_wells >= 6 & n_new_wells <= 10 ~ "6-10",
-    n_new_wells >= 11 & n_new_wells <= 20 ~ "11-20",
-    n_new_wells > 20 ~ ">20"
-  ))
-
-# Convert 'n_new_wells_cat' to a factor with the desired order of levels -- new
-entry_df_grouped$n_new_wells_cat <- factor(entry_df$n_new_wells_cat, levels = c("0", "1-5", "6-10", "11-20", ">20"))
-
-# Calculate the proportion of field-year observations in each category -- new
-prop_new_wells <- entry_df_grouped %>%
-  group_by(n_new_wells_cat) %>%
-  summarise(prop = n() / nrow(entry_df)) %>%
-  mutate(prop_pct = prop * 100)
-
-# Create the bar plot -- new
-ggplot(prop_new_wells, aes(x = n_new_wells_cat, y = prop_pct)) +
-  geom_bar(stat = "identity", fill = "steelblue", color = "white") +
-  labs(title = "Proportion of Field-Year Observations by Number of New Wells",
-       x = "Number of New Wells", y = "Proportion (%)") +
-  geom_text(aes(label = sprintf("%.1f%%", prop_pct)), vjust = -0.5, size = 3) +
-  ylim(0, max(prop_new_wells$prop_pct) * 1.1)  # Set y-axis limit for better visualization
-
-# Time series plots
-entry_df_summary <- entry_df %>%
-  group_by(year) %>%
-  summarise(brent = first(brent),
-            new_well_yearsum = sum(n_new_wells),
-            new_prod_yearsum = sum(new_prod),
-            doc_prod_yearsum = sum(doc_prod),
-            capex_yearmean = mean(capex_imputed),
-            opex_yearmean = mean(opex_imputed),
-            totex_capex_yearmean = mean(totex_capex),
-            # wellcost_yearmean = mean(wellcost_imputed),
-            wm_capex_yearmean = mean(wm_capex_imputed),
-            wm_opex_yearmean = mean(wm_opex_imputed),
-            wm_totex_yearmean = mean(wm_totex))
-
-ggplot(entry_df_summary, aes(x = year)) +
-  geom_line(aes(y = new_well_yearsum), color = "steelblue") +
-  geom_line(aes(y = brent), color = "black", linetype = "dashed") +
-  scale_y_continuous(sec.axis = sec_axis(~./1, name = "Brent Price")) +
-  labs(title = "Number of New Wells (sum of fields)", x = "Year", y = "Number of New Wells")
-ggsave(file.path(docDir, "timeseries/new_well.pdf"))
-
-# Poisson models
-# Without field fixed effects
-models_nofe <- list()
-for (capvar in c("capex")) {
-  for (var in c("n_new_wells", "new_prod")) {
-    formula_base <- as.formula(paste0(var, " ~ brent + capex_imputed + opex_imputed + depl"))
-    models_nofe[[paste0(capvar, "_", var)]] <- feglm(formula_base, data = entry_df, family = poisson)
-    
-    formula_tot <- as.formula(paste0(var, " ~ brent + totex_capex + depl"))
-    models_nofe[[paste0(capvar, "_", var, "_tot")]] <- feglm(formula_tot, data = entry_df, family = poisson)
-  }
-}
-
-# # Output results
-# for (var in c("n_new_wells", "new_prod")) {
-#   stargazer(models_nofe[[paste0("capex_", var)]], models_nofe[[paste0("capex_", var, "_tot")]],
-#             type = "latex", out = file.path(texDir, paste0("poisson_", var, ".tex")),
-#             keep = c("brent", "capex_imputed", "opex_imputed", "totex_capex", "depl"), 
-#             order = c("brent", "capex_imputed", "opex_imputed", "totex_capex", "depl"),
-#             covariate.labels = c("Brent", "Capex", "Opex", "Totex", "Depletion"),
-#             omit.stat = c("LL", "ser", "f"),
-#             add.lines = list(c("Field FEs", "N", "N", "N")),
-#             star.cutoffs = c(0.1, 0.05, 0.01),
-#             notes = "Standard errors clustered at field level are in parentheses.",
-#             no.space = TRUE)
+# 
+# write_rds(entry_df, file.path(dataDir, "entry_revised_real.rds"))
+# 
+# # Plots to look at data
+# entry <- read_rds(file.path(dataDir, "entry.rds"))
+# 
+# # Histograms
+# ggplot(entry, aes(x = new_wells)) +
+#   geom_histogram(binwidth = 1, center = 0, boundary = 0, closed = "left", fill = "skyblue", color = "black") +
+#   labs(title = "Histogram of New Wells", x = "New Wells", y = "Frequency")
+# ggsave(file.path(docDir, "histograms", "new_well.pdf"), width = 6, height = 4)
+# 
+# ggplot(entry, aes(x = new_prod)) +
+#   geom_histogram(fill = "skyblue", color = "black") +
+#   labs(title = "Histogram of New Production", x = "New Production", y = "Frequency")
+# ggsave(file.path(docDir, "histograms", "new_prod.pdf"), width = 6, height = 4)
+# 
+# ggplot(entry, aes(x = opex_imputed)) +
+#   geom_histogram(fill = "skyblue", color = "black") +
+#   labs(title = "Histogram of Opex (Imputed)", x = "Opex (Imputed)", y = "Frequency")
+# ggsave(file.path(docDir, "histograms", "opex_imputed.pdf"), width = 6, height = 4)
+# 
+# ggplot(entry, aes(x = capex_imputed)) +
+#   geom_histogram(fill = "skyblue", color = "black") +
+#   labs(title = "Histogram of Capex (Imputed)", x = "Capex (Imputed)", y = "Frequency")
+# ggsave(file.path(docDir, "histograms", "capex_imputed.pdf"), width = 6, height = 4)
+# 
+# ggplot(entry, aes(x = wellcost_imputed)) +
+#   geom_histogram(fill = "skyblue", color = "black") +
+#   labs(title = "Histogram of Wellcost (Imputed)", x = "Wellcost (Imputed)", y = "Frequency")
+# ggsave(file.path(docDir, "histograms", "wellcost_imputed.pdf"), width = 6, height = 4)
+# 
+# # Time series
+# entry_summary <- entry %>%
+#   group_by(year) %>%
+#   summarize(new_well_yearsum = sum(new_wells),
+#             new_prod_yearsum = sum(new_prod),
+#             doc_prod_yearsum = sum(doc_prod),
+#             capex_yearmean = mean(capex_imputed),
+#             opex_yearmean = mean(opex_imputed),
+#             totex_capex_yearmean = mean(totex_capex),
+#             wellcost_yearmean = mean(wellcost_imputed),
+#             wm_capex_yearmean = mean(wm_capex_imputed),
+#             wm_opex_yearmean = mean(wm_opex_imputed),
+#             wm_totex_yearmean = mean(wm_totex),
+#             brent = first(brent))
+# 
+# # Outcome variables: New prod and new wells and Brent over time
+# ggplot(entry_summary, aes(x = year)) +
+#   geom_line(aes(y = new_well_yearsum), color = "blue") +
+#   geom_line(aes(y = brent), color = "black", linetype = "dashed") +
+#   scale_y_continuous(sec.axis = sec_axis(~., name = "Brent Price")) +
+#   labs(title = "No. New Wells (sum of fields)", x = "Year", y = "New Wells")
+# ggsave(file.path(docDir, "timeseries", "new_well.pdf"), width = 6, height = 4)
+# 
+# ggplot(entry_summary, aes(x = year)) +
+#   geom_line(aes(y = new_prod_yearsum), color = "blue") +
+#   geom_line(aes(y = brent), color = "black", linetype = "dashed") +
+#   scale_y_continuous(sec.axis = sec_axis(~., name = "Brent Price")) +
+#   labs(title = "New Production (sum of fields)", x = "Year", y = "New Production")
+# ggsave(file.path(docDir, "timeseries", "new_prod.pdf"), width = 6, height = 4)
+# 
+# # Cost variables
+# ggplot(entry_summary, aes(x = year)) +
+#   geom_line(aes(y = wm_opex_yearmean), color = "blue") +
+#   geom_line(aes(y = wm_capex_yearmean), color = "red") +
+#   geom_line(aes(y = wm_totex_yearmean), color = "green") +
+#   geom_line(aes(y = brent), color = "black", linetype = "dashed") +
+#   scale_y_continuous(sec.axis = sec_axis(~., name = "Brent Price")) +
+#   labs(title = "Capex/Opex/Totex per bbl (mean of fields)", x = "Year", y = "Cost per bbl")
+# ggsave(file.path(docDir, "timeseries", "cost_imputed.pdf"), width = 6, height = 4)
+# 
+# ggplot(entry_summary, aes(x = year)) +
+#   geom_line(aes(y = wm_opex_yearmean), color = "blue") +
+#   geom_line(aes(y = wm_capex_yearmean), color = "red") +
+#   geom_line(aes(y = brent), color = "black", linetype = "dashed") +
+#   scale_y_continuous(sec.axis = sec_axis(~., name = "Brent Price")) +
+#   labs(title = "Capex/Opex per bbl (mean of fields)", x = "Year", y = "Cost per bbl")
+# 
+# ggplot(entry_summary, aes(x = year)) +
+#   geom_line(aes(y = wellcost_yearmean), color = "blue") +
+#   geom_line(aes(y = brent), color = "black", linetype = "dashed") +
+#   scale_y_continuous(sec.axis = sec_axis(~., name = "Brent Price")) +
+#   labs(title = "Wellcost per EUR bbl (mean of fields)", x = "Year", y = "Wellcost per EUR bbl")
+# 
+# # Poisson model
+# # Without field FEs
+# # Regressions
+# models <- list()
+# 
+# for (var in c("new_wells", "new_prod")) {
+#   # Add depletion, separate cost vars
+#   models[[paste0(var)]] <- feglm(as.formula(paste0(var, " ~ brent + capex_imputed + opex_imputed + depl")),
+#                                  family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add API, separate cost vars
+#   models[[paste0(var, "_api")]] <- feglm(as.formula(paste0(var, " ~ brent + wm_api_gravity + capex_imputed + opex_imputed + depl")),
+#                                          family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add API with brent interaction, separate cost vars
+#   models[[paste0(var, "_apiX")]] <- feglm(as.formula(paste0(var, " ~ brent:wm_api_gravity + capex_imputed + opex_imputed + depl")),
+#                                           family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add depletion, sum cost vars
+#   models[[paste0(var, "_tot")]] <- feglm(as.formula(paste0(var, " ~ brent + totex_capex + depl")),
+#                                          family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add API, separate cost vars
+#   models[[paste0(var, "_tot_api")]] <- feglm(as.formula(paste0(var, " ~ brent + wm_api_gravity + totex_capex + depl")),
+#                                              family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add API, with Brent interaction
+#   models[[paste0(var, "_tot_apiX")]] <- feglm(as.formula(paste0(var, " ~ brent:wm_api_gravity + totex_capex + depl")),
+#                                               family = poisson(link = "log"), data = entry_df)
 # }
-
-# Output result - testing
-for (var in c("n_new_wells", "new_prod")) {
-  # Create the file path for the LaTeX output
-  file_path <- paste0("outputs/poisson_", var, ".tex")
-  
-  # Create the LaTeX table using etable()
-  etable(
-    models_nofe[[paste0("capex_", var)]],
-    models_nofe[[paste0("capex_", var, "_tot")]],
-    file = file_path,
-    tex = TRUE,
-    keep = c("brent", "capex_imputed", "opex_imputed", "totex_capex", "depl"),
-    order = c("brent", "capex_imputed", "opex_imputed", "totex_capex", "depl"),
-    coefstat = "se",
-    title = paste0("Poisson Models for ", var),
-    notes = "Standard errors clustered at field level are in parentheses.",
-    fitstat = c("n", "bic"),
-    digits = 3
-  )
-  
-  # Calculate and print pseudo R-squared separately
-  cat("\nPseudo R-squared for", paste0("capex_", var), "model:", r2(models_nofe[[paste0("capex_", var)]], type = "pr2"), "\n")
-  cat("Pseudo R-squared for", paste0("capex_", var, "_tot"), "model:", r2(models_nofe[[paste0("capex_", var, "_tot")]], type = "pr2"), "\n")
-}
-
-# With field fixed effects
-models_fe <- list()
-for (var in c("n_new_wells", "new_prod")) {
-  formula_base <- as.formula(paste0(var, " ~ brent + capex_imputed + opex_imputed + depl"))
-  models_fe[[paste0("fe_", var)]] <- feglm(formula_base, data = entry_df, family = poisson, 
-                                           fixef = "doc_field_code")
-  
-  formula_tot <- as.formula(paste0(var, " ~ brent + totex_capex + depl"))
-  models_fe[[paste0("fe_", var, "_tot")]] <- feglm(formula_tot, data = entry_df, family = poisson, 
-                                                   fixef = "doc_field_code")
-  
-  formula_api <- as.formula(paste0(var, " ~ brent + wm_api_gravity + capex_imputed + opex_imputed + depl"))
-  models_fe[[paste0("fe_", var, "_api")]] <- feglm(formula_api, data = entry_df, family = poisson, 
-                                                   fixef = "doc_field_code")
-  
-  formula_apiX <- as.formula(paste0(var, " ~ brent * wm_api_gravity + capex_imputed + opex_imputed + depl"))
-  models_fe[[paste0("fe_", var, "_apiX")]] <- feglm(formula_apiX, data = entry_df, family = poisson, 
-                                                    fixef = "doc_field_code")
-  
-  formula_tot_api <- as.formula(paste0(var, " ~ brent + wm_api_gravity + totex_capex + depl"))
-  models_fe[[paste0("fe_", var, "_tot_api")]] <- feglm(formula_tot_api, data = entry_df, family = poisson, 
-                                                       fixef = "doc_field_code")
-  
-  formula_tot_apiX <- as.formula(paste0(var, " ~ brent * wm_api_gravity + totex_capex + depl"))
-  models_fe[[paste0("fe_", var, "_tot_apiX")]] <- feglm(formula_tot_apiX, data = entry_df, family = poisson, 
-                                                        fixef = "doc_field_code")
-}
-
-# Output results
-for (var in c("new_prod", "new_wells")) {
-  stargazer(models_fe[[paste0("fe_", var)]], models_fe[[paste0("fe_", var, "_tot")]],
-            models_fe[[paste0("fe_", var, "_api")]], models_fe[[paste0("fe_", var, "_apiX")]],
-            models_fe[[paste0("fe_", var, "_tot_api")]], models_fe[[paste0("fe_", var, "_tot_apiX")]],
-            type = "latex", out = file.path(texDir, paste0("poisson_fe_", var, ".tex")),
-            keep = c("brent", "capex_imputed", "opex_imputed", "totex_capex", "depl", "wm_api_gravity"), 
-            order = c("brent", "capex_imputed", "opex_imputed", "totex_capex", "depl", "wm_api_gravity"),
-            covariate.labels = c("Brent", "Capex", "Opex", "Totex", "Depletion", "API Gravity"),
-            omit.stat = c("LL", "ser", "f"),
-            add.lines = list(c("Field FEs", "Y", "Y", "Y", "Y", "Y", "Y")),
-            star.cutoffs = c(0.1, 0.05, 0.01),
-            notes = "Standard errors clustered at field level are in parentheses.",
-            no.space = TRUE)
-}
+# 
+# # Output results
+# modelsummary(models, stars = c('*' = .1, '**' = .05, '***' = .01),
+#              coef_map = c("brent" = "Brent Price",
+#                           "capex_imputed" = "Capex (Imputed)",
+#                           "opex_imputed" = "Opex (Imputed)",
+#                           "totex_capex" = "Totex (Capex)",
+#                           "depl" = "Depletion",
+#                           "wm_api_gravity" = "API Gravity"),
+#              gof_map = c("nobs" = "No. field-years", "sigma" = "No. fields"),
+#              output = file.path(texDir, "poisson_noprod.tex"))
+# 
+# 
+# # With field FEs
+# # Regressions
+# models_fe <- list()
+# 
+# for (var in c("new_prod", "new_wells")) {
+#   # Add depletion, separate cost vars
+#   models_fe[[paste0("fe", var)]] <- feglm(as.formula(paste0(var, " ~ brent + capex_imputed + opex_imputed + depl | doc_field_code")),
+#                                           family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add API, separate cost vars
+#   models_fe[[paste0("fe", var, "_api")]] <- feglm(as.formula(paste0(var, " ~ brent + wm_api_gravity + capex_imputed + opex_imputed + depl | doc_field_code")),
+#                                                   family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add API with brent interaction, separate cost vars
+#   models_fe[[paste0("fe", var, "_apiX")]] <- feglm(as.formula(paste0(var, " ~ brent:wm_api_gravity + capex_imputed + opex_imputed + depl | doc_field_code")),
+#                                                    family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add depletion, sum cost vars
+#   models_fe[[paste0("fe", var, "_tot")]] <- feglm(as.formula(paste0(var, " ~ brent + totex_capex + depl | doc_field_code")),
+#                                                   family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add API, separate cost vars
+#   models_fe[[paste0("fe", var, "_tot_api")]] <- feglm(as.formula(paste0(var, " ~ brent + wm_api_gravity + totex_capex + depl | doc_field_code")),
+#                                                       family = poisson(link = "log"), data = entry_df)
+#   
+#   # Add API, with Brent interaction
+#   models_fe[[paste0("fe", var, "_tot_apiX")]] <- feglm(as.formula(paste0(var, " ~ brent:wm_api_gravity + totex_capex + depl | doc_field_code")),
+#                                                        family = poisson(link = "log"), data = entry_df)
+# }
+# 
+# # Output results
+# modelsummary(models_fe, stars = c('*' = .1, '**' = .05, '***' = .01),
+#              coef_map = c("brent" = "Brent Price",
+#                           "capex_imputed" = "Capex (Imputed)",
+#                           "opex_imputed" = "Opex (Imputed)",
+#                           "totex_capex" = "Totex (Capex)",
+#                           "depl" = "Depletion",
+#                           "wm_api_gravity" = "API Gravity"),
+#              gof_map = c("nobs" = "No. field-years", "sigma" = "No. fields"),
+#              output = file.path(texDir, "poisson_fe.tex"))
+# 
+# # Check estimated total resource against projected total production
+# predicted_production <- read_csv(file.path(dataRawDir, "predicted-production_2020-2100_field.csv"))
+# predicted_production <- predicted_production %>%
+#   rename(doc_field_code = fieldcode) %>%
+#   select(-fieldname) %>%
+#   group_by(doc_field_code) %>%
+#   summarize(prod_future_sum = sum(production_bbl)) %>%
+#   filter(year == 2020) %>%
+#   select(doc_field_code, prod_future_sum)
+# 
+# forecast_depl_revised <- read_rds(file.path(dataDir, "forecast_depl_revised.rds"))
+# forecast_depl_merged <- left_join(forecast_depl_revised, predicted_production, by = "doc_field_code")
+# 
+# forecast_depl_merged <- forecast_depl_merged %>%
+#   mutate(cum_prod_2019 = depl2019 * resource,
+#          total_prod = cum_prod_2019 + prod_future_sum,
+#          d_res_prod = resource - total_prod)
+# 
+# summary(forecast_depl_merged$d_res_prod)
+# hist(forecast_depl_merged$d_res_prod)
+# sum(forecast_depl_merged$d_res_prod < 0)
+# 
+# # Check estimated total resource against DOC 2009 report
+# doc_reserves <- read_csv(file.path(dataRawDir, "oil_production_reserves_2009.csv"))
+# doc_reserves <- doc_reserves %>%
+#   mutate(doc_field_code_orig = doc_field_code,
+#          doc_field_code = as.numeric(doc_field_code),
+#          cum_prod = as.numeric(cumulative_oil_and_condensatembb),
+#          reserves_left = as.numeric(estimated_oil_reservesmbbl)) %>%
+#   replace_na(list(cum_prod = 0, reserves_left = 0)) %>%
+#   filter(!is.na(doc_field_code)) %>%
+#   mutate(resource_doc = cum_prod + reserves_left) %>%
+#   select(doc_field_code, doc_fieldname, field_name, cum_prod, reserves_left, resource_doc)
+# 
+# forecast_depl_doc <- left_join(forecast_depl_revised, doc_reserves, by = "doc_field_code") %>%
+#   select(doc_field_code, doc_fieldname, resource, depl2019, field_name, resource_doc) %>%
+#   mutate(resource = resource / 1000)  # convert from bbl to Mbbl
+# 
+# ggplot(forecast_depl_doc, aes(x = resource_doc, y = resource)) +
+#   geom_point() +
+#   geom_text(aes(label = doc_fieldname), vjust = -0.5, size = 3) +
+#   geom_smooth(method = "lm", se = FALSE) +
+#   geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+#   labs(x = "Resource (DOC)", y = "Resource (Estimated)", title = "Comparison of Estimated Resource and DOC Resource") +
+#   theme_minimal()
+# 

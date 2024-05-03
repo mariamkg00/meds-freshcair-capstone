@@ -51,6 +51,11 @@ well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('a
 init_yr_prod <- fread("data/processed/well_start_prod_api10_revised.csv", colClasses = c('api_ten_digit' = 'character',
                                                                                                       'doc_field_code' = 'character',
                                                                                                       'api_field' = 'character')) 
+
+# Added - MP
+init_yr_prod$month_year <- as.Date(init_yr_prod$month_year, format = "YYYY-MM-DD")  
+init_yr_prod$start_date <- as.Date(init_yr_prod$start_date, format = "YYYY-MM-DD")
+
 ## prices
 prices <- fread("data/proprietery-data/wti_brent.csv")
 

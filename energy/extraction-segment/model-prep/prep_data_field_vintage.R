@@ -10,7 +10,6 @@ getwd()
 
 library(data.table)  
 library(lubridate)
-library(zoo)
 library(openxlsx)
 library(ggplot2)
 library(hrbrthemes)
@@ -105,7 +104,7 @@ prod_fv_month[, well_prod := tot_oil_prod/no_wells ] # avg production per well f
 
 prod_fv_month = prod_fv_month[order(doc_fieldname, vintage, month_no)]
 prod_fv_month[, prod_rate := well_prod/30.5, by = c('doc_fieldname', 'doc_field_code', 'vintage')] # bbls/day for each well
-prod_fv_month[, decline_rate := (prod_rate - shift(prod_rate))/prod_rate, by = c('doc_fieldname', 'doc_field_code', 'vintage')]
+prod_fv_year[, decline_rate := (prod_rate - data.table::shift(prod_rate))/prod_rate, by = .(doc_fieldname, doc_field_code, vintage)]
 
 # ggplot(prod_fv_month, aes(x = month_no, y = prod_rate/1000, group = vintage, color = vintage)) + geom_line() +
 #   facet_wrap(. ~ FieldName, nrow = 4, scales = "free_y") +
@@ -126,7 +125,7 @@ prod_fv_year[, well_prod := tot_oil_prod/no_wells ] # avg production per well fo
 
 prod_fv_year = prod_fv_year[order(doc_fieldname, vintage, year_no)]
 prod_fv_year[, prod_rate := well_prod/365, by = c('doc_fieldname', 'doc_field_code', 'vintage')] # bbls/day
-prod_fv_year[, decline_rate := (prod_rate - shift(prod_rate))/prod_rate, by = c('doc_fieldname', 'doc_field_code', 'vintage')]
+prod_fv_year[, decline_rate := (prod_rate - data.table::shift(prod_rate))/prod_rate, by = .(doc_fieldname, doc_field_code, vintage)]
 
 # get peak production month for each field-vintage -----
 
