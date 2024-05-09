@@ -2,7 +2,7 @@
 # Chris Malloy (cmalloy@ucsb.edu)
 # created: 07/28/2021
 # updated: 08/17/2021
-# updated 4/5/24 - MP
+# updated 5/9/24 - MP
 
 ############################################################################################
 # Set up environment 
@@ -25,9 +25,9 @@ library(tigris)
 library(sf)
 library(tidyverse)
 
-#Set wd 
-setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
-getwd()
+setwd('/capstone/freshcair/meds-freshcair-capstone') # Update with existing directory
+main_path = "/capstone/freshcair/meds-freshcair-capstone/" # Update with existing path to directory
+labor_out = "data-str/private/labor/"
 
 ############################################################################################ 
 
@@ -1255,7 +1255,7 @@ setwd('/capstone/freshcair/meds-freshcair-capstone/data/processed/')
 ica_list = list(ica_total=ica_total_all_counties_interpolated,ica_indirect_emp = ica_emp_indirect_all_counties,
                 ica_induced_emp = ica_emp_induced_all_counties, ica_indirect_comp = ica_comp_indirect_all_counties,
                 ica_induced_comp = ica_comp_induced_all_counties)
-write_xlsx(x=ica_list,"ica_multipliers_v2.xlsx")
+write_xlsx(x=ica_list,paste0(main_path, labor_out, "ica_multipliers_v2.xlsx"))
 
 
 ####################################################################################################################
@@ -1269,39 +1269,38 @@ write_xlsx(x=ica_list,"ica_multipliers_v2.xlsx")
 
 # updating working directory to processed data folder in meds-freshcair
 
-setwd('/capstone/freshcair/meds-freshcair-capstone/data/processed/')
 
 ica_ind_output <- ica %>% 
   dplyr::select(county,segment,industry,direct_emp,indirect_emp,induced_emp,direct_comp,indirect_comp,induced_comp)
 
-write_csv(ica_ind_output,'ica_multipliers_by_industry_long.csv')
+write_csv(ica_ind_output, paste0(main_path, labor_out, 'ica_multipliers_by_industry_long.csv'))
 
-library(sysfonts)
-library(scales)
-font_add_google(name = 'Inter', family = 'inter')
-show_text_auto()
-### producing visual 
-ica_top_ten_counties <- ica_total_all_counties %>% 
-  filter(segment == 'drilling') %>% 
-  filter(county != 'Statewide') %>% 
-  arrange(desc(direct_comp))
-options(scipen = 999)
-sub("0{3}$", "K", ica_top_ten_counties$direct_comp)
-ggplot(data = ica_top_ten_counties)+
-  geom_col(aes(x = reorder(county, -direct_comp), y = direct_comp), fill = '#006CD1')+
-  geom_text(aes(x = reorder(county, -direct_comp), y = direct_comp, label = scales::comma(round(direct_comp,2)), vjust = -0.5))+
-  scale_y_continuous(labels = label_dollar(scale = .001, suffix = "K"))+
-  labs(x = 'California County',
-       y = 'Direct Compensation ($USD)',
-       title = 'Top California Counties with Highest Direct Compensation Multipliers')+
-  annotate('text' , x = 5.75, y = 300000, label = 'Direct impacts were computed by inputting the level of revenue observed\n for the drilling industries separately for each county with active operations. ',
-           fontface = 'italic')+
-  theme_bw()+
-  theme(axis.text.x = element_text(family = 'inter', size = 12),
-        axis.text.y = element_text(family = 'inter', size = 12),
-        axis.title.x = element_text(family = 'inter', size = 14),
-        axis.title.y = element_text(family = 'inter', size = 14),
-        plot.title = element_text(family = 'inter', size = 15, hjust = 0.5),
-        panel.grid = element_blank(),
-        panel.border = element_blank())
+# library(sysfonts)
+# library(scales)
+# font_add_google(name = 'Inter', family = 'inter')
+# show_text_auto()
+# ### producing visual 
+# ica_top_ten_counties <- ica_total_all_counties %>% 
+#   filter(segment == 'drilling') %>% 
+#   filter(county != 'Statewide') %>% 
+#   arrange(desc(direct_comp))
+# options(scipen = 999)
+# sub("0{3}$", "K", ica_top_ten_counties$direct_comp)
+# ggplot(data = ica_top_ten_counties)+
+#   geom_col(aes(x = reorder(county, -direct_comp), y = direct_comp), fill = '#006CD1')+
+#   geom_text(aes(x = reorder(county, -direct_comp), y = direct_comp, label = scales::comma(round(direct_comp,2)), vjust = -0.5))+
+#   scale_y_continuous(labels = label_dollar(scale = .001, suffix = "K"))+
+#   labs(x = 'California County',
+#        y = 'Direct Compensation ($USD)',
+#        title = 'Top California Counties with Highest Direct Compensation Multipliers')+
+#   annotate('text' , x = 5.75, y = 300000, label = 'Direct impacts were computed by inputting the level of revenue observed\n for the drilling industries separately for each county with active operations. ',
+#            fontface = 'italic')+
+#   theme_bw()+
+#   theme(axis.text.x = element_text(family = 'inter', size = 12),
+#         axis.text.y = element_text(family = 'inter', size = 12),
+#         axis.title.x = element_text(family = 'inter', size = 14),
+#         axis.title.y = element_text(family = 'inter', size = 14),
+#         plot.title = element_text(family = 'inter', size = 15, hjust = 0.5),
+#         panel.grid = element_blank(),
+#         panel.border = element_blank())
 
