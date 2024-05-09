@@ -149,7 +149,7 @@ ccs_scens[, ccs_scenario := factor(ccs_scenario, levels = c('no ccs', 'high CCS 
 price_data = fread(file.path('data/processed/field_capex_opex_forecast_revised.csv'), header = T)
 
 # Updated - MP
-resource_data = fread(file.path("data/processed/field_resource_revised.csv"), header = T)
+resource_data = fread(file.path("data/intermediate-zenodo/intermediate/extraction-model/field_resource_revised.csv"), header = T)
 resource_data = resource_data[, c('doc_field_code', 'resource')]
 
 ## oad ghg factors -- Updated - MP
