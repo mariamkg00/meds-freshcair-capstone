@@ -4,7 +4,8 @@
 ## Compile extraction outputs (site and county, include 2019) -- use individual rds files
 ## Updated 4/14/24 - MP
 ## Updated 4/24/24 - MP
-## Updated 5/2/24 - MP
+## Updated 5/8/24 - MP
+
 
 ## libraries
 library(data.table)
@@ -31,7 +32,7 @@ main_path_external     <- '/capstone/freshcair/meds-freshcair-capstone/'
 sp_data_path     <- paste0(main_path, "data/input/gis/")
 
 ## UPDATE THESE WITH NEW RUNS!!!!!
-extraction_folder_path <- 'data/processed/extraction_2024-05-02'
+extraction_folder_path <- 'data/processed/extraction_2024-05-08'
 extraction_folder_name <- 'revision-setbacks/'
 data_path  <-'data/processed/'
 
@@ -42,10 +43,10 @@ inmap_ex_path  <- paste0(main_path, "data/processed/extraction")
 if(save_external == 1) {
   
   ## UPDATE THIS WITH NEW RUNS!!!!!
-  extraction_path <- paste0('data/processed/extraction_2024-05-02/revision-setbacks/')
+  extraction_path <- paste0('data/processed/extraction_2024-05-08/revision-setbacks/')
   
-  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-05-02/academic-out/'), showWarnings = FALSE)
-  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-05-02/')
+  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-05-08/academic-out/'), showWarnings = FALSE)
+  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-05-08/')
 
 } else {
   
@@ -187,16 +188,16 @@ prod_x_county <- well_prod %>%
   left_join(county_lut) %>%
   dplyr::group_by(doc_field_code, doc_fieldname, year, adj_county_name) %>%
   dplyr::summarise(prod = sum(OilorCondensateProduced, na.rm = T)) %>%
-  ungroup() %>%
+  dplyr::ungroup() %>%
   dplyr::group_by(doc_field_code, year) %>%
-  mutate(field_total = sum(prod, na.rm = T)) %>%
-  ungroup() %>%
-  mutate(rel_prod = prod / field_total,
+  dplyr::mutate(field_total = sum(prod, na.rm = T)) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(rel_prod = prod / field_total,
          rel_prod = ifelse(is.na(rel_prod) & prod == 0 & field_total == 0, 0, rel_prod)) %>%
-  filter(rel_prod > 0) %>%
+  dplyr::filter(rel_prod > 0) %>%
   dplyr::group_by(doc_field_code) %>%
-  filter(year == max(year)) %>%
-  ungroup() %>%
+  dplyr::filter(year == max(year)) %>%
+  dplyr::ungroup() %>%
   dplyr::select(doc_field_code, adj_county_name, rel_prod)
 
 ## how many fields with positive prod?
@@ -467,7 +468,7 @@ print(paste("Starting extraction compiling at ", start_time))
 doParallel::registerDoParallel(cores = n_cores)
 
 for (i in 1:length(field_files_to_process)) {
-  
+  i = 13
   field_file_name <- field_files_to_process[i]
   
   field_scen_out <- readRDS(paste0(extraction_path, 'field-out/', field_file_name))
@@ -527,7 +528,7 @@ for (i in 1:length(field_files_to_process)) {
                              all.x = T)
   
   full_site_df_2019[,':=' (total_prod_bbl = fifelse(is.na(total_prod_bbl), 0, total_prod_bbl))]
-  full_site_df_2019[,':=' (total_ghg_kgCO2e = fifelse(is.na(total_ghg_kgCO2e), 0, total_ghg_kgCO2e))]
+  full_site_df_2019[,':=' (total_ghg_kgCO2e = fifelse(is.na(total_ghg_kgCO2e), 0, total_ghg_kgCO2e))] # CHECK
   
   setcolorder(full_site_df_2019, c("scen_id", "oil_price_scenario", "innovation_scenario", "carbon_price_scenario", "ccs_scenario",
                               "setback_scenario", "setback_existing", "prod_quota_scenario", "excise_tax_scenario", "doc_field_code", 
@@ -563,8 +564,11 @@ for (i in 1:length(field_files_to_process)) {
   ## save site level output for production 
   saveRDS(full_site_out, paste0(field_save_path, scenario_id_tmp, "_field_results.rds"))
   
+  t <- readRDS("/capstone/freshcair/meds-freshcair-capstone/data/processed/extraction_2024-05-08/field-results/high oil price-no_setback-no quota-carbon_target_90perc_reduction-no ccs-low innovation-no tax-0_field_results.rds")
   
-  
+  # new_t <- t%>% 
+  #   group_by(year) %>% 
+  #   summarise(prod = sum(total_prod_bbl,na.rm=T)) ADDED
   ## now do county-level, add labor impacts
   ## ---------------------------------------------------------
   
@@ -572,6 +576,10 @@ for (i in 1:length(field_files_to_process)) {
                       by = c("doc_field_code"),
                       all.x = T,
                       allow.cartesian = T)
+  
+  county_out_test1 <- county_out %>% 
+    group_by(year) %>% 
+    summarise(prod = sum(total_prod_bbl, na.rm=T))
   
   setcolorder(county_out, c('scen_id', 'oil_price_scenario', 'innovation_scenario', 'carbon_price_scenario', 'ccs_scenario',
                             'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario', 
@@ -581,10 +589,20 @@ for (i in 1:length(field_files_to_process)) {
   county_out[, county_prod_bbl := total_prod_bbl * rel_prod]
   county_out[, county_ghg_kgCO2e := total_ghg_kgCO2e * rel_prod]
   
-  county_out <- county_out[, .(total_county_bbl = sum(county_prod_bbl),
-                               total_county_ghg_kgCO2e = sum(county_ghg_kgCO2e)), by = .(scen_id, oil_price_scenario, innovation_scenario, carbon_price_scenario,
-                                                                                         ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
-                                                                                         year, adj_county_name)]
+  # Added - MP
+  county_out <- county_out[, .(total_county_bbl = sum(county_prod_bbl, na.rm = TRUE),
+                                   total_county_ghg_kgCO2e = sum(county_ghg_kgCO2e, na.rm = TRUE)), 
+                               by = .(scen_id, oil_price_scenario, innovation_scenario, carbon_price_scenario,
+                                      ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
+                                      year, adj_county_name)]
+  
+  # county_out <- county_out[, .(total_county_bbl = sum(county_prod_bbl),
+  #                              total_county_ghg_kgCO2e = sum(county_ghg_kgCO2e)), by = .(scen_id, oil_price_scenario, innovation_scenario, carbon_price_scenario,
+  #                                                                                        ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
+  #                                                                                        year, adj_county_name)]
+  county_out_test <- county_out %>% 
+    group_by(year) %>% 
+    summarise(prod = sum(total_county_bbl, na.rm=T))
   
   ## add oil price
   county_out <- merge(county_out, oilpx_scens,
@@ -625,7 +643,7 @@ for (i in 1:length(field_files_to_process)) {
                       by = "county",
                       all.x = T)
   
-  county_out[, proj_prod := sum(total_county_bbl), by = .(scen_id, county)]
+  county_out[, proj_prod := sum(total_county_bbl, na.rm=TRUE), by = .(scen_id, county)]
   county_out <- county_out[proj_prod > 0]
   county_out[, proj_prod := NULL]
   
@@ -664,7 +682,11 @@ for (i in 1:length(field_files_to_process)) {
   ## save county outputs (labor, production, and revenue)
   saveRDS(county_out, paste0(county_save_path, scenario_id_tmp, "_county_results.rds"))
   
+  county_out_t <- county_out %>% 
+    group_by(year) %>% 
+    summarise(prod = sum(total_county_bbl, na.rm=T))
   
+  # THIS VALUE IS TOO SMALL!!!!!
   
   ## HEALTH IMPACTS: calculate census level health impacts
   ## -------------------------------------------------------------
@@ -675,7 +697,7 @@ for (i in 1:length(field_files_to_process)) {
                            all.x = T)
   
   ## summarize extraction production per cluster
-  total_clusters <- health_site_out[, .(total_prod_bbl = sum(total_prod_bbl)), by = .(id, year, scen_id, oil_price_scenario,
+  total_clusters <- health_site_out[, .(total_prod_bbl = sum(total_prod_bbl, na.rm=TRUE)), by = .(id, year, scen_id, oil_price_scenario,
                                                                                       carbon_price_scenario, ccs_scenario, setback_scenario,
                                                                                       setback_existing, excise_tax_scenario)] 
   
@@ -741,7 +763,7 @@ for (i in 1:length(field_files_to_process)) {
   ## ------------------------------------------------------------------
   
   ## summarize extraction production per cluster
-  total_clusters_sens <- health_site_out[, .(total_prod_bbl = sum(total_prod_bbl)), by = .(id, year, scen_id, oil_price_scenario,
+  total_clusters_sens <- health_site_out[, .(total_prod_bbl = sum(total_prod_bbl, na.rm=TRUE)), by = .(id, year, scen_id, oil_price_scenario,
                                                                                       carbon_price_scenario, ccs_scenario, setback_scenario,
                                                                                       setback_existing, excise_tax_scenario)]
 
