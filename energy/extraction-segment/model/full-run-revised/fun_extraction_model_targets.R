@@ -2,35 +2,36 @@
 
 
 
-# scen_list = fread(file.path('data/processed/scenario_id_list_targets.csv'), header = T)
+# scen_list = fread(file.path('data/processed/scenario_id_list_targets_v3.csv'), header = T)
 
 ## filter for scenarios to run
 # selected_scens <- scen_list[subset_scens == 1]
 
 run_extraction_model <- function(input_scenarios) {
-  
   scen_sel <- input_scenarios
   
   # Added for testing - MP
-  # scen_sel = selected_scens
+  scen_sel = selected_scens #
+  # print(scen_sel) #
   
   # Added for testing - MP
-  # z = 16
   
   ## start scenario 
   ## --------------------------------------------------  
   
   func_yearly_production <- function(z) {
   
-
-    print(z)
+    #print(z)
     scen = scen_sel[z]
+    print(scen) #
     scenario_name_z <- scen[, scen_id][1]
+    # print(scenario_name_z) # 
     target_pol <- scen[, target_policy[1]]
-    
+    # print(target_pol) #
     if(target_pol == "excise_tax") {
       
       excise_tax_df <- find_excise_tax(scen_z = scen)
+      # print("excise tax target policy") #
       
       excise_tax_scens_z <- tibble(year = c(2020:2045)) %>%
         mutate(tax_rate = excise_tax_df[, tax_est_val][1],
@@ -42,6 +43,7 @@ run_extraction_model <- function(input_scenarios) {
       target_ghg_val = excise_tax_df[, target_val][1]
       
     } else if (target_pol == "carbon_tax") {
+      # print("carbon tax target policy") #
       
       carbonpx_df <- find_carbonpx_start(scen_z = scen)
     
@@ -60,6 +62,7 @@ run_extraction_model <- function(input_scenarios) {
       target_ghg_val = carbonpx_df[, target_val[1]]
 
     } else {
+      # print("other target policy")
       
       carbonpx_scens_z <- copy(carbonpx_scens)
       
@@ -71,18 +74,23 @@ run_extraction_model <- function(input_scenarios) {
     ## create input sheet
     ## list through all scenarios ------
     scenarios_dt_z = scen[oilpx_scens, on = .(oil_price_scenario), allow.cartesian = T, nomatch = 0]
+    # print(scenarios_dt_z) #
     scenarios_dt_z = scenarios_dt_z[vars_dt, on = .(year), allow.cartesian = T, nomatch = 0]
+    # print(scenarios_dt_z) #
     scenarios_dt_z = scenarios_dt_z[innovation_scens, on = .(year, innovation_scenario), nomatch = 0]
+    # print(scenarios_dt_z) #
     scenarios_dt_z = scenarios_dt_z[carbonpx_scens_z, on = .(year, carbon_price_scenario), nomatch = 0]
     scenarios_dt_z = scenarios_dt_z[ccs_scens_all, on = .(year, ccs_scenario), nomatch = 0]
     scenarios_dt_z = scenarios_dt_z[setback_scens, on = .(doc_field_code, setback_scenario, setback_existing), nomatch = 0]
     scenarios_dt_z = scenarios_dt_z[prod_quota_scens, on = .(year, prod_quota_scenario), nomatch = 0]
     scenarios_dt_z = scenarios_dt_z[excise_tax_scens_z, on = .(year, excise_tax_scenario), nomatch = 0]
+    print(scenarios_dt_z) #
     
     ## compute tax
     scenarios_dt_z[, tax := tax_rate * oil_price_usd_per_bbl]
     scenarios_dt_z[, tax_rate:= NULL]
     scenarios_dt_z[, scen_id := NULL]
+    print(scenarios_dt_z) #
     
     
     ## set order
@@ -98,16 +106,19 @@ run_extraction_model <- function(input_scenarios) {
     
     depl_2019_z = scenarios_dt_z[year == 2020, .(doc_field_code,  oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
                                                  setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
-    
+    print(depl_2019_z) #
     depl_2019_z = merge(depl_2019_z, entry_dt[year == 2019, .(doc_field_code, depl)],
                         by = 'doc_field_code')
+    print(depl_2019_z) #
     
     setnames(depl_2019_z, 'depl', 'depl2019')
     
     prod_2019_z = prod_hist[year == 2019, .(doc_field_code, total_bbls)]
+    print(prod_2019_z) #
     
     trr_2020_z = unique(scenarios_dt_z[year == 2020, .(doc_field_code, oil_price_scenario, innovation_scenario, carbon_price_scenario, 
                                                        ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, resource)])
+    print(trr_2020_z) # 
     
     depl_2020_z = prod_2019_z[trr_2020_z, on = 'doc_field_code']
     depl_2020_z = depl_2020_z[depl_2019_z, on = .(doc_field_code, 
@@ -115,7 +126,7 @@ run_extraction_model <- function(input_scenarios) {
                                                   setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
     
     depl_2020_z = depl_2020_z[!is.na(resource)]
-    depl_2020_z = depl_2020_z[is.na(total_bbls), total_bbls := 0]
+    depl_2020_z = depl_2020_z[is.na(total_bbls), total_bbls := 0] # total bbl prod is good here! #
     
     depl_2020_z[, year := 2020]
     depl_2020_z[, depl := depl2019 + (total_bbls/resource)]
@@ -141,7 +152,7 @@ run_extraction_model <- function(input_scenarios) {
     
     # add excise tax to opex
     dt_info_z[, m_opex_imputed_adj := m_opex_imputed_adj + tax]
-    dt_info_z[, wm_opex_imputed_adj := wm_opex_imputed_adj + tax]
+    dt_info_z[, wm_opex_imputed_adj := wm_opex_imputed_adj + tax] # total bbl good here
     
     
     # calculate ccs
