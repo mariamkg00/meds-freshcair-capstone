@@ -68,6 +68,10 @@ library(here)
 library(dplyr)
 library(openxlsx)
 library(readxl)
+library(purrr)
+library(data.table)
+library(tidyverse)
+library(tidyr)
 
 # source function to rank costs
 # source(here::here('energy', 'extraction-segment', 'prod_quota.R'))
@@ -173,6 +177,8 @@ n_wells_setbacks0[, setback_existing := 0]
 adj_setback <- expand.grid(adj_setback_scen = unique(n_wells_setbacks$setback_scenario),
                            doc_field_code = unique(n_wells_setbacks0$doc_field_code))
 
+adj_setback$doc_field_code = as.character(adj_setback$doc_field_code) # Added MP
+
 n_wells_setbacks0 <- merge(adj_setback, n_wells_setbacks0,
                            by = c('doc_field_code'),
                            all = T)
@@ -191,10 +197,12 @@ n_wells_setbacks <- rbind(n_wells_setbacks, n_wells_setbacks0)
 
 ## load setback scenarios -- Updated - MP
 setback_scens = fread(file.path("data/processed/setback-cov/setback_coverage_R.csv"), header = T, colClasses = c('doc_field_code' = 'character'))
+setback_scens[, doc_field_code := as.numeric(doc_field_code)] # Added MP
 setback_scens[, scen_area_m2 := orig_area_m2 *  (1 - rel_coverage)]
 setback_scens <- setback_scens[, c("doc_field_code", "setback_scenario", "orig_area_m2", "scen_area_m2", "rel_coverage")]
 setnames(setback_scens, 'rel_coverage', 'area_coverage')
 
+n_wells_setbacks[, doc_field_code := as.numeric(doc_field_code)] # Added MP
 setback_scens = merge(setback_scens, n_wells_setbacks,
                       by = c('doc_field_code', 'setback_scenario'),
                       all = T)
