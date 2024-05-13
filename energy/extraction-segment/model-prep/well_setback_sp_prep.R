@@ -9,8 +9,8 @@
 
 # Update home based on your working directory
 home <- "/capstone/freshcair/meds-freshcair-capstone" 
-ft_path <- "/data/proprietery-data/FracTrackerSetbackdata.gdb" 
-save_path <- paste0(home, "/data/proprietery-data/setback-buffers/") 
+ft_path <- "/data-str/private/inputs/FracTrackerSetbackdata.gdb" 
+save_path <- paste0(home, "/data-str/private/setback-buffs/") 
 setwd(home)
 
 # load packages
@@ -38,7 +38,7 @@ ca <- st_as_sf(map("state", plot = FALSE, fill = TRUE)) %>%
 ################################# READ DATA AND TRANSFORM
 
 # to get the names of layers in the shapefile
-layers <- sf::st_layers(dsn = file.path(home, "/data/proprietery-data/FracTrackerSetbackdata.gdb")) 
+layers <- sf::st_layers(dsn = file.path(home, "/data-str/private/inputs/FracTrackerSetbackdata.gdb")) 
 
 ## read in the SR layers
 layer_vec <- c("SetbackOutlines_SR_Dwellings_082220", "PlaygroundsinCities", "DayCareCenters", "reselderlyCare",
@@ -327,7 +327,7 @@ create_buffer <- function(dist_ft) {
   # plot(sr_s, xlim = xcheck, ylim = ycheck, add = TRUE, col = "blue")
 
   ## save output
-  st_write(out_tmp2, dsn = paste0(save_path, "test_buffer_", buff_dist_ft_name, ".shp")) 
+  st_write(out_tmp2, dsn = paste0(save_path, "buffer_", buff_dist_ft_name, ".shp")) 
   
 }
 

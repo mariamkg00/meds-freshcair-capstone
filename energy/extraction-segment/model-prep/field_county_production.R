@@ -23,8 +23,8 @@ library(data.table)
 # read in data ------
 
 ## well production
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
-                                                                     'doc_field_code' = 'character'))
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+                                                                     'doc_field_code' = 'character')) # add new data directory HK
 
 # aggregate production annually by field-county ------
 
@@ -52,5 +52,5 @@ setorderv(field_county_last_year, c('doc_field_code'))
 
 # export to csv ------
 
-fwrite(prod_field_county, 'data/processed/annual_field_county_production_proportion_revised.csv', row.names = F)
-fwrite(field_county_last_year, 'data/processed/annual_final_year_field_county_production_proportion_revised.csv', row.names = F)
+fwrite(prod_field_county, 'data-str/private/production/annual_field_county_production_proportion_revised.csv', row.names = F) # add new data directory HK
+fwrite(field_county_last_year, 'data-str/private/well-fields/annual_final_year_field_county_production_proportion_revised.csv', row.names = F) # add new data directory HK

@@ -7,14 +7,16 @@
 ##################################################################
 # revise : Feb 14, 2024 by Haejin 
 # Updated 4/25/24 - MP
+# revised file path: haejin - May 6, 2024
 
 # Update with your machine's directory
-wd               <- "/capstone/freshcair/meds-freshcair-capstone"
-buffer_path        <- "data/proprietery-data/setback-buffers/"
-wells_dir     <- "data/proprietery-data/AllWells_gis/"
-doggr_path <- "data/inputs/gis/field-boundaries/"
-save_path <- "data/processed/setback-cov/"
-save_path_prop <- "data/proprietery-data/setback-cov/"
+wd               <- "/capstone/freshcair/meds-freshcair-capstone/"
+buffer_path        <- "data-str/private/setback-buffs/"
+wells_dir     <- "data-str/private/inputs/AllWells_gis/"
+doggr_path <- "data-str/public/inputs/gis/field-boundaries/"
+#save_path <- "data-str/processed/setback-cov/" # remove - Haejin
+save_path1 <- "data-str/public/intermediate/energy/location" # update - Haejin
+save_path_prop <- "data-str/private/setback-cov/" # update - Haejin
 
 # Set working directory 
 setwd(wd)
@@ -210,10 +212,11 @@ wells_within_df <- wells %>%
   mutate(within_setback = ifelse(within_1000 == 0, 1, within_1000),
          within_setback = ifelse(is.na(within_setback), 0, within_setback))
 
-ggplot(data = buff3200) +
-  geom_sf() +
-  lims(x=xcheck, y=ycheck) +
-  geom_sf(data = wells_within_df, aes(color = factor(within_setback)))
+# not working ----------HJ 
+#ggplot(data = buff3200) +
+#  geom_sf() +
+#  lims(x=xcheck, y=ycheck) +
+#  geom_sf(data = wells_within_df, aes(color = factor(within_setback)))
 
 
 # # check number in setback compared to tracey's output

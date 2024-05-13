@@ -6,9 +6,9 @@
 
 # ------------------------------------------- set up and inputs -----------------------------------
 proj_dir           <- getwd()
-data_directory     <- "data/stocks-flows/processed/"
+data_directory     <- "data-str/stocks-flows/processed/"
 output_dir         <- "outputs/stocks-flows/"
-rystad_path        <- "data/proprietary-data/"
+rystad_path        <- "data-str/proprietary-data/"
 save_directory     <- "outputs/stocks-flows/entry-input-df/final/"
 
 ## save suffix
@@ -30,25 +30,25 @@ library(lubridate)
 ## ------------------------------------------ load in the files -----------------------------
 
 ## field asset matches from entry_input_step1.R
-field_asset_matches <- fread("data/processed/field_asset_matches_revised.csv", colClasses = c('doc_field_code' = 'character'))
+field_asset_matches <- fread("data-str/private/assets/field_asset_matches_revised.csv", colClasses = c('doc_field_code' = 'character'))
 
 ## load rystad econ information (asset, year, econ group)
-rystad_econ <- fread("data/processed/oil_asset_opex_capex_govtt_clean.csv")
+rystad_econ <- fread("data-str/private/rystad-processed/oil_asset_opex_capex_govtt_clean.csv")
 
 
 ## entry varibales (now made in create_entry_econ_variables.R )
-rystad_entry_variables <- fread("data/proprietery-data/rystad_entry_variables.csv")
+rystad_entry_variables <- fread("data-str/private/rystad-processed/rystad_entry_variables.csv")
 rystad_entry_variables[, FieldName := NULL]                  
 
 ## imputed cost values
-rystad_cost_imputed <- fread("data/proprietery-data/Rystad_cost_imputed_all_assets.csv")
+rystad_cost_imputed <- fread("data-str/private/inputs/Rystad_cost_imputed_all_assets.csv")
 
 ## well production
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                                'doc_field_code' = 'character'))
 
 ## for initial year production
-init_yr_prod <- fread("data/processed/well_start_prod_api10_revised.csv", colClasses = c('api_ten_digit' = 'character',
+init_yr_prod <- fread("data-str/private/production/well_start_prod_api10_revised.csv", colClasses = c('api_ten_digit' = 'character',
                                                                                                       'doc_field_code' = 'character',
                                                                                                       'api_field' = 'character')) 
 
@@ -57,7 +57,7 @@ init_yr_prod$month_year <- as.Date(init_yr_prod$month_year, format = "YYYY-MM-DD
 init_yr_prod$start_date <- as.Date(init_yr_prod$start_date, format = "YYYY-MM-DD")
 
 ## prices
-prices <- fread("data/proprietery-data/wti_brent.csv")
+prices <- fread("data-str/private/inputs/wti_brent.csv")
 
 ## start with the matches, add all variables
 ## ----------------------------------------------------------------------
@@ -239,7 +239,7 @@ econ_forecast <- all_combos %>%
 # write_csv(econ_forecast, path = "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/field_capex_opex_forecast_10122020.csv")
 # write_csv(econ_forecast, path = "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/field_capex_opex_forecast_10132020_v2.csv")
 # write_csv(econ_forecast, path = "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/field_capex_opex_forecast_final.csv")
-write_csv(econ_forecast, "data/processed/field_capex_opex_forecast_revised.csv")
+write_csv(econ_forecast, "data-str/public/intermediate/energy/production/field_capex_opex_forecast_revised.csv") # add new data directory HK
 
 
 ## final set of field - asset matches
@@ -248,7 +248,7 @@ final_set <- all_combos %>%
   unique()
 
 # ## save file 
-write_csv(final_set, path = "data/processed/docfield_asset_crosswalk_entrydf_revised.csv")
+write_csv(final_set, path = "data-str/private/assets/docfield_asset_crosswalk_entrydf_revised.csv") # add new data directory HK
 
 
 ## add price
@@ -344,6 +344,7 @@ test <- prod_econ_prices_df2 %>%
 # write_csv(prod_econ_prices_df2, path = "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/entry_df_final.csv")
 
 ## v3 refers to matching method
-write_csv(prod_econ_prices_df2, path = "data/processed/entry_df_final_revised.csv")
+write_csv(prod_econ_prices_df2, path = "data-str/public/intermediate/energy/production/entry_df_final_revised.csv") # add new data directory HK
+
 
 

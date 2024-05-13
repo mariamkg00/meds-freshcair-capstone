@@ -5,7 +5,9 @@
 
 # ------------------------------------------- INPUTS -----------------------------------
 
-data_dir     <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
+data_dir     <- "/capstone/freshcair/meds-freshcair-capstone/data-str/private/production/"
+data_dir1 <- "/capstone/freshcair/meds-freshcair-capstone/data-str/public/outputs/results-out/" # add new data directory HK
+data_dir2 <- "/capstone/freshcair/meds-freshcair-capstone/data-str/private/well-fields/" # add new data directory HK
 mprod_fil    <- "well_prod_m.rds"
 wells_19_fil <- "wells_19.csv"
 
@@ -58,10 +60,10 @@ setcolorder(well_prod, c("ReportType", "APINumber", "api_ten_digit", "doc_field_
                          "BTUofGasProduced", "MethodOfOperation", "APIGravityofOil", "WaterDisposition", "OilorCondensateProduced", "DaysProducing",          
                          "GasProduced", "WaterProduced", "ReportedOrEstimated"))
 
-fwrite(well_prod, paste0(data_dir, 'well_prod_m_processed.csv'))
+fwrite(well_prod, paste0(data_dir1, 'well_prod_m_processed.csv')) # add new data directory HK
 
 ## doc field codes, field names
 field_info <- unique(well_prod[, c("doc_field_code", "doc_fieldname")])
 
-fwrite(field_info, paste0(data_dir, 'field_info.csv'))
+fwrite(field_info, paste0(data_dir2, 'field_info.csv')) # add new data directory HK
 

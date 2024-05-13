@@ -30,19 +30,19 @@ library(extrafont)
 
 
 # monthly wellstar injection data
-well_inj <- fread("data/processed/well_inj_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+well_inj <- fread("data-str/private/injection/well_inj_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                              'doc_field_code' = 'character'))
 # well_inj = readRDS(paste0(data_dir, "well_inject_m.rds")) 
 # well_inj = setDT(well_inj)
 # well_inj = well_inj[ WellTypeCode %in% c('WF', 'SC', 'SF')]
 
-well_type = fread("data/inputs/extraction/well_type_df.csv")
+well_type = fread("data-str/public/inputs/well_type_df.csv")
 
 # well_info = fread(paste0(data_dir, info_file), colClasses = c('character', rep(NA, 22))) # info on wells, operators, location, etc
 # well_field = well_info[, c('API', 'FieldName')]
 # well_field = unique(well_field)
 
-ci_info = fread('data/inputs/table_CA-fields-carbon-intensities_2018.csv', header = T)
+ci_info = fread('data-str/public/inputs/table_CA-fields-carbon-intensities_2018.csv', header = T)
 ci_info[ field_name == 'Belridge South', field_name := 'Belridge  South']
 
 
@@ -149,7 +149,7 @@ bar_top10inj = ggplot(type_field_yr[ year %in% c(2015,2018) & doc_fieldname %in%
 # bar_top10inj
 
 ggsave(bar_top10inj,
-       filename = paste0('data/outputs/injection-by-well-type_top10inj_2015-vs-2018_revised.png'),
+       filename = paste0('data-str/private/injection/injection-by-well-type_top10inj_2015-vs-2018_revised.png'),
        width = 16,
        height = 9,
        dpi = 400)

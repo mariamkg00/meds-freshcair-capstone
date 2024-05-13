@@ -6,7 +6,7 @@
 ## Updated 2/20/24 MP
 
 # ------------------------------------------- INPUTS -----------------------------------
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
 getwd()
 
@@ -34,12 +34,12 @@ library(nngeo) #nearest point to each poly
 ## ---------------------------------------------------------
 
 ## monthly well production
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
 
 ## asset to field match using well APIs
-field_asset_match <- fread("data/processed/field_rystad_match_apis_revised.csv", colClasses = c('doc_field_code' = 'character'))
+field_asset_match <- fread("data-str/private/rystad-processed/field_rystad_match_apis_revised.csv", colClasses = c('doc_field_code' = 'character'))
 field_asset_match[, c("doc_fieldname", "bbl_prod", "n_wells_field", "field_prod", "rel_field", "rel_prod") := NULL]
 
 ## compute productive fields
@@ -65,7 +65,7 @@ field_asset_well_match <- well_match_df %>%
 
 ## save file
 # write_csv(field_asset_well_match, path = "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/stocks-flows/entry-model-input/well_doc_asset_match.csv")
-write_csv(field_asset_well_match, file = "data/outputs/well_doc_asset_match_revised.csv")
+write_csv(field_asset_well_match, file = "data-str/private/assets/well_doc_asset_match_revised.csv")
 
 
 ## are there multipe assets in a field?
@@ -110,9 +110,9 @@ na_asset2 <- na_asset %>%
 
 ## step 1: filter for relevant assets
 ## ---------------------------------------------------------
-field_assets <- read_csv("data/proprietery-data/asset_latlon.csv")
+field_assets <- read_csv("data-str/public/inputs/extraction/asset_latlon.csv")
 
-rystad_prod <- read_csv("data/processed/ca_oil_production.csv")
+rystad_prod <- read_csv("data-str/private/rystad-processed/ca_oil_production.csv")
 
 ## filter for assets with production in our time horizon
 rystad_prod_th <- rystad_prod %>%
@@ -131,7 +131,7 @@ write.csv(field_assets_adj, "data/outputs/asset_latlon_adj.csv")
 ## make df of nearest neighbor field to asset
 ## ----------------------------------------------------------------
 
-rystad_cost_imputed <- fread("data/proprietery-data/Rystad_cost_imputed_all_assets.csv")
+rystad_cost_imputed <- fread("data-str/private/inputs/Rystad_cost_imputed_all_assets.csv")
 
 cost_imputed <- rystad_cost_imputed %>%
   mutate(na_val = ifelse(is.na(capex_forecast) | is.na(opex_forecast), 1, 0)) %>%
@@ -143,7 +143,7 @@ cost_imputed <- rystad_cost_imputed %>%
   
 
 ## field location                     
-fields_loc <- st_read("data/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp")
+fields_loc <- st_read("data-str/public/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp")
 
 asset_loc_sf <- st_as_sf(field_assets_adj, coords = c("Longitude", "Latitude"), 
                          crs = st_crs(fields_loc))
@@ -297,7 +297,7 @@ nn_fields_n <- nn_fields %>%
   ungroup()
 
 
-write_csv(nn_fields, file = "data/outputs/field_x_field_match_revised.csv")
+write_csv(nn_fields, file = "data-str/private/assets/field_x_field_match_revised.csv")
 
 
 ## ---------------------------------------------
@@ -309,8 +309,8 @@ fields_sf2 <- fields_loc %>%
   select(NAME, FIELD_CODE, nn_field_code, nn_field_name, cost_info)
 
 ## counties
-counties <- read_sf(dsn = paste0("data/inputs/gis/CA_Counties/", layer = "CA_Counties_TIGER2016.shp")) %>%
-  st_transform(st_crs(fields_loc))
+counties <- read_sf(dsn = paste0("data-str/public/inputs/gis/CA_Counties/", layer = "CA_Counties_TIGER2016.shp")) %>%
+  st_transform(st_crs(fields_loc)) # add new data directory HK
 
 ## mapview
 mapview::mapview(fields_sf2, zcol = "cost_info", layer.name = "Fields", label = fields_sf2$NAME) +
@@ -370,7 +370,7 @@ all_matches <- well_match_df %>%
   unique()
 
 ## save file
-write_csv(all_matches, file = "data/processed/field_asset_matches_revised.csv")
+write_csv(all_matches, file = "data-str/private/assets/field_asset_matches_revised.csv") # add new data directory HK
 
 
 

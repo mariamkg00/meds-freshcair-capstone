@@ -16,7 +16,7 @@ academic_out_path <- file.path(main_path, 'processed')
 input_path        <- file.path(main_path, 'data/processed') 
 
 ## read in saved rds files - updates as needed
-extraction_folder = 'extraction_2024-05-08/'
+extraction_folder = 'extraction_2024-05-13/'
 
 external_path <- '/capstone/freshcair/meds-freshcair-capstone/data/processed' 
 
@@ -24,7 +24,7 @@ external_path <- '/capstone/freshcair/meds-freshcair-capstone/data/processed'
 
 if(external_save == 1) {
   
-  compiled_path = paste0(main_path, 'data/processed/extraction_2024-05-08/')
+  compiled_path = paste0(main_path, 'data/processed/extraction_2024-05-13/')
 } else {
   
   compiled_path  = paste0(academic_out_path, extraction_folder)
@@ -98,7 +98,32 @@ state_hs_out_list <- list()
 ct_out_list       <- list()
 ct_hs_out_list    <- list()
 
+### ADDED MP
+# Print the scenarios in scen_sel
+print("Scenarios in scen_sel:")
+print(scen_sel)
+
+# Check if the scenario directories exist
+invalid_scenarios <- character()
+for (scen in scen_sel$scen_id) {
+  scenario_dir <- file.path(save_info_path, 'state-out', paste0(scen, '_state.rds'))
+  if (!file.exists(scenario_dir)) {
+    invalid_scenarios <- c(invalid_scenarios, scen)
+  }
+}
+
+# Print invalid scenarios (if any)
+if (length(invalid_scenarios) > 0) {
+  print("The following scenarios do not have a corresponding state output file:")
+  print(invalid_scenarios)
+} else {
+  print("All scenarios in scen_sel have a corresponding state output file.")
+}
+
+### END ADDED MP
+
 for (i in 1:nrow(subset_ids)) {
+  i = 1
   print(i)
   
   id_name_tmp <- subset_ids[i, scen_id]

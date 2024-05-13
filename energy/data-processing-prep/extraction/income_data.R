@@ -45,7 +45,7 @@ income <- get_acs(state = "CA", geography = "tract",
 income <- income %>%
   mutate(source = "2015-2019 5-year ACS, 2019 dollars")
 
-fwrite(income, paste0(main_path, "data/inputs/gis/census-tract/ca-median-house-income.csv"))
+fwrite(income, paste0(main_path, "data-str/inputs/gis/census-tract/ca-median-house-income.csv"))
 
 ## repeat for county
 
@@ -57,5 +57,5 @@ county_income <- county_income %>%
          source = "2015-2019 5-year ACS, 2019 dollars") %>%
   dplyr::select(county, variable, estimate, moe, source) # add dplyr - haejin
 
-fwrite(county_income, paste0(main_path, "data/inputs/gis/census-tract/ca-median-house-income-county.csv"))
+fwrite(county_income, paste0(main_path, "data-str/inputs/gis/census-tract/ca-median-house-income-county.csv"))
 

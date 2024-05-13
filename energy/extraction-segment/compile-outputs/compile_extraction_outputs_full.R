@@ -32,7 +32,7 @@ main_path_external     <- '/capstone/freshcair/meds-freshcair-capstone/'
 sp_data_path     <- paste0(main_path, "data/input/gis/")
 
 ## UPDATE THESE WITH NEW RUNS!!!!!
-extraction_folder_path <- 'data/processed/extraction_2024-05-08'
+extraction_folder_path <- 'data/processed/extraction_2024-05-13'
 extraction_folder_name <- 'revision-setbacks/'
 data_path  <-'data/processed/'
 
@@ -43,10 +43,10 @@ inmap_ex_path  <- paste0(main_path, "data/processed/extraction")
 if(save_external == 1) {
   
   ## UPDATE THIS WITH NEW RUNS!!!!!
-  extraction_path <- paste0('data/processed/extraction_2024-05-08/revision-setbacks/')
+  extraction_path <- paste0('data/processed/extraction_2024-05-13/revision-setbacks/')
   
-  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-05-08/academic-out/'), showWarnings = FALSE)
-  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-05-08/')
+  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-05-13/academic-out/'), showWarnings = FALSE)
+  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-05-13/')
 
 } else {
   
@@ -468,7 +468,6 @@ print(paste("Starting extraction compiling at ", start_time))
 doParallel::registerDoParallel(cores = n_cores)
 
 for (i in 1:length(field_files_to_process)) {
-  i = 13
   field_file_name <- field_files_to_process[i]
   
   field_scen_out <- readRDS(paste0(extraction_path, 'field-out/', field_file_name))
@@ -564,7 +563,7 @@ for (i in 1:length(field_files_to_process)) {
   ## save site level output for production 
   saveRDS(full_site_out, paste0(field_save_path, scenario_id_tmp, "_field_results.rds"))
   
-  t <- readRDS("/capstone/freshcair/meds-freshcair-capstone/data/processed/extraction_2024-05-08/field-results/high oil price-no_setback-no quota-carbon_target_90perc_reduction-no ccs-low innovation-no tax-0_field_results.rds")
+  t <- readRDS("/capstone/freshcair/meds-freshcair-capstone/data/processed/extraction_2024-05-13/field-results/high oil price-no_setback-no quota-carbon_target_90perc_reduction-no ccs-low innovation-no tax-0_field_results.rds")
   
   # new_t <- t%>% 
   #   group_by(year) %>% 

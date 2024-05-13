@@ -16,8 +16,8 @@ library(data.table)
 # save_directory <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/"
 
 ## monthly well production
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
-                                                                     'doc_field_code' = 'character'))
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+                                                                     'doc_field_code' = 'character')) # add new data directory HK
 ## field codes and field names
 field_codes <- unique(well_prod[, c("doc_field_code", "doc_fieldname")])
 
@@ -41,7 +41,7 @@ field_zero_prod <- field_prod2 %>%
 field_prod3 <- field_prod2 %>%
   filter(!doc_field_code %in% field_zero_prod$doc_field_code)
 
-write_csv(field_prod3, path = "data/processed/crude_prod_x_field_revised.csv")
+write_csv(field_prod3, path = "data-str/public/intermediate/energy/production/crude_prod_x_field_revised.csv") # add new data directory HK
 
 
 

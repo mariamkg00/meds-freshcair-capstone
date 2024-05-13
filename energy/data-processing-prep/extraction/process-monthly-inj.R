@@ -5,7 +5,9 @@
 
 # ------------------------------------------- INPUTS -----------------------------------
 
-data_dir     <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
+data_dir     <- "/capstone/freshcair/meds-freshcair-capstone/data-str/private/injection/"
+# add file directory - Haejin :
+data_dir1     <- "/capstone/freshcair/meds-freshcair-capstone/data-str/private/production/"
 minj_fil    <- "well_inject_m.rds"
 wells_19_fil <- "wells_19.csv" 
 

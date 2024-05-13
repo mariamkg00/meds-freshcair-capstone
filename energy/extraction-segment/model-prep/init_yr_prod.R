@@ -17,7 +17,7 @@ library(rebus)
 # prod_file       <- "well_prod_m_processed.csv"
 
 ## read in files - UPDATED - MP
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
 ## top ten fields
@@ -103,7 +103,7 @@ well_prod_api10_sd <- left_join(well_prod_bal_all, init_yr_prod_api10_m2) %>%
   filter(well_age >= 0)
 
 ## save output - UPDATED - MP
-write_csv(well_prod_api10_sd, path = "data/processed/well_start_prod_api10_revised.csv")
+write_csv(well_prod_api10_sd, path = "data-str/private/production/well_start_prod_api10_revised.csv")
 
 ## check annual production
 init_prod_a <- well_prod_api10_sd %>%

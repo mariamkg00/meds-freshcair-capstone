@@ -6,10 +6,11 @@
 
 
 # ------------------------------------------- INPUTS -----------------------------------
-
-data_dir    = '/capstone/freshcair/meds-freshcair-capstone/data/inputs/extraction'
+setwd('/capstone/freshcair/meds-freshcair-capstone/')
+data_dir    = 'data-str/private/inputs'
 opgee_fil   = '/OPGEE_v2.0_with-CARB-inputs.xlsm' 
 names_fil   = '/opgee_field_names.csv' 
+out_path = 'data-str/private/well-fields/'
 
 # ------------------------------------------- MAIN -----------------------------------
 
@@ -54,7 +55,4 @@ dt_res[, upstream_kgCO2e_bbl := upstream_gCO2e_MJ*(1/(2e-4))*(1/1000)]
 dt_res[, lifecycle_kgCO2e_bbl := lifecycle_gCO2e_MJ*(1/(2e-4))*(1/1000)]
 
 # save to csv -----
-# Redefine directory
-setwd('/capstone/freshcair/meds-freshcair-capstone/')
-
-fwrite(dt_res, paste0('data/processed/field-level-emissions-results_processed_revised.csv'), row.names = F)
+fwrite(dt_res, paste0(out_path,'field-level-emissions-results_processed_revised.csv'), row.names = F)

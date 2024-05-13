@@ -10,8 +10,8 @@
 
 # inputs and file paths -----
 
-  rystad_path   = '/capstone/freshcair/meds-freshcair-capstone/data/'
-  err_file      = '/processed/economically_recoverable_resources_scenarios_wide.csv' #--missing, need to run other file to generate this ------
+  rystad_path   = '/capstone/freshcair/meds-freshcair-capstone/data-str/'
+  err_file      = 'private/rystad-processed/economically_recoverable_resources_scenarios_wide.csv' #--missing, need to run other file to generate this ------
 
 # read in data ------
   
@@ -55,8 +55,8 @@
   
 # save csv -----
   
-  fwrite(sum_myprod, paste0(rystad_path, "processed/asset_sum_my-production.csv"))
-  fwrite(max_resources, paste0(rystad_path, "processed/asset_max_resources.csv"))
-  fwrite(cumsum_prod, paste0(rystad_path, "processed/asset-year_cumulative_sum_production.csv"))
-  fwrite(myprod_res, paste0(rystad_path, "processed/asset-year_production_my-production_resources.csv"))
+  fwrite(sum_myprod, paste0(rystad_path, "private/production/asset_sum_my-production.csv"))
+  fwrite(max_resources, paste0(rystad_path, "private/production/asset_max_resources.csv"))
+  fwrite(cumsum_prod, paste0(rystad_path, "private/production/asset-year_cumulative_sum_production.csv"))
+  fwrite(myprod_res, paste0(rystad_path, "private/production/asset-year_production_my-production_resources.csv"))
   

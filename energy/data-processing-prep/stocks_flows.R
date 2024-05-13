@@ -2,6 +2,7 @@
 ## February 20, 2020
 ## Data cleaning: Focus areas 1 and 2
 # Updated 2/19/24 - MP
+# revise file path : May 8 2024 - haejin 
 
 
 # Setting working directory to Capstone location in Taylor
@@ -1139,7 +1140,7 @@ library(openxlsx)
 ## updated sector ghg emissions
 ## -------------------------------------------
 
-indust_ghg <- read_xlsx(("data/inputs/extraction/2000_2019_ghg_inventory_trends_figures.xlsx"), sheet = "Figure 13", skip = 4)
+indust_ghg <- read_xlsx(("data-str/public/inputs/extraction/2000_2019_ghg_inventory_trends_figures.xlsx"), sheet = "Figure 13", skip = 4) # revise file path - hj
 
 source <- as.character(indust_ghg[9, 1])
 
@@ -1153,6 +1154,6 @@ indust_ghg2 <- indust_ghg %>%
   mutate(source = source)
 
 ## save clean file
-write_csv(indust_ghg2, file = "data/processed/indust_emissions_2000-2019.csv")
+write_csv(indust_ghg2, file = "data-str/public/outputs/labor-out/indust_emissions_2000-2019.csv") # revise file path - hj
 
 

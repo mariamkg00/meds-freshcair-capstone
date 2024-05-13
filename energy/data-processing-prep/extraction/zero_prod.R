@@ -11,10 +11,10 @@ library(readxl)
 library(openxlsx)
 
 ## set directory 
-proj_dir <- "/capstone/freshcair/meds-freshcair-capstone/data/" # revised file directory -Haejin
-raw_dir            <- "/capstone/freshcair/meds-freshcair-capstone/data/inputs/" #  revised file directory -Haejin
-data_directory <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/" #  revised file directory -Haejin
-output_dir <- "outputs/"
+proj_dir <- "/capstone/freshcair/meds-freshcair-capstone/data-str/" # revised file directory -Haejin
+raw_dir            <- "/capstone/freshcair/meds-freshcair-capstone/data-str/public/inputs/" #  revised file directory -Haejin
+data_directory <- "/capstone/freshcair/meds-freshcair-capstone/data-str/public/outputs/results-out/" #  revised file directory -Haejin
+output_dir <- "private/well-fields/"
 
 ## files
 prod_file       <- "well_prod_m_processed.csv"

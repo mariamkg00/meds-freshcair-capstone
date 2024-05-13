@@ -7,23 +7,23 @@ library(tidyverse)
 
 
 ## set directory
-data_directory <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
-rystad_path <- "/capstone/freshcair/meds-freshcair-capstone/data/"
-save_directory <- "/capstone/freshcair/meds-freshcair-capstone/data/outputs/"
+data_directory <- "/capstone/freshcair/meds-freshcair-capstone/data-str/private/production/" 
+rystad_path <- "/capstone/freshcair/meds-freshcair-capstone/data-str/private/rystad-processed/"
+# save_directory <- "/capstone/freshcair/meds-freshcair-capstone/data-str/outputs/" #. not used
 
 ## read in the data
-rystad_econ <- read_csv(paste0(rystad_path, "processed/oil_asset_opex_capex_govtt_clean.csv"))
-rystad_prod <- read_csv(paste0(rystad_path, "processed/ca_oil_production.csv"))
-rystad_capex_bbl <- read_csv(paste0(rystad_path, "processed/capex_bbl_reserves.csv"))
-rystad_opex_bbl_nom_df <- read_csv(paste0(rystad_path, "processed/rystad_opex_bbl_nom_clean.csv"))
-rystad_capex_bbl_nom_df <- read_csv(paste0(rystad_path, "processed/rystad_capex_bbl_nom_clean.csv"))
+rystad_econ <- read_csv(paste0(rystad_path, "oil_asset_opex_capex_govtt_clean.csv"))
+rystad_prod <- read_csv(paste0(rystad_path, "ca_oil_production.csv"))
+rystad_capex_bbl <- read_csv(paste0(rystad_path, "capex_bbl_reserves.csv"))
+rystad_opex_bbl_nom_df <- read_csv(paste0(rystad_path, "rystad_opex_bbl_nom_clean.csv"))
+rystad_capex_bbl_nom_df <- read_csv(paste0(rystad_path, "rystad_capex_bbl_nom_clean.csv"))
 
 
 ## meas's dfs
-asset_sum_my_production <- read_csv(paste0(rystad_path, "processed/asset_sum_my-production.csv"))
-asset_max_resources <- read_csv(paste0(rystad_path, "processed/asset_max_resources.csv"))
-asset_yr_cumsum_production <- read_csv(paste0(rystad_path, "processed/asset-year_cumulative_sum_production.csv"))
-ratio_df <- read_csv(paste0(rystad_path, "processed/asset-year_production_my-production_resources.csv"))
+asset_sum_my_production <- read_csv(paste0(data_directory, "asset_sum_my-production.csv"))
+asset_max_resources <- read_csv(paste0(data_directory, "asset_max_resources.csv"))
+asset_yr_cumsum_production <- read_csv(paste0(data_directory, "asset-year_cumulative_sum_production.csv"))
+ratio_df <- read_csv(paste0(data_directory, "asset-year_production_my-production_resources.csv"))
 
 
 ## Rystad production for opex per bbl
@@ -98,4 +98,4 @@ econ_per_bbl_df2 <- econ_per_bbl_df %>%
   left_join(ratio_df2)
 
 # ## save to use later
-write_csv(econ_per_bbl_df2, path = "/capstone/freshcair/meds-freshcair-capstone/data/proprietery-data/rystad_entry_variables.csv")
+write_csv(econ_per_bbl_df2, path = "/capstone/freshcair/meds-freshcair-capstone/data-str/private/rystad-processed/rystad_entry_variables.csv")

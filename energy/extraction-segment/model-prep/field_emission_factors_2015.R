@@ -7,7 +7,7 @@
 
 data_path         = '/capstone/freshcair/meds-freshcair-capstone/data/processed'
 opgee_path        = '/capstone/freshcair/meds-freshcair-capstone/data/processed'
-entry_path        = '/capstone/freshcair/meds-freshcair-capstone/data/processed'
+entry_path        = '/capstone/freshcair/meds-freshcair-capstone/data-str/public/intermediate/energy/production'
 inj_file          = 'injection-by-well-type-per-field-per-year_1977-2018_revised.csv'
 emfactor_file     = 'field-level-emissions-results_processed_revised.csv'
 entry_file        = 'entry_df_final_revised.csv'
