@@ -77,7 +77,7 @@ source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', '
 ## step 0: load the inputs
 
 scen_id_list = fread(file.path('data/processed/scenario_id_list_targets.csv'), header = T)
-scen_id_list_final = fread(file.path('data/processed/scenario_id_list_targets_finalv2.csv'), header = T)
+scen_id_list_final = fread(file.path('data/processed/scenario_id_list_targets_v3.csv'), header = T)
 scen_id_list_z = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/scenario_id_list_targets-z.csv'), header = T)
 
 ## filter for scenarios to run
@@ -85,7 +85,6 @@ selected_scens <- scen_id_list[subset_scens == 1]
 
 selected_scens_z <- scen_id_list_z[subset_scens == 1]
 
-#
 selected_scens_final <- scen_id_list_final[subset_scens == 1]
 
 # step 1: run extraction model and get outputs -------
@@ -102,3 +101,4 @@ run_extraction_model(selected_scens_final)
 
 elapsed_time <- Sys.time() - start_time
 print(elapsed_time)
+
