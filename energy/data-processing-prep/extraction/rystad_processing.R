@@ -12,22 +12,22 @@ library(data.table)
 library(dplyr)
 
 ## file paths
-rystad_path <- "/capstone/freshcair/meds-freshcair-capstone/data/"
-data_directory <- "/capstone/freshcair/meds-freshcair-capstone/data/processed/"
+rystad_path <- "/capstone/freshcair/meds-freshcair-capstone/data-str/private/"
+data_directory <- "/capstone/freshcair/meds-freshcair-capstone/data-str/public/outputs/results-out/"
 
 ## laod data
 #economics_df <- read_csv(paste0(rystad_path, "proprietery-data/ca_asset_opex_apex_govtt.csv")) 
-economics_df_update <- read_csv(paste0(rystad_path, "proprietery-data/asset_opex_capex_govtt.csv"))
-production_df <- read_csv(paste0(rystad_path, "proprietery-data/ca_production.csv"))
-econ_cats <- read_csv(paste0(rystad_path, "proprietery-data/asset_econ_categories.csv"))
-err_df <- fread(paste0(rystad_path, "proprietery-data/resources_prod_myprod.csv"), skip = 1)
-rystad_capex_recov_bbl <- read_csv(paste0(rystad_path, "proprietery-data/capex_per_recoverable_bbl.csv"))
-api_asset <- read.csv(paste0(rystad_path, "proprietery-data/asset-wells.csv"))
-rystad_capex_bbl_nom <- read_csv(paste0(rystad_path, "proprietery-data/capex_per_bbl_nom.csv"))
-rystad_opex_bbl_nom <- read_csv(paste0(rystad_path, "proprietery-data/opex_per_bbl_nom.csv"))
-asset_rename <- read_csv(paste0(rystad_path, "proprietery-data/rystad_asset_rename.csv"))
-well_cost_eur <- read.csv(paste0(rystad_path, "proprietery-data/well_cost_per_eur.csv"))
-field_asset <- read_csv(paste0(rystad_path, "proprietery-data/field_to_asset.csv"))
+economics_df_update <- read_csv(paste0(rystad_path, "inputs/asset_opex_capex_govtt.csv"))
+production_df <- read_csv(paste0(rystad_path, "inputs/ca_production.csv"))
+econ_cats <- read_csv(paste0(rystad_path, "inputs/asset_econ_categories.csv"))
+err_df <- fread(paste0(rystad_path, "inputs/resources_prod_myprod.csv"), skip = 1)
+rystad_capex_recov_bbl <- read_csv(paste0(rystad_path, "inputs/capex_per_recoverable_bbl.csv"))
+api_asset <- read.csv(paste0(rystad_path, "inputs/asset-wells.csv"))
+rystad_capex_bbl_nom <- read_csv(paste0(rystad_path, "inputs/capex_per_bbl_nom.csv"))
+rystad_opex_bbl_nom <- read_csv(paste0(rystad_path, "inputs/opex_per_bbl_nom.csv"))
+asset_rename <- read_csv(paste0(rystad_path, "inputs/rystad_asset_rename.csv"))
+well_cost_eur <- read.csv(paste0(rystad_path, "inputs/well_cost_per_eur.csv"))
+field_asset <- read_csv(paste0(rystad_path, "inputs/field_to_asset.csv"))
 
 ## well prod
 
@@ -90,7 +90,7 @@ economics_up_df2 <- janitor::clean_names(economics_df_update) %>%
   dplyr::select(original_asset_name = asset, location, company, economics_group, year, usd_nom)
          
 
-write_csv(economics_up_df2, paste0(rystad_path, "processed/oil_asset_opex_capex_govtt_clean.csv"))  
+write_csv(economics_up_df2, paste0(rystad_path, "rystad-processed/oil_asset_opex_capex_govtt_clean.csv"))  
 
 ## production
 ##-----------------------------------------
@@ -110,7 +110,7 @@ prod_df2 <- janitor::clean_names(production_df) %>%
          company = ifelse(company == location, NA, company)) %>%
   dplyr::select(original_asset_name = asset, location, company, data_source, data_type, oil_and_gas_category, year, bbls)
 
-write_csv(prod_df2, paste0(rystad_path, "processed/ca_oil_production.csv"))
+write_csv(prod_df2, paste0(rystad_path, "rystad-processed/ca_oil_production.csv"))
 
 ## visualize total annual production
 
@@ -136,7 +136,7 @@ econ_cats2 <- econ_cats %>%
          usd = as.numeric(million_usd) * 1e6) %>%
   dplyr::select(-million_usd)
 
-write_csv(econ_cats2, paste0(rystad_path, "processed/asset_economics_cats.csv"))
+write_csv(econ_cats2, paste0(rystad_path, "rystad-processed/asset_economics_cats.csv"))
 
 ## economically recoverable resources scenarios
 ## -----------------
@@ -152,8 +152,8 @@ err_df2[ scenario == "My ProductionMy Production [120] (Million bbl)", scenario 
 
 err_df2_wide = dcast(err_df2, asset + year ~ scenario, value.var = 'value')
 
-fwrite(err_df2, paste0(rystad_path, "processed/economically_recoverable_resources_scenarios.csv"))
-fwrite(err_df2_wide, paste0(rystad_path, "processed/economically_recoverable_resources_scenarios_wide.csv"))
+fwrite(err_df2, paste0(rystad_path, "rystad-processed/economically_recoverable_resources_scenarios.csv"))
+fwrite(err_df2_wide, paste0(rystad_path, "rystad-processed/economically_recoverable_resources_scenarios_wide.csv"))
 
 
 ## capex per bbl
@@ -168,7 +168,7 @@ capex_recov_bbl2 <- rystad_capex_recov_bbl %>%
   mutate(year = as.numeric(year)) %>%
   mutate(economics_group = "capex_per_bbl_reserves")
 
-write_csv(capex_recov_bbl2, paste0(rystad_path, "processed/capex_bbl_reserves.csv"))
+write_csv(capex_recov_bbl2, paste0(rystad_path, "rystad-processed/capex_bbl_reserves.csv"))
 
 ## ---------------------------------------------------------------------------
 ## wells in assets
@@ -269,7 +269,7 @@ field_n_asset <- api_asset_match_rev %>%
 
 anti_join(api_asset4 %>% dplyr::select(original_asset_name) %>%  unique(), field_n_asset %>% dplyr::select(original_asset_name) %>% unique())
 
-write_csv(field_n_asset, paste0(rystad_path, "processed/field_rystad_match_apis_revised.csv"))
+write_csv(field_n_asset, paste0(rystad_path, "rystad-processed/field_rystad_match_apis_revised.csv"))
   
 ## capex per bbl nominal
 rystad_capex_bbl_nom2 <- rystad_capex_bbl_nom %>%
@@ -279,7 +279,7 @@ rystad_capex_bbl_nom2 <- rystad_capex_bbl_nom %>%
          capex_per_bbl_nom = as.numeric(capex_per_bbl_nom)) %>%
   dplyr::select(-`Economics Group`)
 
-write_csv(rystad_capex_bbl_nom2, paste0(rystad_path, "processed/rystad_capex_bbl_nom_clean.csv"))
+write_csv(rystad_capex_bbl_nom2, paste0(rystad_path, "rystad-processed/rystad_capex_bbl_nom_clean.csv"))
 
 
 ## opex per bbl nominal
@@ -290,7 +290,7 @@ rystad_opex_bbl_nom2 <- rystad_opex_bbl_nom[3:nrow(rystad_opex_bbl_nom),] %>%
   mutate(year = as.numeric(year),
          opex_per_bbl_nom = as.numeric(opex_per_bbl_nom)) 
 
-write_csv(rystad_opex_bbl_nom2, paste0(rystad_path, "processed/rystad_opex_bbl_nom_clean.csv"))
+write_csv(rystad_opex_bbl_nom2, paste0(rystad_path, "rystad-processed/rystad_opex_bbl_nom_clean.csv"))
 
 
 ## ---------------------------
@@ -306,7 +306,7 @@ well_cost_eur2 <- well_cost_eur %>%
   dplyr::select(-X, -both_na) 
 
 
-write_csv(well_cost_eur2, paste0(rystad_path, "processed/well_cost_per_eur_clean.csv"))
+write_csv(well_cost_eur2, paste0(rystad_path, "rystad-processed/well_cost_per_eur_clean.csv"))
 
 ## ---------------------------
 ## fields
@@ -318,7 +318,7 @@ field_asset2 <- field_asset %>%
  dplyr::select(-days_prod) %>%
  unique()
   
-write_csv(field_asset2, paste0(rystad_path, "processed/rystad_field_asset.csv"))
+write_csv(field_asset2, paste0(rystad_path, "rystad-processed/rystad_field_asset.csv"))
 
 
 
