@@ -26,8 +26,8 @@ library(zoo)
 # read in data ------
 
 prod_fv_year = fread(file.path(fv_year_file), colClasses = c(rep('character',2), rep(NA,12)))
-peak_prod = fread(file.path(peak_file), header = T)
-dt_entry = fread(file.path(entry_file), header = T)
+peak_prod = fread(file.path(peak_file), header = T) 
+dt_entry = fread(file.path(entry_file), header = T) 
 
 # pad field code with leading zeroes -----
 
@@ -340,6 +340,10 @@ res_all = rbindlist(list(res_mult_fit, res_stat_fit, res_exp_fit, res_stat_exp, 
 setorder(res_all, doc_field_code, start_year)
 
 # combine parameters for field-vintages with peak production and well info -----
+
+# Added MP
+res_all[, doc_field_code := as.numeric(doc_field_code)]
+peak_prod[, doc_field_code := as.numeric(doc_field_code)]
 
 res_info = merge(res_all, peak_prod, by = c('doc_fieldname', 'doc_field_code', 'start_year', 'no_wells'))
 
