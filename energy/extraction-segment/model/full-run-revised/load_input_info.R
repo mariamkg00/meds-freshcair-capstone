@@ -151,13 +151,17 @@ ccs_scens[, ccs_scenario := factor(ccs_scenario, levels = c('no ccs', 'high CCS 
 
 ## load price data -- Updated - MP
 price_data = fread(file.path('data/processed/field_capex_opex_forecast_revised.csv'), header = T)
+# price_data[, doc_field_code := as.character(doc_field_code)]
 
 # Updated - MP
 resource_data = fread(file.path("data/intermediate-zenodo/intermediate/extraction-model/field_resource_revised.csv"), header = T)
+# resource_data[, doc_field_code := as.character(doc_field_code)] # Added MP
 resource_data = resource_data[, c('doc_field_code', 'resource')]
 
 ## oad ghg factors -- Updated - MP
 ghg_factors = fread(file.path('data/processed/ghg_emissions_x_field_2018-2045.csv'), header = T)
+ghg_factors[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+ghg_factors[, doc_field_code := as.character(doc_field_code)] # Added MP
 # ghg_factors = ghg_factors[, .(doc_field_code, doc_fieldname, upstream_kgCO2e_bbl)]
 
 ## adjust setback files to include setback toggle
@@ -177,8 +181,9 @@ n_wells_setbacks0[, setback_existing := 0]
 adj_setback <- expand.grid(adj_setback_scen = unique(n_wells_setbacks$setback_scenario),
                            doc_field_code = unique(n_wells_setbacks0$doc_field_code))
 
-adj_setback$doc_field_code = as.character(adj_setback$doc_field_code) # Added MP
+# adj_setback$doc_field_code = as.numeric(adj_setback$doc_field_code) # Added MP
 
+# n_wells_setbacks0$doc_field_code = as.numeric(n_wells_setbacks0$doc_field_code) # Added MP
 n_wells_setbacks0 <- merge(adj_setback, n_wells_setbacks0,
                            by = c('doc_field_code'),
                            all = T)
@@ -198,11 +203,12 @@ n_wells_setbacks <- rbind(n_wells_setbacks, n_wells_setbacks0)
 ## load setback scenarios -- Updated - MP
 setback_scens = fread(file.path("data/processed/setback-cov/setback_coverage_R.csv"), header = T, colClasses = c('doc_field_code' = 'character'))
 setback_scens[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+setback_scens[, doc_field_code := as.character(doc_field_code)] # Added MP
 setback_scens[, scen_area_m2 := orig_area_m2 *  (1 - rel_coverage)]
 setback_scens <- setback_scens[, c("doc_field_code", "setback_scenario", "orig_area_m2", "scen_area_m2", "rel_coverage")]
 setnames(setback_scens, 'rel_coverage', 'area_coverage')
 
-n_wells_setbacks[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+# n_wells_setbacks[, doc_field_code := as.numeric(doc_field_code)] # Added MP
 setback_scens = merge(setback_scens, n_wells_setbacks,
                       by = c('doc_field_code', 'setback_scenario'),
                       all = T)
@@ -213,7 +219,7 @@ setback_scens[, n_wells_in_setback := NULL]
 setnames(setback_scens, 'n_wells', 'n_wells_start')
 setnames(setback_scens, 'adj_no_wells', 'n_wells_setback')
 
-setback_scens[, doc_field_code := as.character(doc_field_code)]
+# setback_scens[, doc_field_code := as.numeric(doc_field_code)] # Added MP
 setback_scens[, setback_scenario := as.character(setback_scenario)]
                              
 setback_scens[, setback_scenario := fifelse(setback_scenario == "no_setback", setback_scenario, paste0(setback_scenario, "ft"))]
@@ -235,14 +241,21 @@ incentives_scens = setDT(read_excel(path = 'data/inputs/scenarios/CCS_LCFS_45Q.x
                                     range = cell_cols(1:3)))
 #incentives_scens = setDT(read.xlsx(file.path('data/inputs/scenarios/CCS_LCFS_45Q.xlsx'), sheet = 'scenarios', cols = c(1:3)))
 
-# pad field codes with leading zeroes ------
-price_data[, doc_field_code := sprintf("%03d", doc_field_code)]
-resource_data[, doc_field_code := sprintf("%03d", doc_field_code)]
-ghg_factors[, doc_field_code := sprintf("%03d", doc_field_code)]
+# # pad field codes with leading zeroes ------  removing for now MP
+# price_data[, doc_field_code := sprintf("%03d", doc_field_code)]
+# resource_data[, doc_field_code := sprintf("%03d", doc_field_code)]
+# ghg_factors[, doc_field_code := sprintf("%03d", doc_field_code)]
 
 # create datatable of forecasted input variables -----
+# vars_dt$doc_field_code = as.numeric(vars_dt$doc_field_code) # Added MP
+# resource_data$doc_field_code = as.numeric(resource_data$doc_field_code) # Added MP
 
 vars_dt = merge(price_data[year >= 2020], resource_data, by = c('doc_field_code'))
+vars_dt[, doc_field_code := as.character(doc_field_code)] # Added MP
+
+# vars_dt$doc_field_code = as.numeric(vars_dt$doc_field_code) # Added MP
+# ghg_factors$doc_field_code = as.numeric(ghg_factors$doc_field_code)
+
 vars_dt = merge(vars_dt, ghg_factors[year >= 2020], by = c('doc_field_code', 'year'))
 setcolorder(vars_dt, c('doc_field_code', 'doc_fieldname', 'year', 
                        'm_opex_imputed', 'm_capex_imputed', 'wm_opex_imputed', 'wm_capex_imputed', 'resource', 
@@ -281,6 +294,8 @@ setnames(ccs_scens_all, c('ccs_scenario_adj', 'ccs_price_usd_per_kg_adj'), c('cc
 
 # load entry data
 entry_dt = fread(file.path('data/processed/entry_df_final_revised.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
+entry_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+entry_dt[, doc_field_code := as.character(doc_field_code)] # Added MP
 
 # # load matrix of scenarios and forecasted variables
 # scenarios_dt = load_scenarios_dt(scenario_selection)
@@ -288,23 +303,34 @@ entry_dt = fread(file.path('data/processed/entry_df_final_revised.csv'), header 
 # load coefficients from poisson regression of historic data -- Updated but stole from Zenodo - MP
 coefs_dt = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/poisson_regression_coefficients_revised.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 coefs_dt = unique(coefs_dt)
+# coefs_dt$doc_field_code = as.numeric(coefs_dt$doc_field_code) # Added MP
 
 # load decline parameters -- Updated - MP
 decline_dt = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/forecasted_decline_parameters_2020_2045.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
+decline_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+decline_dt[, doc_field_code := as.character(doc_field_code)] # Added MP
 
 # load peak production for each field
 peak_dt = fread(file.path('data/processed/field-year_peak-production_yearly.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
-
+peak_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+peak_dt[, doc_field_code := as.character(doc_field_code)] # Added MP
+# peak_dt[, doc_field_code := sprintf("%03d", doc_field_code)]
+# peak_dt$doc_field_code = as.numeric(peak_dt$doc_field_code)
 
 # exit file
 exit_coefs = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/exit_regression_coefficients.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
+# exit_coefs[, doc_field_code := as.numeric(doc_field_code)] # Added MP
 
-exit_coefs[, doc_field_code := sprintf("%03s", doc_field_code)]
+# Removing for now MP
+# exit_coefs[, doc_field_code := sprintf("%03s", doc_field_code)]
 exit_coefs[, doc_fieldname := NULL]
 
 # load forecasted production from existing (pre 2020) wells -- Updated - MP
 prod_existing_vintage = fread(file.path('data/processed/pred_prod_no_exit_2020-2045_field_start_year_revised.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 prod_existing_vintage[, vintage := as.character(start_year)]
+
+# exit_coefs[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+
 prod_existing_vintage[, setback_scenario := fifelse(setback_scenario == "no_setback", setback_scenario, paste0(setback_scenario, "ft"))]
 
 
@@ -313,6 +339,9 @@ prod_existing_vintage[, setback_scenario := fifelse(setback_scenario == "no_setb
 
 # load historic production -- Updated - MP
 prod_hist = fread(file.path('data/processed/crude_prod_x_field_revised.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
+prod_hist[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+prod_hist[, doc_field_code := as.character(doc_field_code)] # Added MP
+# prod_hist[, doc_field_code := as.numeric(doc_field_code)]
 
 # # rename FieldCode -> doc_field_code -----
 # 
@@ -324,8 +353,8 @@ prod_hist = fread(file.path('data/processed/crude_prod_x_field_revised.csv'), he
 #   setnames(decline_dt, "FieldName", "doc_fieldname")
 #   setnames(peak_dt, "FieldName", "doc_fieldname")
 
-# pad field codes with leading zeroes -----
-coefs_dt[, doc_field_code := sprintf("%03s", doc_field_code)]
+# pad field codes with leading zeroes ----- Removing for now - MP
+# coefs_dt[, doc_field_code := sprintf("%03s", doc_field_code)]
 
 # get peak production median of last two vintages -----
 
