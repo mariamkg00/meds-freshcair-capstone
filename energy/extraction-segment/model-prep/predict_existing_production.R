@@ -22,7 +22,7 @@ w_setback_file  = 'data/processed/wells_in_setbacks_revised.csv'
 save_path         = 'data/processed/' # Updated - MP
 # load libraries -------- 
 
-library(data.table)
+library(data.table)  
 library(tidyverse)
 library(dplyr)
 
@@ -31,6 +31,10 @@ library(dplyr)
 dt_prod = fread(paste0(prod_file), header = T, colClasses = c('api_ten_digit' = 'character',
                                                                          'doc_field_code' = 'character'))
 
+
+
+# field_2019_prod = dt_prod %>% filter(year==2019) %>% group_by(doc_field_code) %>% summarise(prod_field_2019 = sum(oil_prod,na.rm=T))
+
 pred_adj_vals = fread(paste0(prod_adj_file), header = T, colClasses = c("doc_field_code" = "character"))
 
 decline_params = fread(paste0(param_file), header = T, colClasses = c('doc_field_code' = 'character'))
@@ -38,6 +42,12 @@ decline_params = fread(paste0(param_file), header = T, colClasses = c('doc_field
 peak_prod = fread(paste0(peak_file), header = T, colClasses = c('doc_field_code' = 'character'))
 
 well_setbacks = fread(paste0(w_setback_file), header = T, colClasses = c('api_ten_digit' = 'character'))
+
+# Make sure doc_field_code is numeric for all dfs
+dt_prod[, doc_field_code := as.numeric(doc_field_code)]
+pred_adj_vals[, doc_field_code := as.numeric(doc_field_code)]
+decline_params[, doc_field_code := as.numeric(doc_field_code)]
+peak_prod[, doc_field_code := as.numeric(doc_field_code)]
 
 # get fields that produced oil in recent years and the number of wells in each vintage that produced oil -----
 
