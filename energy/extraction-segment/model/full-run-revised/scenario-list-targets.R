@@ -143,9 +143,14 @@ scen_sel <- expand.grid(oil_price_scenario = unique(oilpx_scens_names[, oil_pric
 
 setDT(scen_sel)
 
-## add ID column
+## add ID column 
+# scen_sel[, scen_id := paste(oil_price_scenario, setback_scenario, prod_quota_scenario,
+#                             carbon_price_scenario, ccs_scenario, innovation_scenario, excise_tax_scenario, sep = "-")]
+
+# Testing above MP
 scen_sel[, scen_id := paste(oil_price_scenario, setback_scenario, prod_quota_scenario,
-                            carbon_price_scenario, ccs_scenario, innovation_scenario, excise_tax_scenario, sep = "-")]
+                            carbon_price_scenario, ifelse(ccs_scenario %like% "- 45Q", "no ccs", ccs_scenario),
+                            innovation_scenario, excise_tax_scenario, sep = "-")]
 
 setcolorder(scen_sel, c('scen_id', 'oil_price_scenario', 'setback_scenario', 'prod_quota_scenario',
                         'carbon_price_scenario', 'ccs_scenario', 'innovation_scenario', 'excise_tax_scenario'))
@@ -156,12 +161,12 @@ setcolorder(scen_sel, c('scen_id', 'oil_price_scenario', 'setback_scenario', 'pr
 
 ## bau scen ids
 scen_sel[, BAU_scen := fifelse((oil_price_scenario == 'reference case' & 
-                                innovation_scenario == 'low innovation' & 
-                                carbon_price_scenario == 'price floor' & 
-                                ccs_scenario == 'no ccs' &
-                                excise_tax_scenario == 'no tax' &
-                                setback_scenario == 'no_setback' &
-                                prod_quota_scenario == 'no quota'), 1, 0)]
+                                  innovation_scenario == 'low innovation' & 
+                                  carbon_price_scenario == 'price floor' & 
+                                  ccs_scenario == 'no ccs' &
+                                  excise_tax_scenario == 'no tax' &
+                                  setback_scenario == 'no_setback' &
+                                  prod_quota_scenario == 'no quota'), 1, 0)]
 
 # Updated - MP
 scen_sel[, target := fifelse(prod_quota_scenario %in% c('setback_1000_quota', 'setback_2500_quota', 'setback_3200_quota', 'setback_5280_quota'),
@@ -204,8 +209,12 @@ excise_target_df <- excise_target_df[keep == 1]
 excise_target_df[, keep := NULL]
 
 
+# excise_target_df[, scen_id := paste(oil_price_scenario, setback_scenario, prod_quota_scenario,
+#                                     carbon_price_scenario, ccs_scenario, innovation_scenario, excise_tax_scenario, sep = "-")]
+# Testing above MP
 excise_target_df[, scen_id := paste(oil_price_scenario, setback_scenario, prod_quota_scenario,
-                                    carbon_price_scenario, ccs_scenario, innovation_scenario, excise_tax_scenario, sep = "-")]
+                                    carbon_price_scenario, ifelse(ccs_scenario %like% "- 45Q", "no ccs", ccs_scenario),
+                                    innovation_scenario, excise_tax_scenario, sep = "-")]
 
 setcolorder(excise_target_df, c('scen_id', 'oil_price_scenario', 'setback_scenario', 'prod_quota_scenario',
                                 'carbon_price_scenario', 'ccs_scenario', 'innovation_scenario', 'excise_tax_scenario', 'BAU_scen', 'target', 'target_policy'))
@@ -240,9 +249,13 @@ carbon_target_df[, keep := fifelse(setback_scenario == "no_setback" & target %in
 carbon_target_df <- carbon_target_df[keep == 1]
 carbon_target_df[, keep := NULL]
 
-## add scen id
+# ## add scen id
+# carbon_target_df[, scen_id := paste(oil_price_scenario, setback_scenario, prod_quota_scenario,
+#                                     carbon_price_scenario, ccs_scenario, innovation_scenario, excise_tax_scenario, sep = "-")]
+# Testing above MP
 carbon_target_df[, scen_id := paste(oil_price_scenario, setback_scenario, prod_quota_scenario,
-                                    carbon_price_scenario, ccs_scenario, innovation_scenario, excise_tax_scenario, sep = "-")]
+                                    carbon_price_scenario, ifelse(ccs_scenario %like% "- 45Q", "no ccs", ccs_scenario),
+                                    innovation_scenario, excise_tax_scenario, sep = "-")]
 
 setcolorder(carbon_target_df, c('scen_id', 'oil_price_scenario', 'setback_scenario', 'prod_quota_scenario',
                                 'carbon_price_scenario', 'ccs_scenario', 'innovation_scenario', 'excise_tax_scenario', 'BAU_scen', 'target', 'target_policy'))
@@ -271,17 +284,17 @@ scen_sel_toggle <- left_join(setback_toggle, scen_sel) %>%
 ## Updated - MP
 subset_dt = unique(## non-taget (all oil, all setback, all carbon px, no tax, low inno, no ccs, no quota)
   scen_sel_toggle[(innovation_scenario == 'low innovation' &
-            carbon_price_scenario == "price floor" &
-            ccs_scenario %in% c("no ccs") & 
-            excise_tax_scenario == 'no tax' &
-            prod_quota_scenario == 'no quota') |
-             ## targets
-  (innovation_scenario == 'low innovation' &
-   !carbon_price_scenario %in% c("price ceiling", "central SCC") & 
-   prod_quota_scenario == 'no quota' &
-   ccs_scenario %in% c("no ccs") &
-   excise_tax_scenario %in% c("no tax", "tax_setback_1000ft", "tax_setback_2500ft", "tax_setback_3200ft", "tax_setback_5280ft", "tax_90perc_reduction") &   
-   target != "no_target")])
+                     carbon_price_scenario == "price floor" &
+                     ccs_scenario %in% c("no ccs") & 
+                     excise_tax_scenario == 'no tax' &
+                     prod_quota_scenario == 'no quota') |
+                    ## targets
+                    (innovation_scenario == 'low innovation' &
+                       !carbon_price_scenario %in% c("price ceiling", "central SCC") & 
+                       prod_quota_scenario == 'no quota' &
+                       ccs_scenario %in% c("no ccs") &
+                       excise_tax_scenario %in% c("no tax", "tax_setback_1000ft", "tax_setback_2500ft", "tax_setback_3200ft", "tax_setback_5280ft", "tax_90perc_reduction") &   
+                       target != "no_target")])
 
 
 ## indicate scenarios
@@ -289,8 +302,8 @@ scen_sel_toggle[, subset_scens := fifelse(scen_id %in% subset_dt[, scen_id], 1, 
 
 ## set col order
 setcolorder(scen_sel_toggle, c('scen_id', 'oil_price_scenario', 'setback_scenario', 'prod_quota_scenario',
-                         'carbon_price_scenario', 'ccs_scenario', 'innovation_scenario', 'excise_tax_scenario', 'target', 'target_policy', 'subset_scens', 'BAU_scen'))
+                               'carbon_price_scenario', 'ccs_scenario', 'innovation_scenario', 'excise_tax_scenario', 'target', 'target_policy', 'subset_scens', 'BAU_scen'))
 
 
 # Updated - MP
-fwrite(scen_sel_toggle, file.path('data/processed/scenario_id_list_targets_v3.csv'), row.names = F)
+fwrite(scen_sel_toggle, file.path('data/processed/scenario_id_list_targets_v5.csv'), row.names = F)

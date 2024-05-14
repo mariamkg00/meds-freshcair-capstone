@@ -160,7 +160,7 @@ ghg_2019 <- as.numeric(hist_ghg[, value][1])
 
 
 ## read inputs
-state_out <- fread("data/processed/extraction_2024-04-14/state-results/subset_state_results.csv")
+state_out <- fread("data/processed/extraction_2024-05-13/state-results/subset_state_results.csv")
 
 
 
@@ -558,7 +558,7 @@ labor_dac_bind[, category := "Employment"]
 ## Health DAC
 ##----------------------------------------------------
 
-health_out <- fread("data/processed/extraction_2024-04-14/census-tract-results/subset_census_tract_results.csv")
+health_out <- fread("data/processed/extraction_2024-05-13/census-tract-results/subset_census_tract_results.csv")
 # health_out <- fread(paste0(extraction_folder_path, 'census-tract-results/subset_census_tract_results.csv'))
 
 

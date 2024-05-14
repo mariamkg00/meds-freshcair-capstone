@@ -38,7 +38,7 @@ if(zenodo_repo) {
 } else {
   
   ## paths
-  main_path <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
+  main_path <- '/capstone/freshcair/meds-freshcair-capstone/data/outputs/'
   fig_path <- 'outputs/academic-out/extraction/figures/nature-energy-revision/final/'
   # save_path <- paste0(fig_path, "figs/")
   # source_data_path <- paste0(main_path, 'nature-energy/source-data/')

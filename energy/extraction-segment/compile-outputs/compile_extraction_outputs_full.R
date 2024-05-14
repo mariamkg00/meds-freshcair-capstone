@@ -119,6 +119,8 @@ setnames(county_income, "estimate", "median_hh_income")
 ## monthly well production -- Updated - MP
 well_prod <- fread('data/processed/well_prod_m_processed.csv', colClasses = c('api_ten_digit' = 'character',
                                                                                                  'doc_field_code' = 'character'))
+well_prod[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+well_prod[, doc_field_code := as.character(doc_field_code)] # Added MP
 
 ## historical GHG emissions, 2019
 ## --------------------------
@@ -326,7 +328,13 @@ extraction_field_clusters_10km <- read.csv('data/intermediate-zenodo/intermediat
 
 # Removed sep=""
 extraction_fields_xwalk <- foreign::read.dbf('data/intermediate-zenodo/intermediate/extraction-model/extraction_fields_xwalk_id.dbf') %>%
-  dplyr::rename(input_fid = id, doc_field_code = dc_fld_)
+  dplyr::rename(input_fid = id, doc_field_code = dc_fld_)  
+  
+extraction_fields_xwalk$doc_field_code = as.numeric(extraction_fields_xwalk$doc_field_code) # Added MP
+extraction_fields_xwalk$doc_field_code = as.character(extraction_fields_xwalk$doc_field_code)
+
+
+
 
 ## Add Old Wilmington to xwalk
 oldw_df <- data.table(NAME = "Old Wilmington (ABD)",

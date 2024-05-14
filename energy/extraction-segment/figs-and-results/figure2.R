@@ -146,11 +146,12 @@ ggplot(filtered_data_5, aes(x = year, y = value, color = policy_intervention, li
   geom_line() +
   facet_wrap(~ metric, scales = "free_y")
 
-ggsave(filtered_data_5,
-       filename = paste0('outputs/fig2_prod_v2'),
-       width = 180,
-       height = 185,
-       units = "mm")
+# Removed MP
+# ggsave(filtered_data_5,
+#        filename = paste0('data/outputs/fig2_prod_v2'),
+#        width = 180,
+#        height = 185,
+#        units = "mm")
 
 
 

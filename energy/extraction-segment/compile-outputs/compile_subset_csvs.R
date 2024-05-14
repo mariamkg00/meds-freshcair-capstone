@@ -44,13 +44,13 @@ ct_hs_path     = paste0(compiled_path, 'health-county-results/')
 scen_file <- 'scenario_id_list_targets_finalv2.csv'
 
 ## load files
-scen_list <- fread(file.path('data/processed/scenario_id_list_targets_v3.csv'), header = T) 
+scen_list <- fread(file.path('data/processed/scenario_id_list_targets_final.csv'), header = T) 
 
-# Added - MP
-setback_scenarios <- c("no_setback", "setback_3200ft")
-subset_list <- scen_list[scen_list$setback_scenario %in% setback_scenarios]
+# # Added - MP
+# setback_scenarios <- c("no_setback", "setback_3200ft")
+# subset_list <- scen_list[scen_list$setback_scenario %in% setback_scenarios]
 
-# subset_list <- scen_list[BAU_scen == 1 | subset_scens == 1]
+subset_list <- scen_list[BAU_scen == 1 | subset_scens == 1]
 
 subset_ids <- subset_list[, .(scen_id, target, target_policy)]
 
@@ -87,7 +87,7 @@ if (length(missing_scenarios) > 0) {
   print("No missing scenarios found.")
 }
 
-### MP TESTING END ---------- ---------- ---------- ---------- ----------
+### MP TESTING END --------------------------------------------------
 
 ## start function
 ## 1) read in rds for subset ids; 2) save to drive; 3) compile field level outputs for health (for now)
@@ -123,7 +123,6 @@ if (length(invalid_scenarios) > 0) {
 ### END ADDED MP
 
 for (i in 1:nrow(subset_ids)) {
-  i = 1
   print(i)
   
   id_name_tmp <- subset_ids[i, scen_id]

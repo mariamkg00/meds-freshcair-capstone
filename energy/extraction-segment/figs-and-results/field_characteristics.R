@@ -1,4 +1,5 @@
 ## Tracey Mangin
+## Updated 5/13 MP
 
 ## libraries
 library(data.table)
@@ -33,7 +34,7 @@ theme_line = theme_ipsum(base_family = 'Arial',
         plot.margin = unit(c(1,1,1,1), 'lines'))
 
 ## paths 
-main_path <- '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/'
+main_path <- '/capstone/freshcair/meds-capstone-freshcair'
 source_path   <- paste0(main_path, 'data/health/source_receptor_matrix/')
 inmap_ex_path  <- paste0(main_path, "data/health/source_receptor_matrix/inmap_processed_srm/extraction")
 # inmap_ref_path  <- paste0(main_path, "data/health/source_receptor_matrix/inmap_processed_srm/refining")
@@ -44,41 +45,41 @@ save_info_path <- paste0(main_path, 'outputs/academic-out/extraction/figures/rev
 
 
 ## files
-bau_file <- 'reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax_field_results.rds'
-labor_file <- 'reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax_county_results.rds'
+bau_file <- 'reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-0_field_results.rds'
+labor_file <- 'reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-0_county_results.rds'
 forecast_file     <- 'field_capex_opex_forecast_revised.csv'
 ghg_file          <- 'ghg_emissions_x_field_2018-2045.csv'
 setback_file      <- 'setback_coverage_R.csv'
 prod_file       <- "well_prod_m_processed.csv"
 
 ## well prod
-well_prod <- fread(paste0(main_path, "/data/stocks-flows/processed/", prod_file), colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("/capstone/freshcair/meds-freshcair-capstone/data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                                                  'doc_field_code' = 'character'))
 
 ## read in bau field out
-bau_out <- readRDS(paste0(main_path, 'outputs/academic-out/extraction/extraction_2022-11-07/field-results/', bau_file))
+bau_out <- readRDS(paste0('/capstone/freshcair/meds-freshcair-capstone/data/processed/extraction_2024-05-13/field-results/', bau_file))
 
 ## county out
-county_out <- readRDS(paste0(main_path, 'outputs/academic-out/extraction/extraction_2022-11-07/county-results/', labor_file))
+county_out <- readRDS(paste0('/capstone/freshcair/meds-freshcair-capstone/data/processed/extraction_2024-05-13/county-results/', labor_file))
 
 ## load opex/ capex
-price_data = fread(file.path(main_path, 'outputs/stocks-flows/entry-input-df/final/', forecast_file), header = T)
+price_data = fread(file.path('/capstone/freshcair/meds-freshcair-capstone/data/processed/field_capex_opex_forecast_revised.csv'), header = T)
 price_data[, doc_field_code := sprintf("%03d", doc_field_code)]
 price_data[, sum_cost := m_opex_imputed + m_capex_imputed]
 price_data <- price_data[year == 2020, .(doc_field_code, m_opex_imputed, m_capex_imputed, sum_cost)]
 
 ## emissions factors
-ghg_factors = fread(file.path(main_path, 'outputs/stocks-flows', ghg_file), header = T)
+ghg_factors = fread(file.path('/capstone/freshcair/meds-freshcair-capstone/data/processed/', ghg_file), header = T)
 ghg_factors[, doc_field_code := sprintf("%03d", doc_field_code)]
 ghg_factors <- ghg_factors[year == 2019, .(doc_field_code, upstream_kgCO2e_bbl)]
 
 ## setback coverage
-setback_scens = fread(file.path(main_path, 'outputs/setback', 'model-inputs', setback_file), header = T, colClasses = c('doc_field_code' = 'character'))
+setback_scens = fread(file.path('/capstone/freshcair/meds-freshcair-capstone/data/processed/setback-cov', setback_file), header = T, colClasses = c('doc_field_code' = 'character'))
 setnames(setback_scens, 'rel_coverage', 'area_coverage')
 setback_scens <- setback_scens[setback_scenario != "no_setback", .(doc_field_code, setback_scenario, area_coverage)]
 
 ## dac 
-dac_ces <- read_xlsx(paste0(main_path, 'data/health/raw/ces3results.xlsx'))
+dac_ces <- read_xlsx('/capstone/freshcair/meds-freshcair-capstone/data/inputs/health/ces3results.xlsx')
 
 ces_county <- dac_ces %>%
   select(`Census Tract`, `California County`, `SB 535 Disadvantaged Community`) %>%
@@ -93,7 +94,7 @@ ces_county <- dac_ces %>%
 #   as.data.table()
 
 ## census pop
-ct_inc_pop_45 <- fread(paste0(main_path, "data/benmap/processed/ct_inc_45.csv"), stringsAsFactors  = FALSE) %>%
+ct_inc_pop_45 <- fread("/capstone/freshcair/meds-freshcair-capstone/data/processed/ct_inc_45.csv", stringsAsFactors  = FALSE) %>%
   mutate(ct_id = paste0(stringr::str_sub(gisjoin, 2, 3),
                         stringr::str_sub(gisjoin, 5, 7),
                         stringr::str_sub(gisjoin, 9, 14))) %>%
@@ -422,9 +423,9 @@ county_df <- prod_x_county %>%
 
 
 ## save 
-fwrite(field_df, paste0(save_info_path, 'field_characteristics.csv'))
+fwrite(field_df, paste0('/capstone/freshcair/meds-freshcair-capstone/data/outputs/field_characteristics.csv'))
 
-fwrite(county_df, paste0(save_info_path, 'county_characteristics.csv'))
+fwrite(county_df, paste0('/capstone/freshcair/meds-freshcair-capstone/data/outputs/county_characteristics.csv'))
 
 
 # ## save 
