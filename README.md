@@ -25,26 +25,38 @@ We have two primary structures: "model" and "data". The existing model comprises
 We create processed and final data. At the end of the project, we will select only the necessary files and structure the processed and final data accordingly.
 ​​
 ```
-├── model/
-│   ├── energy/
-│   │   ├── data-processing-prep/     
-│   │   └── extraction/
-│   │       ├── extraction/
-│   │       └── cost/
-│   │       └── map/ 
-│   ├── health/
-│   │   ├── health/
-│   │   └── map/ 
-│   ├── labor/
-│   ├── mechanism/                             # will be removed 
-│   ├── pred-model/                            # will be removed 
-│   └── scripts/STAT_tool box                  # will be removed 
-├── .gitignore
-├── README.md
-└── data                                       # not share in public
+├── private/
+│   ├── assets/
+│   ├── entry-exit/
+│   ├── health/                             
+│   ├── injection/
+│   ├── labor
+│   ├── injection
+│   ├── inputs
+│   ├── labor
+│   ├── production
+│   ├── rystad-processed
+│   ├── scens
+│   ├── setback-buffs
+│   ├── setback-cov                         
+│   └── well-fields                 
+├── public
+│   ├── inputs
+│   │   ├── extraction
+│   │   ├── gis
+│   │   ├── health
+│   │   ├── labor
+│   │   └── scenarios
+│   ├── intermediate
+│   │   ├── energy
+│   │   └── health
+│   ├── outputs
+│   │   ├── health-out
+│   │   ├── labor-out
+│   │   ├── model-out
+│   │   └── results-out
+                               
 ```
-
-## This is emLab's orignial readme content !! ----------
 
 # ca-transport-supply-decarb
 
