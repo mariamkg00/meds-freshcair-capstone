@@ -18,7 +18,7 @@ California's ambitious goal to slash GHG emissions by 90% by 2045 marks a signif
 The purpose of this Github repository is to maintain a clear and effective history of working progress in the capstone project. This repository contains parts of the data and scripts used to update the well setback distance reflected by the upcoming Senate Bill 1137. 
 
 
-## Repository file structure
+## Data structure
 
 This is the fundamental structure of our repository:
 We have two primary structures: "model" and "data". The existing model comprises three different sections (extraction, health, labor), which will be simplified to sections, and we will select the necessary ones to remain in this repository in the future. The Shinydashboard will be updated in the Spring quarter.
