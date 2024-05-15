@@ -4,12 +4,15 @@
 
 scen_list = fread(file.path('data/processed/scenario_id_list_targets_v3.csv'), header = T)
 
-## filter for scenarios to run
+# filter for scenarios to run
 selected_scens <- scen_list[subset_scens == 1]
 
-run_extraction_model <- function(input_scenarios) {
-  scen_sel <- input_scenarios
-  scen_sel = selected_scens # MP 
+run_extraction_model_fc <- function(input_scenarios) {
+  # paste0("Scenario: ", input_scenarios)
+  # scen_sel <- input_scenarios
+  
+  scen_sel = selected_scens # MP
+  
   # Added for testing - MP
   # print(scen_sel) #
   
@@ -19,10 +22,10 @@ run_extraction_model <- function(input_scenarios) {
   ## --------------------------------------------------  
   
   func_yearly_production <- function(z) {
-    z=13
+    # paste0("Starting scenario ", z)
+    z=1
     #print(z)
     scen = scen_sel[z]
-    print(scen) #
     scenario_name_z <- scen[, scen_id][1]
     # print(scenario_name_z) # 
     target_pol <- scen[, target_policy[1]]
@@ -72,6 +75,7 @@ run_extraction_model <- function(input_scenarios) {
     
     ## create input sheet
     ## list through all scenarios ------
+    
     scenarios_dt_z = scen[oilpx_scens, on = .(oil_price_scenario), allow.cartesian = T, nomatch = 0]
     # print(scenarios_dt_z) #
     scenarios_dt_z = scenarios_dt_z[vars_dt, on = .(year), allow.cartesian = T, nomatch = 0]
@@ -80,8 +84,13 @@ run_extraction_model <- function(input_scenarios) {
     # print(scenarios_dt_z) #
     scenarios_dt_z = scenarios_dt_z[carbonpx_scens_z, on = .(year, carbon_price_scenario), nomatch = 0]
     scenarios_dt_z = scenarios_dt_z[ccs_scens_all, on = .(year, ccs_scenario), nomatch = 0]
+    # scenarios_dt_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    # setback_scens[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    # Testing below
     scenarios_dt_z = scenarios_dt_z[setback_scens, on = .(doc_field_code, setback_scenario, setback_existing), nomatch = 0]
     scenarios_dt_z = scenarios_dt_z[prod_quota_scens, on = .(year, prod_quota_scenario), nomatch = 0]
+    # scenarios_dt_z = scenarios_dt_z[setback_scens, on = .(doc_field_code, setback_scenario, setback_existing), nomatch = 0]
+    # scenarios_dt_z = scenarios_dt_z[prod_quota_scens, on = .(year, prod_quota_scenario), nomatch = 0]
     scenarios_dt_z = scenarios_dt_z[excise_tax_scens_z, on = .(year, excise_tax_scenario), nomatch = 0]
     print(scenarios_dt_z) #
     
@@ -102,23 +111,29 @@ run_extraction_model <- function(input_scenarios) {
     
     # calculate depletion in 2020 -----
     
-    
+    # scenarios_dt_z[, doc_field_code := as.numeric(doc_field_code)]
     depl_2019_z = scenarios_dt_z[year == 2020, .(doc_field_code,  oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
                                                  setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
     print(depl_2019_z) #
+    # entry_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    # depl_2019_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     depl_2019_z = merge(depl_2019_z, entry_dt[year == 2019, .(doc_field_code, depl)],
                         by = 'doc_field_code')
     print(depl_2019_z) #
     
     setnames(depl_2019_z, 'depl', 'depl2019')
     
+    # prod_hist[, doc_field_code := as.numeric(doc_field_code)]
     prod_2019_z = prod_hist[year == 2019, .(doc_field_code, total_bbls)]
     print(prod_2019_z) #
     
     trr_2020_z = unique(scenarios_dt_z[year == 2020, .(doc_field_code, oil_price_scenario, innovation_scenario, carbon_price_scenario, 
                                                        ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, resource)])
     print(trr_2020_z) # 
-    
+    setDT(prod_2019_z) #
+    setDT(trr_2020_z) #
+    setDT(depl_2019_z) #
+    # prod_2019_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     depl_2020_z = prod_2019_z[trr_2020_z, on = 'doc_field_code']
     depl_2020_z = depl_2020_z[depl_2019_z, on = .(doc_field_code, 
                                                   oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
@@ -138,6 +153,8 @@ run_extraction_model <- function(input_scenarios) {
     # calculate ccs costs in 2020 using 2019 production ------
     
     dt_info_z = unique(scenarios_dt_z[year == 2020])
+    #dt_info_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    #prod_2019_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     dt_info_z = merge(dt_info_z,
                       prod_2019_z,
                       by = 'doc_field_code')
@@ -277,26 +294,53 @@ run_extraction_model <- function(input_scenarios) {
     prod_existing_vintage_z[, doc_fieldname := NULL]
     
     for (i in seq_along(pred_years)) {
+      i = 1
       t = pred_years[i]
       
       # print(t)
       
       ## first: predict new wells ----------------------------------------------------------------------
       new_wells = dt_info_z[year == t]
+      #new_wells[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #coefs_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #dt_depl_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      print(length(unique(new_wells$doc_field_code))) # 
+      setDT(new_wells)
       new_wells = new_wells[dt_depl_z[year == t], on = .(doc_field_code,
                                                          oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario,
                                                          setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
                                                          year), nomatch = 0]
-      new_wells = new_wells[coefs_dt, on = .(doc_field_code, doc_fieldname), nomatch = 0]
       
-      # poisson regression for all fields
-      new_wells[, m_new_wells_pred := fifelse(depl < 0.9999,
-                                              exp(brent_hat*oil_price_usd_per_bbl + capex_hat*m_capex_imputed + opex_hat*m_opex_imputed_adj + depl_hat*depl) * fixed_effect,
-                                              0)]
-      # new_wells[, wm_new_wells_pred := fifelse(depl < 0.9999,
-      #                                           exp(brent_hat*oil_price_usd_per_bbl + capex_hat*wm_capex_imputed + opex_hat*wm_opex_imputed_adj + depl_hat*depl) * fixed_effect,
-      #                                           0)]
+      # Updating below code
+      setDT(coefs_dt)
+      new_wells = new_wells[coefs_dt, on = .(doc_field_code, doc_fieldname), nomatch = NA]
+      # new_wells = new_wells[coefs_dt, on = .(doc_field_code, doc_fieldname), nomatch = 0] # OG
+      print(length(unique(new_wells$doc_field_code))) #
       
+      
+      # # poisson regression for all fields -- OLD
+      # new_wells[, m_new_wells_pred := fifelse(depl < 0.9999,
+      #                                         exp(brent_hat*oil_price_usd_per_bbl + capex_hat*m_capex_imputed + opex_hat*m_opex_imputed_adj + depl_hat*depl) * fixed_effect,
+      #                                         0)]
+      
+      # NEW ----
+      source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', 'entry-func.R'))
+      # Prepare the entry_df for predict_new_wells function
+      entry_df <- new_wells %>%
+        rename(top_field = doc_fieldname, capex_imputed = m_capex_imputed, opex_imputed = m_opex_imputed_adj) %>%
+        mutate(year = as.integer(year))
+      
+      # Get the new wells prediction using the random forest function
+      predicted_new_wells <- predict_new_wells(entry_df)
+      
+      # Merge the predicted new wells back into the new_wells dataframe
+      new_wells <- merge(new_wells, predicted_new_wells, by = c("doc_field_code", "year"))
+      
+      # Use the predicted new wells
+      new_wells[, m_new_wells_pred := new_wells_pred]
+      new_wells[, new_wells_pred := NULL]  # Clean up the temporary column
+      
+      # NEW END ---
       setorder(new_wells, 'doc_field_code')
       
       # round number of wells to integer
@@ -316,9 +360,16 @@ run_extraction_model <- function(input_scenarios) {
       setnames(new_wells_exit_t, c("year", "m_new_wells_pred"), c("start_year", "adj_no_wells"))
       setcolorder(new_wells_exit_t, c("doc_field_code", "vintage", "start_year", "adj_no_wells", "no_wells_after_exit"))
       
-      ## existing
+      ## existing 
+      #prod_existing_vintage_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       prod_existing_exit_t = prod_existing_vintage_z[year == t, .(doc_field_code, vintage, start_year, adj_no_wells, no_wells_after_exit)]
-      
+      # New
+      prod_existing_exit_t_old = prod_existing_vintage_z[, .(doc_field_code, vintage, start_year, adj_no_wells, no_wells_after_exit)]
+      setDT(prod_existing_exit_t) # Added MP
+      setDT(prod_existing_vintage_z) # 
+      # prod_existing_exit_t = prod_existing_exit_t[unique(prod_existing_vintage_z$doc_field_code), on = .(doc_field_code)]
+      # Replacing above line MP
+      prod_existing_exit_t = prod_existing_exit_t[prod_existing_exit_t$doc_field_code %in% unique(prod_existing_vintage_z$doc_field_code), ]
       
       ## if i > 1, add new wells to the df 
       if(i > 1) {
@@ -332,28 +383,54 @@ run_extraction_model <- function(input_scenarios) {
       } else { exit_dt_t = rbind(prod_existing_exit_t, new_wells_exit_t)}
       
       ## create df of exit params
-      exit_dt_t = exit_dt_t[order(doc_field_code, start_year)]
+      exit_dt_t = exit_dt_t[order(doc_field_code, start_year)] # 293 fields??? MP
       
       exit_model_dt = dt_info_z[year == t, .(doc_field_code, oil_price_usd_per_bbl, m_opex_imputed)]
       
+      #exit_model_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #dt_depl_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       exit_model_dt = merge(exit_model_dt, dt_depl_z[year == t, .(doc_field_code, depl)],
                             by = 'doc_field_code',
                             all.x = T)
       
+      #exit_coefs[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #exit_model_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       exit_model_dt = merge(exit_model_dt, exit_coefs,
                             by = 'doc_field_code',
                             all.x = T)
+      #exit_model_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       
-      exit_model_dt[, n_well_exit := calc_num_well_exits(fe_val = fixed_effect,
-                                                         bhat = brent_hat,
-                                                         p_oil = oil_price_usd_per_bbl, 
-                                                         op_hat = opex_hat,
-                                                         opex_val = m_opex_imputed, 
-                                                         dhat = depl_hat, 
-                                                         depl_val = depl)]
+      # # OLD exit model
+      # exit_model_dt[, n_well_exit := calc_num_well_exits(fe_val = fixed_effect,
+      #                                                    bhat = brent_hat,
+      #                                                    p_oil = oil_price_usd_per_bbl, 
+      #                                                    op_hat = opex_hat,
+      #                                                    opex_val = m_opex_imputed, 
+      #                                                    dhat = depl_hat, 
+      #                                                    depl_val = depl)]
+      
+      # NEW exit model
+      # Prepare the exit_df for predict_exit_wells function
+      exit_df <- exit_model_dt %>%
+        rename(depl = depl, top_field = doc_fieldname, capex_imputed = m_capex_imputed, opex_imputed = m_opex_imputed) %>%
+        mutate(year = as.integer(year))
+      
+      # Get the exit wells prediction using the random forest function
+      predicted_exit_wells <- predict_exit_wells(exit_df)
+      
+      # Merge the predicted exit wells back into the exit_model_dt dataframe
+      exit_model_dt <- merge(exit_model_dt, predicted_exit_wells, by = c("doc_field_code", "year"))
+      
+      # Use the predicted exit wells
+      exit_model_dt[, n_well_exit := exit_wells_pred]
+      exit_model_dt[, exit_wells_pred := NULL]  # Clean up the temporary column
+      # END NEW exit model
+      
       ## store it
       exit_save = copy(exit_model_dt)
       exit_save[, year := t]
+      #dt_info_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #exit_save[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       exit_save = merge(dt_info_z[year == t, .(doc_field_code, doc_fieldname, oil_price_scenario,
                                                innovation_scenario, carbon_price_scenario, ccs_scenario,
                                                setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)],
@@ -362,6 +439,9 @@ run_extraction_model <- function(input_scenarios) {
                         all.x = T)
       
       list_exits[[i]] = exit_save
+      
+      #exit_dt_t[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #exit_model_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       
       ## join well exit to exit_dt_t
       exit_dt_t = merge(exit_dt_t, exit_model_dt[, .(doc_field_code, n_well_exit)],
@@ -393,7 +473,9 @@ run_extraction_model <- function(input_scenarios) {
       
       ## modify newly predicted entry in time t
       exit_dt_new_t = exit_dt_t[start_year == t, .(doc_field_code, no_wells_after_exit_t)]
-      
+      #new_wells[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #exit_dt_new_t[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      # Correct through here 5/11
       new_wells = merge(new_wells, exit_dt_new_t,
                         by = "doc_field_code",
                         all.x = T)
@@ -405,13 +487,29 @@ run_extraction_model <- function(input_scenarios) {
       ## modify prod_existing_vintage_z
       exit_dt_existing = exit_dt_t[vintage != "new", .(doc_field_code, vintage, start_year, no_wells_after_exit_t)]
       
-      prod_existing_vintage_z = merge(prod_existing_vintage_z, exit_dt_existing,
-                                      by = c("doc_field_code", "vintage", "start_year"),
-                                      all.x = T)
+      #prod_existing_vintage_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      
+      # Removing duplicates -- added MP
+      unique_exits <- unique(exit_dt_existing[, .(doc_field_code, vintage, start_year)])
+      
+      #prod_existing_vintage_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      prod_existing_vintage_z <- merge(prod_existing_vintage_z,
+                                       exit_dt_existing[unique_exits, on = .(doc_field_code, vintage, start_year)],
+                                       by = c("doc_field_code", "vintage", "start_year"),
+                                       all.x = TRUE) # Added allow.cartesian MP
+      
+      # Removing duplicates from prod_existing_vintage_z
+      # This isn't quite right...
+      #prod_existing_vintage_z = unique(prod_existing_vintage_z)
+      
+      # prod_existing_vintage_z = merge(prod_existing_vintage_z, exit_dt_existing,
+      #                                 by = c("doc_field_code", "vintage", "start_year"),
+      #                                 all.x = T) 
       
       prod_existing_vintage_z[, no_wells_after_exit := fifelse(orig_year >= t, no_wells_after_exit_t, no_wells_after_exit)]
       prod_existing_vintage_z[, production_bbl := no_wells_after_exit * prod_per_well_bbl]
       
+      # Good through here 5/12
       prod_existing_vintage_z[, no_wells_after_exit_t := NULL]
       
       ## if i > 1, modify prod_existing_vintage_z
@@ -420,6 +518,8 @@ run_extraction_model <- function(input_scenarios) {
         exit_dt_new = exit_dt_t[vintage == "new" & start_year < t, .(doc_field_code, vintage, start_year, no_wells_after_exit_t)]
         setnames(exit_dt_new, "start_year", "vintage_start")
         
+        #exit_dt_new[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+        #prod_new_vintage_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
         prod_new_vintage_z = merge(prod_new_vintage_z, exit_dt_new,
                                    by = c("doc_field_code", "vintage", "vintage_start"),
                                    all.x = T)
@@ -443,7 +543,8 @@ run_extraction_model <- function(input_scenarios) {
       #                        by = 'doc_field_code',
       #                        all.x = T)
       
-      
+      #decline_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #new_wells[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       new_wells_prod = merge(new_wells,
                              decline_dt[t == year, .(doc_field_code, q_i, D, b, d, int_year)], # meas-note: change b1, b2, d --> b, d
                              by = 'doc_field_code',
@@ -452,17 +553,31 @@ run_extraction_model <- function(input_scenarios) {
       # param_other = unique(decline_dt[t == year & doc_fieldname == 'other', .(q_i, D, b1, b2, d, int_year)])
       param_other = unique(decline_dt[t == year & doc_fieldname == 'other', .(q_i, D, b, d, int_year)])
       
-      new_wells_prod[is.na(q_i), q_i := param_other[, q_i]]
-      new_wells_prod[is.na(D), D := param_other[, D]]
+      
+      # new_wells_prod[is.na(q_i), q_i := param_other[, q_i]] OLD
+      # New code for above line
+      new_wells_prod[is.na(q_i) & !is.na(param_other[, q_i]), q_i := param_other[, q_i][[1]]]
+      # new_wells_prod[is.na(D), D := param_other[, D]] OLD
+      # New code for above line
+      new_wells_prod[is.na(D) & !is.na(param_other[, D]), D := param_other[, D][[1]]]
       
       # new_wells_prod[is.na(b2) & is.na(b1), b2 := param_other[, b2]]
       # new_wells_prod[is.na(d) & is.na(b1), d := param_other[, d]]
       # new_wells_prod[is.na(int_year) & is.na(b1), int_year := param_other[, int_year]]
-      new_wells_prod[is.na(b), b := param_other[, b]]
-      new_wells_prod[is.na(d), d := param_other[, d]]
-      new_wells_prod[is.na(int_year), int_year := param_other[, int_year]]
+      # new_wells_prod[is.na(b), b := param_other[, b]] OLD
+      # New code for above line 
+      new_wells_prod[is.na(b) & !is.na(param_other[, b]), b := param_other[, b][[1]]]
+      # new_wells_prod[is.na(d), d := param_other[, d]] OLD
+      # New code for above line 
+      new_wells_prod[is.na(d) & !is.na(param_other[, d]), d := param_other[, d][[1]]]
+      # new_wells_prod[is.na(int_year), int_year := param_other[, int_year]] OLD
+      # New code for above line
+      new_wells_prod[is.na(int_year) & !is.na(param_other[, int_year]), int_year := param_other[, int_year][[1]]]
       
       
+      #peak_prod_median[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      setDT(new_wells_prod) # Added MP
+      setDT(peak_prod_median)
       new_wells_prod = new_wells_prod[peak_prod_median[, .(doc_field_code, peak_avg_well_prod)], on = 'doc_field_code', nomatch = 0]
       
       ## adjust number of wells for setback scenario
@@ -596,6 +711,8 @@ run_extraction_model <- function(input_scenarios) {
       existing_vintage_prod_t = existing_vintage_prod_t[, .(setback_scenario, setback_existing, doc_field_code, vintage, production_bbl)]
       
       ## merge field info for time t with production for time t
+      #temp_prod_existing_vintage[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #existing_vintage_prod_t[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       temp_prod_existing_vintage = merge(temp_prod_existing_vintage, existing_vintage_prod_t,
                                          by = c("doc_field_code", "setback_scenario", "setback_existing"),
                                          all.x = T,
@@ -631,6 +748,8 @@ run_extraction_model <- function(input_scenarios) {
         
         temp_prod_new_vintage_t <- prod_new_vintage_z[year == t]
         
+        #temp_prod_new_vintage_t[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+        #temp_prod_new_vintage_info[, doc_field_code := as.numeric(doc_field_code)] # Added MP
         temp_prod_new_vintage_t <- merge(temp_prod_new_vintage_t, temp_prod_new_vintage_info,
                                          by = c("doc_field_code", "oil_price_scenario", 
                                                 "innovation_scenario", "carbon_price_scenario", 
@@ -661,16 +780,21 @@ run_extraction_model <- function(input_scenarios) {
       ## ---------------------------------------------------------
       
       # join production dataframe to cost rankings
+      #temp_prod_quota[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #temp_dt_info_rank[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       temp_prod_quota = merge(temp_prod_quota, temp_dt_info_rank, 
                               by = c("doc_field_code", "doc_fieldname", "oil_price_scenario", "innovation_scenario", 
                                      "carbon_price_scenario", "ccs_scenario", "setback_scenario", "setback_existing", "prod_quota_scenario", 
                                      "excise_tax_scenario"),
                               all.x = T)
+      print(length(unique(temp_prod_quota$doc_field_code))) #
       
       # create column with appropriate cost rank based on if vintage is new as of year t
       temp_prod_quota[, cost_rank := fifelse(vintage_start == t, cost_new_rank, cost_existing_rank)]
+      print(length(unique(temp_prod_quota$doc_field_code))) #
       # remove other cost rank columns
       temp_prod_quota[, c('cost_existing_rank', 'cost_new_rank') := NULL]
+      print(length(unique(temp_prod_quota$doc_field_code))) #
       
       # calculate cumulative production in ascending order of rank then descending order of vintage 
       # (i.e. assume that within a field, older vintages get shut first)
@@ -678,11 +802,12 @@ run_extraction_model <- function(input_scenarios) {
              oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario,
              setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)
       
-      ## calculate cumulative sum by scenario, arranging by cost rank and cost vintage rank
-      temp_prod_quota = temp_prod_quota[!is.na(cost_rank)]
-      
-      ## add column to randomize order when cost_rank and vintge_start are the same
+      ## calculate cumulative sum by scenario, arranging by cost rank and cost vintage rank 
+      # temp_prod_quota = temp_prod_quota[!is.na(cost_rank)] # OG
+      # Replacing above line 
       temp_prod_quota[, random := sample.int(.N, replace = FALSE), by = .(cost_rank, vintage_start)]
+      ## add column to randomize order when cost_rank and vintge_start are the same
+      # temp_prod_quota[, random := sample.int(.N, replace = FALSE), by = .(cost_rank, vintage_start)]
       
       ## set order based on cost_rank, vintage_start, and random
       setorder(temp_prod_quota, cost_rank, -vintage_start, random)
@@ -718,7 +843,6 @@ run_extraction_model <- function(input_scenarios) {
       ## add column that indicates if cumulative production is greater than quota
       temp_prod_quota[, over_quota_ranks := fifelse(prod_cumsum > quota, 1, 0)]
       
-      
       ## create column with previous cumulative production
       ## create column of cumulative sum of over_quota_ranks to identify first field vintage to bust quota -- replacing with if else below
       # temp_prod_quota[, ':=' (last_prod = data.table::shift(prod_cumsum, n = 1, fill = NA, type = "lag"),
@@ -745,26 +869,55 @@ run_extraction_model <- function(input_scenarios) {
       temp_prod_quota[, prod_quota_remainder := quota - last_prod]
       temp_prod_quota[, adj_prod_limited := fifelse(sum_over == 1, prod_quota_remainder,
                                                     fifelse(sum_over > 1, 0, production_bbl))]
+      print(length(unique(temp_prod_quota$doc_field_code))) #
       
       ## recalculate the number of new wells for field-vintage starting in t if that field-vintage busts quota
       temp_prod_quota[, adj_new_wells := fifelse(sum_over == 1 & vintage_start == t, adj_prod_limited / (production_bbl / num_wells), num_wells)]
-      
+      print(length(unique(temp_prod_quota$doc_field_code))) #
       ## set columns as numeric
       temp_prod_quota[, c('adj_prod_limited', 'adj_new_wells') := lapply(.SD, as.numeric), .SDcols = c('adj_prod_limited', 'adj_new_wells')] 
-      
+      print(length(unique(temp_prod_quota$doc_field_code))) #
       ## add column to track if field-vintage did not produce because of quota
       temp_prod_quota[, zero_prod_quota := fifelse(adj_prod_limited == 0 & sum_over > 0, 1, 0)]
-      
+      print(length(unique(temp_prod_quota$doc_field_code))) #
       ## update existing vintage production years to reflect if a field-vintage doesn't produce due to the quota
-      ## start by creating df filtered for "existing" vintages
+      ## start by creating df filtered for "existing" vintages -- removing for now MP
+      # zero_prod_quota_old <- temp_prod_quota[vintage != "new", .(doc_field_code, oil_price_scenario, innovation_scenario, carbon_price_scenario, 
+      #                                                            ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
+      #                                                            vintage, zero_prod_quota)]
+      
+      # # Added - MP
+      # zero_prod_quota_old <- temp_prod_quota[, .(doc_field_code, oil_price_scenario, innovation_scenario, carbon_price_scenario,
+      #                                            ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
+      #                                            vintage, zero_prod_quota)]
+      # 
+      # # Add missing fields
+      # all_fields <- unique(temp_prod_quota$doc_field_code)
+      # missing_fields <- setdiff(all_fields, unique(zero_prod_quota_old$doc_field_code))
+      # missing_data <- data.table(doc_field_code = missing_fields,
+      #                            oil_price_scenario = NA_character_,
+      #                            innovation_scenario = NA_character_,
+      #                            carbon_price_scenario = NA_character_,
+      #                            ccs_scenario = NA_character_,
+      #                            setback_scenario = NA_character_,
+      #                            setback_existing = NA_integer_,
+      #                            prod_quota_scenario = NA_character_,
+      #                            excise_tax_scenario = NA_character_,
+      #                            vintage = NA_character_,
+      #                            zero_prod_quota = NA_integer_)
+      # 
+      # zero_prod_quota_old <- rbind(zero_prod_quota_old, missing_data)
+      
       zero_prod_quota_old <- temp_prod_quota[vintage != "new", .(doc_field_code, oil_price_scenario, innovation_scenario, carbon_price_scenario, 
                                                                  ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
                                                                  vintage, zero_prod_quota)]
       
-      ## merge prod existing with previous dt
+      ## merge prod existing with previous dt 
+      #prod_existing_vintage_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #zero_prod_quota_old[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       prod_existing_vintage_z <- merge(prod_existing_vintage_z, zero_prod_quota_old,
                                        by = c('doc_field_code', 'vintage', 'setback_scenario', 'setback_existing'),
-                                       all.x = T)
+                                       all.x = T) 
       
       
       ## shift years if vintage doesn't produce due to quota
@@ -809,7 +962,8 @@ run_extraction_model <- function(input_scenarios) {
       
       
       ## store existing well production for time t
-      list_prod_existing[[i]] = temp_prod_quota[vintage != "new"]
+      # list_prod_existing[[i]] = temp_prod_quota  # New -- this was removing the 30 new fields -- trying again with OG
+      list_prod_existing[[i]] = temp_prod_quota[vintage != "new"] 
       
       
       ## set up new wells prod df that will be used to find future production for new wells
@@ -830,6 +984,8 @@ run_extraction_model <- function(input_scenarios) {
       
       
       ## merge with production info from year t
+      #new_wells_prod_new[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #temp_prod_quota_new_wells[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       new_wells_prod_new = merge(new_wells_prod_new, temp_prod_quota_new_wells,
                                  by = c("doc_field_code", "year", 
                                         "doc_fieldname", "oil_price_scenario", 
@@ -858,9 +1014,9 @@ run_extraction_model <- function(input_scenarios) {
       
       list_cumulative_wells[[i]] = cumulative_wells_dt
       
-      ## remove objects
-      rm(dt_info_rank, temp_dt_info_rank, existing_vintage_prod_t, dtt_long, temp_new_wells_prod, 
-         temp_prod_existing_vintage, temp_prod_quota, temp_prod_quota_new_wells, zero_prod_quota_old)  
+      ## remove objects - removing MP
+      # rm(dt_info_rank, temp_dt_info_rank, existing_vintage_prod_t, dtt_long, temp_new_wells_prod, 
+      #    temp_prod_existing_vintage, temp_prod_quota, temp_prod_quota_new_wells, zero_prod_quota_old)  
       ## end section that implements production quota
       
       ## predict decline curves for new field vintages (those that start in year t)
@@ -933,6 +1089,8 @@ run_extraction_model <- function(input_scenarios) {
                                                      vintage, vintage_start, zero_prod_quota)]
       
       setorder(prod_new_vintage_z, doc_field_code, vintage_start, year)
+      #prod_new_vintage_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+      #zero_prod_quota_new[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       prod_new_vintage_z <- merge(prod_new_vintage_z, zero_prod_quota_new,
                                   by = c("doc_field_code", "oil_price_scenario", 
                                          "innovation_scenario", "carbon_price_scenario", 
@@ -966,6 +1124,8 @@ run_extraction_model <- function(input_scenarios) {
         # prod_old[, year := as.numeric(year)]
         
         ## merge prod_new and prod_old
+        #prod_new[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+        #prod_old[, doc_field_code := as.numeric(doc_field_code)] # Added MP
         prod_next_year = merge(prod_new, prod_old, 
                                by = c("doc_field_code", "doc_fieldname", 
                                       "oil_price_scenario", "innovation_scenario", 
@@ -999,10 +1159,14 @@ run_extraction_model <- function(input_scenarios) {
         trr_prev = unique(trr_prev)
         
         ## merge previous depl and trr 
+        setDT(prod_next_year) # Added MP
+        setDT(depl_prev)
         prod_next_year = prod_next_year[depl_prev, on = .(doc_field_code, 
                                                           oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
                                                           setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
         
+        #trr_prev[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+        setDT(trr_prev)
         prod_next_year = prod_next_year[trr_prev, on = .(doc_field_code, 
                                                          oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
                                                          setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
@@ -1034,6 +1198,8 @@ run_extraction_model <- function(input_scenarios) {
         ## filter for t + 1
         info_next_year = unique(scenarios_dt_z[year == t + 1])
         
+        #info_next_year[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+        #prod_next_year[, doc_field_code := as.numeric(doc_field_code)] # Added MP
         ## merge info next year to prod_next year
         info_next_year = merge(info_next_year,
                                prod_next_year[, .(doc_field_code, 
@@ -1051,6 +1217,8 @@ run_extraction_model <- function(input_scenarios) {
         setnames(ccs_prev, 'ccs_adoption', 'adoption_prev')
         
         ## merge with info next year dt
+        #info_next_year[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+        #ccs_prev[, doc_field_code := as.numeric(doc_field_code)] # Added MP
         info_next_year = merge(info_next_year, ccs_prev, 
                                by = c('doc_field_code', 'doc_fieldname', 'oil_price_scenario', 'innovation_scenario', 'carbon_price_scenario', 'ccs_scenario',
                                       'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario'))
@@ -1064,6 +1232,8 @@ run_extraction_model <- function(input_scenarios) {
         setnames(cumul_wells_end, c('cumulative_wells', 'wells_km2'), c('cumul_wells_end', "wells_km2_end"))
         
         ## first update dt_info_z
+        #dt_info_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+        #cumul_wells_end[, doc_field_code := as.numeric(doc_field_code)] # Added MP
         dt_info_z = merge(dt_info_z, cumul_wells_end,
                           by = c('doc_field_code', 'oil_price_scenario', 'innovation_scenario', 'carbon_price_scenario', 'ccs_scenario',
                                  'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario', 'year'),
@@ -1078,6 +1248,8 @@ run_extraction_model <- function(input_scenarios) {
         density_start_next = dt_info_z[year == t, .(doc_field_code, oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario,
                                                     setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, cumulative_wells, wells_km2)]
         
+        #info_next_year[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+        #density_start_next[, doc_field_code := as.numeric(doc_field_code)] # Added MP
         info_next_year = merge(info_next_year, density_start_next,
                                by = c('doc_field_code', 'oil_price_scenario', 'innovation_scenario', 'carbon_price_scenario', 'ccs_scenario',
                                       'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario'),
@@ -1188,7 +1360,8 @@ run_extraction_model <- function(input_scenarios) {
     
     
     ## join with prod_existing_vintage_z, prod_new_vintage_z
-    
+    #prod_new_vintage_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    #exit_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     exit_out = merge(prod_new_vintage_z[, .(doc_field_code, year, orig_year, vintage, vintage_start, m_new_wells_pred,
                                             prod_per_well_bbl, no_wells_after_exit, production_bbl)],
                      exit_dt[, .(doc_field_code, doc_fieldname, oil_price_scenario, innovation_scenario, carbon_price_scenario,
@@ -1198,6 +1371,8 @@ run_extraction_model <- function(input_scenarios) {
     
     setnames(exit_out, c('vintage_start', 'm_new_wells_pred'), c('start_year', 'adj_no_wells'))
     
+    #prod_existing_vintage_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    #exit_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     exit_out_existing = merge(prod_existing_vintage_z[, .(doc_field_code, year, orig_year, vintage, start_year, adj_no_wells,
                                                           prod_per_well_bbl, no_wells_after_exit, production_bbl)],
                               exit_dt[, .(doc_field_code, doc_fieldname, oil_price_scenario, innovation_scenario, carbon_price_scenario,
@@ -1294,6 +1469,8 @@ run_extraction_model <- function(input_scenarios) {
       stop("The following columns are missing in new_prod_dt: ", paste(missing_cols, collapse = ", "))
     }
     
+    #field_existing_info[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    #field_new_info[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     field_all = merge(field_existing_info, field_new_info,
                       by = c('oil_price_scenario', 'innovation_scenario', 'carbon_price_scenario', 'ccs_scenario',
                              'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario', 
@@ -1308,6 +1485,8 @@ run_extraction_model <- function(input_scenarios) {
     field_all[is.na(new_ghg_kgCO2e), new_ghg_kgCO2e := 0]
     field_all[, total_ghg_kgCO2e := existing_ghg_kgCO2e + new_ghg_kgCO2e]
     
+    #field_all[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    #field_well_entry[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     field_all = merge(field_all, field_well_entry,
                       by = c('oil_price_scenario', 'innovation_scenario', 'carbon_price_scenario', 'ccs_scenario',
                              'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario', 
@@ -1322,6 +1501,8 @@ run_extraction_model <- function(input_scenarios) {
                                'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario', 'n_wells_start',
                                'orig_area_m2', 'n_wells_setback', 'scen_area_m2',  'cumulative_wells', 'wells_km2')]
     
+    #density_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    #field_all[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     density_dt = merge(density_dt, field_all,
                        by = c('oil_price_scenario', 'innovation_scenario', 'carbon_price_scenario', 'ccs_scenario',
                               'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario', 
@@ -1340,6 +1521,8 @@ run_extraction_model <- function(input_scenarios) {
                                      ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
                                      year, cumulative_wells, wells_km2)]
     
+    #field_all[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    #density_dt_merg[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     field_all = merge(field_all, density_dt_merg,
                       by = c('oil_price_scenario', 'innovation_scenario', 'carbon_price_scenario', 'ccs_scenario',
                              'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario', 
@@ -1349,6 +1532,8 @@ run_extraction_model <- function(input_scenarios) {
     field_all[, scen_id := scenario_name_z]
     
     ## add field-level depl
+    #field_all[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    #dt_depl_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     field_all = merge(field_all, dt_depl_z,
                       by = c('scen_id', 'doc_field_code', 'year'),
                       all.x = T)
@@ -1356,14 +1541,16 @@ run_extraction_model <- function(input_scenarios) {
     ## add field-level exit
     exit_field_dt <- exit_out[, .(scen_id, doc_field_code, year, vintage, start_year, n_well_exit, adj_no_wells, no_wells_after_exit)]
     setnames(exit_field_dt, "n_well_exit", "n_pred_exit")
-    exit_field_dt <- exit_field_dt[, .(adj_no_wells = sum(adj_no_wells),
-                                       n_wells_after_exit = sum(no_wells_after_exit)), by = .(scen_id, doc_field_code, year, n_pred_exit)]
+    exit_field_dt <- exit_field_dt[, .(adj_no_wells = sum(adj_no_wells, na.rm=T),
+                                       n_wells_after_exit = sum(no_wells_after_exit, na.rm=T)), by = .(scen_id, doc_field_code, year, n_pred_exit)]
     
+    #field_all[, doc_field_code := as.numeric(doc_field_code)] # Added MP
+    #exit_field_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     field_all <-  merge(field_all, exit_field_dt,
                         by = c('scen_id', 'doc_field_code', 'year'),
                         all.x = T)
     
-    ## set coloum order
+    ## set column order
     field_all <- field_all[, .(scen_id, oil_price_scenario, innovation_scenario, carbon_price_scenario,
                                ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
                                doc_field_code, doc_fieldname, year, ccs_adopted, existing_prod_bbl,
@@ -1403,6 +1590,10 @@ run_extraction_model <- function(input_scenarios) {
     
     
     state_all[, target_val := target_ghg_val]
+    setDT(state_all)
+    setDT(excise_tax_scens_z)
+    setDT(carbonpx_scens_z)
+    setDT(state_all)
     state_all <- state_all[excise_tax_scens_z, on = .(year, excise_tax_scenario), allow.cartesian = T, nomatch = 0]
     state_all <- state_all[carbonpx_scens_z, on = .(year, carbon_price_scenario), allow.cartesian = T, nomatch = 0]
     
@@ -1457,6 +1648,7 @@ run_extraction_model <- function(input_scenarios) {
   ## res selection
   # res = lapply(1:nrow(scen_sel), func_yearly_production)
   
+  library(foreach)
   foreach(i = 1:nrow(scen_sel)) %dopar% {
     func_yearly_production(i)
   }
@@ -1542,3 +1734,4 @@ run_extraction_model <- function(input_scenarios) {
   # rm(pred_prod, pred_prod_wide, prod_existing_updated, prod_new, annual_outputs, pq_dt, all_prod)
   
 }
+
