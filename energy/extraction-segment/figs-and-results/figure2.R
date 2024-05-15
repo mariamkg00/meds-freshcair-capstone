@@ -473,14 +473,14 @@ ggsave(cumul_ghg_filtered_plot,
 ## figure
 ghg_cumul_fig_v2 <- ggplot(cumul_ghg %>% 
                              filter(oil_price_scenario == "reference case" & setback_existing == 0), aes(x = ghg_2045_perc * -100, y = cumul_ghg, color = policy_intervention)) +
-  geom_point(size = 2, alpha = 0.8) +
+  geom_point(size = 4, alpha = 0.8) +
   labs(title = "c. Cumulative GHG emissions",
        x = "GHG emissions reduction target (%, 2045 vs 2019)",
        y = bquote(MtCO[2]~e),
        color = "2045 GHG emission target",
        shape = "Policy intervention") +
   theme_line_n_l +
-  annotate("text", x = 59, y = 255, label = "BAU", size = 2) +
+  annotate("text", x = 59, y = 255, label = "BAU", size = 4) +
   scale_color_manual(values = c("BAU" = "black", policy_colors_subset)) +
   # scale_x_continuous(limits = c(0, NA)) +
   scale_y_continuous(limits = c(150, 270)) +
@@ -488,7 +488,18 @@ ghg_cumul_fig_v2 <- ggplot(cumul_ghg %>%
         # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
         legend.background = element_rect(fill = "white", color = "grey"),
         axis.ticks.length.y = unit(0.1, 'cm'),
-        axis.ticks.length.x = unit(0.1, 'cm')) 
+        axis.ticks.length.x = unit(0.1, 'cm'),
+        plot.title = element_text(size = 21),
+        axis.title.x = element_text(size=18),
+        axis.title.y = element_text(size=18),
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size=15))
+
+ggsave(ghg_cumul_fig_v2,
+       filename = file.path('outputs/figure2.png'),
+       width = 7,
+       height = 7,
+       units = "in")
 
 # ## setback version
 # cumul_ghg_sb <- levels_dt[metric == "total_state_ghg_MtCO2" & 
@@ -848,12 +859,12 @@ title_low <- ggdraw() +
     fontface = 'bold',
     x = 0,
     hjust = 0
-  ) +
-  theme(
-    # add margin on the left of the drawing canvas,
-    # so title is aligned with left edge of first plot
-    plot.margin = margin(0, 0, 0, 7)
-  )
+  ) 
+  # theme( Removing for now MP
+  #   # add margin on the left of the drawing canvas,
+  #   # so title is aligned with left edge of first plot
+  #   plot.margin = margin(0, 0, 0, 7)
+  # )
 
 fig2_v2_combine_low <- plot_grid(
   prod_fig_low + theme(legend.position="none"),
@@ -1037,12 +1048,12 @@ title_high <- ggdraw() +
     fontface = 'bold',
     x = 0,
     hjust = 0
-  ) +
-  theme(
-    # add margin on the left of the drawing canvas,
-    # so title is aligned with left edge of first plot
-    plot.margin = margin(0, 0, 0, 7)
-  )
+  ) 
+  # theme( Removed for now MP
+  #   # add margin on the left of the drawing canvas,
+  #   # so title is aligned with left edge of first plot
+  #   plot.margin = margin(0, 0, 0, 7)
+  # )
 
 fig2_v2_combine_high <- plot_grid(
   prod_fig_high + theme(legend.position="none"),
