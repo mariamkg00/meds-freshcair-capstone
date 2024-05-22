@@ -495,8 +495,10 @@ Integrates field-level oil production data with greenhouse gas (GHG) emissions f
 
 #### extraction-segment/model-prep 
 
-`well_setback_sp_prep.R`
+**`well_setback_sp_prep.R`**
 Processes spatial data from the FracTracker Setback dataset to analyze and visualize sensitive receptors (e.g., dwellings, playgrounds, healthcare facilities) around oil and gas extraction sites in California. It involves reading and transforming spatial layers from a Geographic Database (GDB), applying buffers to identify setback areas, simplifying complex geometries for efficiency, and ultimately creating and saving spatial buffers around sensitive sites, which are then visualized using various GIS and mapping libraries.
+
+
 - Inputs:
   * FracTrackerSetbackdata.gdb (layers SetbackOutlines_SR_Dwellings_082220, PlaygroundsinCities, DayCareCenters, reselderlyCare, CHHS_adultdayhealthcare_csv_Events, CHHS_altbirthing_csv_Events, CHHS_Dialysis_csv_Events, CHHS_healthcare_facility_locations_csv_Events, CHHS_intermedcarefac_csv_Events, CHHS_PrimaryCareClinic_csv_Events, CHHS_psychclinics_csv_Events,
 CHHS_rehabclinic_csv_Events, CHHS_skillednursingfacs_csv_Events, CHHS_surgicalclinic_csv_Events, CHHS_acutecarehospital_csv_Events_1, CAAcuteCAreHostpitalslatlon_1, PrivSchoolsCA_1, SchoolPropCA_1, SchoolsCA_Sabins_1, from *External data*)
