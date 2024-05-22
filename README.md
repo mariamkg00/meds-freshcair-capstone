@@ -1,14 +1,30 @@
 ## freshcair-meds-capstone
 
-## Assessing the Impacts of Supply-side Oil Policies in California
+## Assessing the Social and Environmental Impacts of Supply Side Oil Policies in California
 
 Group members: Haejin Kim (haejin_kim@ucsb.edu), Maxwell Patterson (maxwellpatterson@ucsb.edu), and Mariam Garcia (mkgarcia@ucsb.edu)
 
 Clients: The 2035 Initiative (lucasboyd@iee.ucsb.edu), and emLab ( tmangin@ucsb.edu)
 
-Corresponding authors: Ranjit Deshmukh (rdeshmukh@ucsb.edu); Paige Weber, (paigeweber@unc.edu); Kyle Meng (kmeng@bren.ucsb.edu)
+Corresponding authors: Ranjit Deshmukh (UCSB, rdeshmukh@ucsb.edu); Paige Weber (UNC, paigeweber@unc.edu); Kyle Meng (UCSB, kmeng@bren.ucsb.edu)
 
-GitHub repository author and manager: Tracey Mangin (tmangin@ucsb.edu) Zenodo repository manager: Tracey Mangin (tmangin@ucsb.edu)
+GitHub repository author and manager: Tracey Mangin (emLab, tmangin@ucsb.edu) 
+
+Zenodo repository manager: Tracey Mangin (emLab, tmangin@ucsb.edu)
+
+Link to original repository: https://github.com/emlab-ucsb/ca-transport-supply-decarb
+
+#### Data Collection
+
+Proprietary data was handed off from emLab 2024-01-10, with missing data shared through Dropbox from 2024-01-10 through 2024-05-09.
+
+#### Geographic Location
+
+Oil well production and location data is from the California state region. 
+
+#### Funding
+
+No additional funding was required for this project. Proprietary data was handed off from emLab and while the original acqusition of proprietary required compensation to data providers, no additional data was needed for this project.
 
 
 ## Intro
@@ -20,9 +36,7 @@ The purpose of this Github repository is to maintain a clear and effective histo
 
 ## Data structure
 
-This is the fundamental structure of our repository:
-We have two primary structures: "model" and "data". The existing model comprises three different sections (extraction, health, labor), which will be simplified to sections, and we will select the necessary ones to remain in this repository in the future. The Shinydashboard will be updated in the Spring quarter.
-We create processed and final data. At the end of the project, we will select only the necessary files and structure the processed and final data accordingly.
+This is the fundamental structure of our data structure. The intermediate data in the public folder, which is publicly accessible, entails the inputs into the final extraction model. Providing these data will allow public users to regenerate the final outputs of the model and to understand the information that is being processed. The private folder contains all other data used in the workflow, ranging from proprietary inputs, sensitive processed versions of this data, and data used to connect the workflow in the preliminary data processing scripts.
 ​​
 ```
 ├── private/
@@ -58,33 +72,12 @@ We create processed and final data. At the end of the project, we will select on
                                
 ```
 
-# ca-transport-supply-decarb
-
-# Equitable low-carbon transition pathways for California’s oil extraction
-
-**Authors:** Ranjit Deshmukh, Paige Weber, Olivier Deschenes, Danae Hernandez-Cortes, Tia Kordell, Ruiwen Lee, Christopher Malloy, Tracey Mangin, Measrainsey Meng, Sandy Sum, Vincent Thivierge, Anagha Uppal, David W. Lea, and Kyle Meng
-
-**Corresponding authors:** Ranjit Deshmukh (rdeshmukh@ucsb.edu); Paige Weber, (paigeweber@unc.edu); Kyle Meng (kmeng@bren.ucsb.edu) 
-
-**GitHub repository manager:** Tracey Mangin (tmangin@ucsb.edu)
-**Zenodo repository manager:** Tracey Mangin (tmangin@ucsb.edu)
-
-The purpose of this file is to document the data and scripts used in the study “Equitable low-carbon transition pathways for California’s oil extraction.” The first section includes information about data inputs. The second section includes descriptions of the scripts developed to conduct the study (all code related to this study is available in the GitHub repository ca-transport-supply-decarb). The third section includes information about the files included in the study’s [Zenodo repository](https://zenodo.org/record/7742803#.ZGPBrezML0o). 
-
 Due to data confidentiality, the user can only run a subset of the scripts. Thus, we provide all of the intermediate outputs needed to run the following scripts:
-* `ca-transport-supply-decarb/energy/extraction-segment/model/full-run-revised/00_extraction_steps.R` - this script runs the energy model that results in oil extraction outputs. To successfully run the energy model, the user should make the following changes in the script:
-  - Set `zenodo_repo <- TRUE` 
-  - Define `zenodo_user_path`, which should be the user-specific path that leads up to the `ca-transport-supply-decarb-files` folder downloaded from Zenodo
-  - Define a `save_path`, which represent the path to where the user would like the outputs to be saved
-  - Define a `run_name`, which is used with the current to generate a folder to save outputs (this folder will be created in the `save_path` location).
-* `ca-transport-supply-decarb/energy/extraction-segment/figs-and-results/fig_outputs.R` - this script takes the energy, health, and labor outputs and computes values for the manuscript (i.e., outputs needed to make figures and results presented in the paper). To successfully run the code, the user should make the following changes to the script:
-  - Set `zenodo_repo <- TRUE` 
-  - Define `zenodo_user_path`, which should be the user-specific path that leads up to the `ca-transport-supply-decarb-files` folder downloaded from Zenodo
-  - Define `save_info_path`, which is a path specifying where the user wants the outputs to be saved
-  - Zenodo users do not need to specify `energy_result_date` or `comp_result_date`. 
-* The scripts contained in the main `ca-transport-supply-decarb/energy/extraction-segment/figs-and-results/` (these scripts create figures and values presented in the manuscript. The files `figure2.R`, `figure3.R`, and `figure6.R` are set up so that the user can set `zenodo_repo <- TRUE`  and specify a `zenodo_user_path and zenodo_save_path`. For all other scripts in this folder, the user will need to update file paths. 
+* `energy/extraction-segment/model/full-run-revised/00_extraction_steps.R`
+* `energy/extraction-segment/figs-and-results/fig_outputs.R`
+* `energy/extraction-segment/figs-and-results/`
 
-## External data
+
 The following section documents all inputs needed to conduct the study. The “Required” column indicates if the file is needed to conduct the analysis, and the “Zenodo” column indicates if the input is included in the [Zenodo repository](https://zenodo.org/record/7742803#.ZGPBrezML0o). Note that a asterisk* indicates files that are not publicly available.
 
 ### Extraction inputs
@@ -156,7 +149,7 @@ This section describes the code scripts developed to conduct this study. All cod
 
 ### health/
 `scripts/health_data.R`
-Calculate population increases to 2045.
+Calculates population increase up until 2045. Analyzes various health and dempographics data sets. Includes environment setup, loading and preprocessing census tract population data, demographics projections, mortality incidence data, and the generation of future population and mortality incidence projections. 
 - Inputs: 
   * nhgis0001_ts_geog2010_tract.csv
   * age_group_desc.csv
@@ -169,7 +162,7 @@ Calculate population increases to 2045.
   * ct_pop_45.csv
 
 `scripts/source_receptor_matrix.R`
-This script creates the Total PM2.5 (weighted and unweighted).
+Reads and transforms shapefiles for census tracts and counties, selects specific areas by excluding islands, determines spatial resolution for source-receptor matrices (SRM), processed pollution data files for different pollutants, and saves the processed data for further analysis.
 - Inputs: 
   * tl_2019_06_tract.shp
   * CA_Counties_TIGER2016_noislands.shp (from *External data*)
@@ -197,7 +190,7 @@ Creates inputs for figures.
 
 ### labor/processing/
 `ica_multiplier_process.R`
-This file creates ICA multipliers for the labor analysis for both the extraction and refining segments.
+Processes and analyzes industry contribution analysis (ICA) data for various segments (extraction, drilling, refining) across California counties, focusing on employment and compensation impacts. Reads in data, merges and reshapes datasets for analysis, calculates averages for missing data, and exports both detailed and aggregated results for further use, including generating a visual representation of direct compensation from the drilling segment across counties.
 - Inputs (all inputs from *External data*. Files not listed must be obtained from IMPLAN): 
   * fte-convert.xlsx 
   * ica-emp-ext-kern.csv
@@ -377,7 +370,7 @@ This script creates a file with social cost of carbon information obtained from 
   * social_cost_carbon.csv
 
 `extraction/clean_doc_prod.R`
-This script re-organizes WellSTAR well information, production, and injection data. 
+Processes data related to oil production and injection from WellSTAR spanning years 1977 to 2019, includes cleaning and merging these datasets with county and well type information. It also attempts to correct issues with specific well data for the year 2019 by replacing patterns in the dataset, saving the cleaned and processed production, injection, and well data into RDS and CSV files. 
 - Inputs:
   * All_wells_20200417.xlsx (from *External data*)
   * CSV_1977_1985/CaliforniaOilAndGasWellMonthlyProduction.csv (from *External data*)
@@ -423,7 +416,7 @@ This script re-organizes WellSTAR well information, production, and injection da
   * wells_19.csv
 
 `extraction/process-monthly-prod.R`
-This script processes the monthly prod file to filter out gas fields, add needed columns, and rename columns.
+Processes historical and contemporary data on oil well production and injection, correcting and merging datasets from various years to create comprehensive records. It also addresses data quality issues, specifically for the year 2019, by applying pattern replacements to correct errors in the dataset, and then saves the cleaned and processed data for further analysis.
 - Inputs:
   * well_prod_m.rds (from `clean_doc_prod.R`)
   * wells_19.csv (from `clean_doc_prod.R`)
@@ -448,7 +441,7 @@ This script takes raw outputs from the OPGEE model and organizes them into a lon
   * field-level-emissions-results_processed_revised.csv
 
 `extraction/rystad_processing.R`
-This script cleans data from Rystad.
+Processes greenhouse gas (GHG) emission intensities from the OPGEE (Oil Production Greenhouse Gas Emissions Estimator) model for various oil fields, incorporating specific inputs to adjust for California Air Resources Board (CARB) standards. It reads, transforms, and aggregates the data to calculate upstream emissions and convert emissions from grams per megajoule (gCO2e/MJ) to kilograms per barrel (kgCO2e/bbl) for life cycle analysis, then saves the processed results to a CSV file for further analysis.
 - Inputs:
   * Asset_opex_capex_govtt.csv (from *External data*)
   * ca_production.csv (from *External data*)
@@ -478,7 +471,7 @@ This script cleans data from Rystad.
   * ca_asset_opex_capex_govtt_clean.csv (not required for analysis)
 
 `extraction/zero_prod.R`
-This script creates a file used in the well exit analysis.
+Analyzes periods of zero production for oil wells, identifying wells that have ceased production for consecutive months and determining if they were ever reactivated. It calculates the duration of these inactive periods, distinguishes between wells that permanently stopped producing versus those that resumed production, and exports summaries and detailed records of these wells and their statuses for further analysis.
 - Inputs:
   * well_prod_m_processed.csv (from `clean_doc_prod.R`)
   * AllWells_20210427.csv (from *External data*)
@@ -486,14 +479,14 @@ This script creates a file used in the well exit analysis.
   * no_prod_wells_out.csv
 
 `extraction/income_data.R`
-This script collects Census data on household income for California using the censusapi R package.
+Retrieves and processes U.S. Census data on median household income by census tract and county for California, using the American Community Survey (ACS) 5-year estimates for 2015-2019. It employs the tidycensus R package to access the data, formats the data for clarity and consistency, and saves the processed data sets to CSV files for census tract and county-level median household incomes..
 - Outputs:
   * ca-median-house-income.csv
   * ca-median-house-income-county.csv
   * scenario-prep
 
 `ccs_parameterization.R`
-This script contains the functions that calculate the cost of CCS for each field or refinery, depending on the amount of GHG emitted by the respective field or refinery.
+Integrates field-level oil production data with greenhouse gas (GHG) emissions factors and refinery-level emissions data to calculate comprehensive GHG emissions associated with oil extraction and refining processes. It prepares and merges these datasets for a selected year, computes field-level extraction emissions, aligns refinery data, and finally, combines both datasets to analyze and potentially solve for the mean value of a parameter ("b") in relation to carbon capture and storage (CCS) costs and GHG emissions across the extraction and refining sectors.
 - Inputs:
   * crude_prod_x_field_revised.csv (from `crude_prod_x_field.R`)
   * ghg_emissions_x_field_2018-2045.csv (from `forecast_ghg_emission_factors.R`)
@@ -503,20 +496,22 @@ This script contains the functions that calculate the cost of CCS for each field
 #### extraction-segment/model-prep 
 
 `well_setback_sp_prep.R`
-This file reads in FrackTracker’s sensitive receptor data and creates shapefiles representing the three different buffer areas.
+Processes spatial data from the FracTracker Setback dataset to analyze and visualize sensitive receptors (e.g., dwellings, playgrounds, healthcare facilities) around oil and gas extraction sites in California. It involves reading and transforming spatial layers from a Geographic Database (GDB), applying buffers to identify setback areas, simplifying complex geometries for efficiency, and ultimately creating and saving spatial buffers around sensitive sites, which are then visualized using various GIS and mapping libraries.
 - Inputs:
   * FracTrackerSetbackdata.gdb (layers SetbackOutlines_SR_Dwellings_082220, PlaygroundsinCities, DayCareCenters, reselderlyCare, CHHS_adultdayhealthcare_csv_Events, CHHS_altbirthing_csv_Events, CHHS_Dialysis_csv_Events, CHHS_healthcare_facility_locations_csv_Events, CHHS_intermedcarefac_csv_Events, CHHS_PrimaryCareClinic_csv_Events, CHHS_psychclinics_csv_Events,
 CHHS_rehabclinic_csv_Events, CHHS_skillednursingfacs_csv_Events, CHHS_surgicalclinic_csv_Events, CHHS_acutecarehospital_csv_Events_1, CAAcuteCAreHostpitalslatlon_1, PrivSchoolsCA_1, SchoolPropCA_1, SchoolsCA_Sabins_1, from *External data*)
 - Outputs:
   * buffer_1000ft.shp
   * buffer_2500ft.shp
+  * buffer_3200ft.shp 
   * buffer_5280.shp
 
 `gen_well_setback_status.R`
-This file creates the information needed for setback analysis (i.e., whether or not each well falls within buffer and the percentage of the field that gets covered by a buffer)
+Processes well and field data to determine their proximity to sensitive receptors based on predefined setback distances (1000ft, 2500ft, 3200ft, and 5280ft) around oil and gas extraction sites in California. It involves reading spatial data, creating buffers around sensitive areas, and then calculating which wells and fields fall within these buffers, generating attributes for each well and field regarding their inclusion within the setbacks, and visualizing these relationships through maps.
 - Inputs:
   * buffer_1000ft.shp (from `well_setback_sp_prep.R`)
   * buffer_2500ft.shp (from `well_setback_sp_prep.R`)
+  * buffer_3200ft.shp (from `well_setback_sp_prep.R`)
   * buffer_5280.shp (from `well_setback_sp_prep.R`)
   * allwells_gis/Wells_All.shp (from *External data*)
   * DOGGR_Admin_Boundaries_Master.shp (from *External data*)
@@ -527,7 +522,7 @@ This file creates the information needed for setback analysis (i.e., whether or 
   * coverage_map.html
 
 `economically_recoverable_resources.R`
-This script analyzes production and economically recoverable resources at the asset level.
+Processes data on economically recoverable resources (ERR) by reading a dataset of assets, their yearly production, and ERR scenarios, then calculates and summarizes key metrics such as the sum of a custom production scenario (my_production), the maximum resources available per asset, and the cumulative sum of production. It then merges these metrics to analyze the proportion of production relative to the custom scenario and maximum resources, finally saving these summaries as CSV files for further analysis.
 - Inputs:
   * economically_recoverable_resources_scenarios_wide.csv (from `rystad_processing.R`)
 - Outputs:
@@ -537,7 +532,7 @@ This script analyzes production and economically recoverable resources at the as
   * asset-year_production_my-production_resources.csv
 
 `create_entry_econ_variables.R`
-This script creates economic variables.
+Aggregates and processes various datasets related to oil asset economics, production, and capital and operational expenditures per barrel, collected from Rystad Energy. It adjusts and merges these datasets to create a comprehensive dataframe that includes adjusted location names, economics group filters, production summaries, and calculates economics per barrel. The final dataframe is enriched with additional metrics like cumulative production ratios and resources, then saved for further analysis.
 - Inputs:
   * oil_asset_opex_capex_govtt_clean.csv (from `rystad_processing.R`)
   * ca_oil_production.csv (from `rystad_processing.R`)
@@ -559,14 +554,14 @@ This script (a) imputes the asset-level costs (capex and opex) for years in the 
   * Rystad_cost_imputed_all_assets.csv
 
 `init_yr_prod.R`
-This script summarizes production by well and initial production year.
+Identifies the initial year of oil production for each well based on the dataset of well production, processes and aggregates production data to determine top fields and their relative production, and calculates the age of wells from their start date of production. It then creates a balanced dataset of well production over time, merges it with the initial production year data to calculate the age of wells, and saves the processed data for further analysis, ensuring that the annual production data aligns with historical records.
 - Inputs:
   * well_prod_m_processed.csv (from `clean_doc_prod.R`)
 - Outputs:
   * well_start_prod_api10_revised.csv
 
 `match_fields_assets.R`
-This script creates an output used in another script to make well entry inputs. This script matches fields to Rystad assets. This is the final version, which matches 1) first on well-level APIs, 2) the closest either a) field with economic data or b) asset.
+Performs several steps to match oil fields to assets based on well API numbers, including aggregating well production data, matching fields to assets through API numbers, and identifying productive fields. It creates a dataset that pairs fields with assets, handles unmatched fields by finding the nearest asset or field spatially, and saves the matched and unmatched datasets for further analysis. The script utilizes spatial data processing and nearest neighbor algorithms to ensure comprehensive field-to-asset mapping, accommodating cases where direct matches are not available by leveraging spatial proximity.
 - Inputs:
   * field_rystad_match_apis_revised.csv (from `rystad_processing.R`)
   * well_prod_m_processed.csv (from `process-monthly-prod.R`)
@@ -582,7 +577,7 @@ This script creates an output used in another script to make well entry inputs. 
   * outputs/stocks-flows/entry-model-input/final/field_asset_matches_revised.csv
 
 `create_entry_input.R`
-This script creates an output used in another script to make well entry inputs. This script matches fields to Rystad assets. This is the final version, which matches 1) first on well-level APIs, 2) the closest either a) field with economic data or b) asset.
+Aggregates various datasets to create an input file for modeling entry decisions in the oil industry. It merges field-to-asset matches, economic data, well production, and price information, performing calculations such as imputed costs and new well production to compile a comprehensive dataset that includes variables like field names, production levels, costs, and oil prices for each field and year. This consolidated dataset is intended for analyzing the economic viability and entry decisions within the oil field assets over time.
 - Inputs:
   * field_asset_matches_revised.csv (from `match_fields_assets.R`)
   * oil_asset_opex_capex_govtt_clean.csv (from `rystad_processing.R`)
@@ -627,14 +622,14 @@ This script produces the regression outputs for Supplementary Table 1.
 - Outputs: None
 
 `crude_prod_x_field.R`
-This script summarizes annual production by field.
+Processes monthly oil production data at the well level to aggregate and analyze production by oil field and year. It creates a dataset that includes field codes, field names, years, and total barrels produced, excluding fields with zero production, and saves this aggregated production data for further analysis.
 - Inputs:
   * well_prod_m_processed.csv (from `clean_doc_prod.R`)
 - Outputs:
   * crude_prod_x_field_revised.csv
   
 `field_county_production.R`
-This script summarizes production by year, county, and field. Production by field can be attributed to multiple counties.
+Calculates the annual oil production by field and county, determining the proportion of each field's production that comes from each county. It saves two datasets: one with annual production proportions by field and county for all years, and another with proportions for just the last year of non-zero production for each field, organizing the data by year, field code, field name, and county name.
 - Inputs:
   * well_prod_m_processed.csv (from `clean_doc_prod.R`)
 - Outputs:
@@ -642,7 +637,7 @@ This script summarizes production by year, county, and field. Production by fiel
   * annual_final_year_field_county_production_proportion_revised.csv
 
 `field_emission_factors_2015.R`
-This script creates field-level GHG emission factors for oil extraction. GHG factors are based on CARB’s LCFS OPGEE emission factors. 
+Calculates field-level greenhouse gas emission factors for California oil fields, incorporating data on oil production, injection practices, and emission factors from various sources. It distinguishes between fields using steam injection and those that do not, applying median emission factors accordingly, and calculates total GHG emissions for the year 2015 based on these factors and field-level production data. 
 - Inputs:
   * injection-by-well-type-per-field-per-year_1977-2018_revised.csv (from `injection-type-by-field.R`) 
   * field-level-emissions-results_processed_revised.csv (from `opgee-carb-results.R`)
@@ -653,12 +648,13 @@ This script creates field-level GHG emission factors for oil extraction. GHG fac
   * ghg_emissions_x_field_2015_revised.csv
 
 `county-setback.R`
-This script creates a file used to make county-level figures. 
+Calculates and visualizes the percentage of each county in California covered by oil and gas setback zones of different distances (1000ft, 2500ft, 3200ft, and 5280ft) from oil and gas wells. It uses spatial data manipulation to intersect county and field boundaries with setback buffer zones, computes the area covered by each setback within counties, and saves the results for further analysis. 
 - Inputs:
   * CA_Counties_TIGER2016.shp (from *External data*) 
   * DOGGR_Admin_Boundaries_Master.shp (from *External data*) 
   * buffer_1000ft.shp (from `well_setback_sp_prep.R`)
   * buffer_2500ft.shp (from `well_setback_sp_prep.R`)
+  * buffer_3200ft.shp (from `well_setback_sp_prep.R`)
   * buffer_5280.shp (from `well_setback_sp_prep.R`)
   * well_prod_m_processed.csv (from `process-monthly-prod.R`)
   * crude_prod_x_field_revised.csv (from `crude_prod_x_field.R`) 
@@ -666,7 +662,7 @@ This script creates a file used to make county-level figures.
   * county_level_setback_coverage.csv
 
 `well_exits.R`
-This script summarizes the production by plugged wells in the year leading up to their exit by field. The outputs of this script are not needed for the analysis, but are used for comparison in another script.
+Explores the exit patterns of oil and gas wells by analyzing their production data, specifically focusing on wells that have been plugged. It loads various datasets related to well production, filters for plugged wells, computes the last year of production for these wells, and generates summaries of final year production across different oil fields. The analysis aims to understand how production levels change leading up to a well being plugged and how these patterns vary across different fields and well vintages.
 - Inputs:
   * well_prod_m_processed.csv (from `clean_doc_prod.R`)
   * AllWells_20210427.csv (from *External data*)
@@ -674,7 +670,7 @@ This script summarizes the production by plugged wells in the year leading up to
   * well_exit_volume_x_field_v1_revised.csv
 
 `prep_data_field_year.R`
-This script preps the production data to be at the field-start year level.
+Processes and analyzes oil production data to assess field-level yearly decline parameters in oil production. It starts by loading various datasets related to oil well production, initializing years, and new well entries. The script then cleans and aggregates the data to calculate oil production metrics, including peak production years and average production rates per well. It identifies decline rates by comparing production rates over time and adjusts these metrics to account for the status of the wells (e.g., active vs. plugged). Finally, the script saves several output files that summarize these analyses, providing insights into oil field productivity and decline trends over time.
 - Inputs:
   * well_prod_m_processed.csv (from `process-monthly-prod.R`)
   * well_start_prod_api10_revised.csv (from `init_yr_prod.R`)
@@ -694,7 +690,7 @@ This script creates an output based on an alternative exit rule (based on a prod
   * well_exits_under_rule.csv
 
 `field-vintage-exit.R`
-This script creates an output used in the well exit analysis.
+Evaluates and tracks the exit of oil wells from production based on a predefined production threshold rule, comparing annual production for each field-vintage (combination of field code and start year) against a specified exit threshold. It merges datasets containing annual production data and exit thresholds, calculates the number of wells exiting production for each field-vintage annually, aggregates these exits by field and year, and saves the resulting data to a CSV file for analysis of field-level well exits under the applied rule.
 - Inputs:
   * well_prod_m_processed.csv (from `clean_doc_prod.R`)
   * AllWells_20210427.csv (from *External data*)
@@ -712,7 +708,7 @@ This script has the exit model. The outputs are used in the final extraction mod
   * exit_regression_coefficients.csv 
 
 `historic-extraction-emissions.R`
-This script compiles historic oil and gas greenhouse gas emissions.
+Analyzes historical oil and gas emissions by processing production data and greenhouse gas inventory data to adjust emissions based on actual production volumes and the energy content of produced oil and natural gas. It calculates adjusted GHG emissions for all oil fields and specifically for fields included in an analysis, incorporates these adjustments into state-level GHG emissions estimates, and saves the adjusted emissions data for further use, providing a nuanced view of the oil and gas sector's impact on emissions.
 - Inputs:
   * well_prod_m.rds (from `clean_doc_prod.R`)
   * wells_19.csv (from `clean_doc_prod.R`)
@@ -723,7 +719,7 @@ This script compiles historic oil and gas greenhouse gas emissions.
   * historic_ghg_emissions_og_ng_adjusted.csv
 
 `prep_data_field_vintage.R`
-This script organizes oil production data to the field-vintage level.
+Processes and analyzes oil production data to examine decline parameters at the field-vintage level, where "vintage" refers to groups of wells started within specific time periods. It calculates average production rates and decline rates for wells, identifies peak production times, and aggregates this data by field and vintage, aiming to understand how production rates change over time and to support analysis on the longevity and productivity of oil fields.
 - Inputs:
   * well_prod_m_processed.csv (from `clean_doc_prod.R`)
 well_start_prod_api10_revised.csv (from `init_yr_prod.R`) 
@@ -734,7 +730,7 @@ entry_df_final_revised.csv (from `create_entry_input.R`)
   * production_api10_monthly_revised.csv 
 
 `decline_parameters_field_start_year.R`
-This script parameterizes decline at field-start year level.
+Performs a detailed analysis to parameterize oil production decline at the field-start year level by fitting hyperbolic and exponential decline models to production data. It systematically processes the production data to identify peak production rates, calculates decline rates for each field and vintage, and applies curve fitting techniques to estimate the decline parameters, ultimately compiling these parameters along with additional field and well information into a comprehensive dataset for further analysis.
 - Inputs:
   * production_field-year_yearly_entry.csv (from `prep_data_field_year.R`)
   * field-year_peak-production_yearly.csv (from `prep_data_field_year.R`)
@@ -743,7 +739,7 @@ This script parameterizes decline at field-start year level.
   * fitted-parameters_field-start-year_yearly_entry.csv
 
 `predict_existing_production.R`
-This script predicts production from existing wells and saves the outputs to be used in the extraction module.
+Predicts future oil production from existing wells that have not exited production up to the year 2045. It merges well production data with decline parameters and peak production information, adjusts for wells within setback areas, calculates production per well considering both active and non-setback wells, and aggregates and saves the adjusted production data for analysis, accounting for various scenarios including setbacks and plugged wells.
 - Inputs:
   * production_api10_yearly_start_year.csv (from `prep_data_field_year.R`)
   * fitted-parameters_field-start-year_yearly_entry.csv (from `decline_parameters_field_start_year.R`)
@@ -754,7 +750,7 @@ This script predicts production from existing wells and saves the outputs to be 
   * pred_prod_no_exit_2020-2045_field_start_year_revised.csv
 
 `analyze-parameters.R`
-This script conducts analysis and creates plots related to decline curve parameters. The output is used in v1 of the model, but not the final model. 
+Analyzes decline curve parameters for oil production, projecting these parameters from historical data to forecast future production trends from 2020 to 2045. It cleans and processes parameter data, predicts future parameters using linear models, fills in missing field data with median values, and ultimately compiles and saves a comprehensive dataset of forecasted decline parameters for each field and start year. The output is used in v1 of the model, but not the final model. 
 - Inputs:
   * crude_prod_x_field_revised.csv (from `crude_prod_x_field.R`)
   * fitted-parameters_field-start-year_yearly_entry.csv (from `decline_parameters_field_start_year.R`)
@@ -763,7 +759,7 @@ This script conducts analysis and creates plots related to decline curve paramet
   * forecasted_decline_parameters_2020_2045.csv
 
 `extraction_fields.R`
-This script creates a list of fields included in the projection analysis.
+Generates a list of oil fields included in an analysis by reading in data from entry and production files, identifying unique field codes, and then matching these field codes against a shapefile of field boundaries to extract the relevant fields. The resulting dataset, which includes field names and codes, is saved as a shapefile for use in further analyses, such as health and labor studies, ensuring that only fields relevant to the study are considered.
 - Inputs:
   * entry_df_final_revised.csv (from `create_entry_input.R`)
   * pred_prod_no_exit_2020-2045_field_start_year_revised.csv (from `predict_existing_production.R`)
@@ -772,7 +768,7 @@ This script creates a list of fields included in the projection analysis.
   * extraction_fields.shp
 
 `extra/injection-type-by-field.R`
-This script summarizes the types of injection by each field and by each field-year.
+Analyzes and visualizes the types and amounts of water and steam injected into oil wells for enhanced oil recovery, focusing on data from specific fields and years. It processes well injection data to distinguish between wells with single and multiple field associations, calculates the total and type-specific injection volumes, and creates bar plots to illustrate the breakdown of injection types for the top oil-producing fields and those with the highest injection volumes in 2015 and 2018, also noting the carbon intensity values for these fields.
 - Inputs:
   * well_inj_m_processed.csv (from `clean_doc_prod.R`)
   * well_type_df.csv (from *External data*)
@@ -781,7 +777,7 @@ Outputs:
   * injection-by-well-type-per-field-per-year_1977-2018_revised.csv
 
 `forecast_ghg_emission_factors.R`
-This script takes the updated OPGEE emission factors (modeled at various historical years), linearly regresses the emission factors, and projects emission factors for all fields until 2045.
+Forecasts greenhouse gas (GHG) emission factors for oil fields from 2018 to 2045, differentiating between fields using steam injection and those that do not, based on historic and projected production data, injection data, and calculated emissions. It performs linear regressions to predict future emission factors, generates and saves detailed forecasts, and visualizes the trends in emission factors over time for specific categories of fields, such as those using steam injection and the top 10 producing fields.
 - Inputs:
   * Various saved OPGEE results files (copy and pasted from the OPGEE spreadsheet)
   * crude_prod_x_field_revised.csv (from `crude_prod_x_field.R`)
@@ -794,14 +790,14 @@ This script takes the updated OPGEE emission factors (modeled at various histori
 #### extraction-segment/model/full-run-revised
 
 `input_prep/emissions-target-90.R`
-This script calculates a 90% reduction in GHG emissions for scenario development.
+Reads a CSV file containing data on greenhouse gas emissions from 2000 to 2019, specifically focusing on the Oil & Gas: Production & Processing segment for the year 2019. It then calculates a target of a 90% reduction from the 2019 GHG emissions level for this segment and saves this target as a new CSV file, indicating the desired emissions reduction goal.
 - Inputs:
   * indust_emissions_2000-2019.csv (from `stocks_flows.R`)
 - Outputs:
   * emission_reduction_90.csv
 
 `input_prep/prep-excise-non-target.R`
-This script creates scenario input information for excise tax scenarios.
+Creates a data frame of hypothetical excise tax scenarios for the years 2020 to 2045 at different tax rates (0, 5%, 10%, 50%, 90%, and 100% of the oil price), assigns a descriptive name to each tax rate scenario, and specifies the units as a fraction of the oil price. It then saves the resulting data frame, which includes the year, tax rate, scenario name, and units, to a CSV file for use in analyzing the impact of various non-target excise tax rates on oil prices.
 - Inputs: None
 - Outputs:
   * excise_tax_non_target_scens.csv
