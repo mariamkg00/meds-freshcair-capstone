@@ -80,7 +80,21 @@ Due to data confidentiality, the user can only run a subset of the scripts. Thus
 
 The following section documents all inputs needed to conduct the study. The “Required” column indicates if the file is needed to conduct the analysis, and the “Zenodo” column indicates if the input is included in the [Zenodo repository](https://zenodo.org/record/7742803#.ZGPBrezML0o). Note that a asterisk* indicates files that are not publicly available.
 
-### Extraction inputs
+### 3,200ft Setback Scenario
+
+The main objective of the project is to incorporate the 3,200 foot setback scenario, forecast the imact of the new setback scenario on future oil production, and subsequently estimate the health, labor and pollution impacts of the setback. The following scripts have been updated to include the new setback scenario, and are the most important scripts in evaluating the impact of SB 1137:
+
+- well_setback_sp_prep.R
+- gen_well_setback_status.R
+- county-setback.R
+- extraction_fields.R
+- predict_existing_production.R
+- scenario_list_targets.R
+- load_input_info.R
+- 00_extraction_steps.R
+
+
+## Input Data
 | File | Description | Source | Required | Zenodo |
 | ----- | ----- | ----- | ----- | ----- |
 | All_wells_20200417.xlsx | Geographical and other information for California wells | California Department of Conservation (DOC) | Yes | Yes |
@@ -110,7 +124,7 @@ The following section documents all inputs needed to conduct the study. The “R
 | field_to_asset.csv* | Field and asset production days | Rystad | No | No |
 | N9010CA2a.xls | California Natural Gas Gross Withdrawals | EIA | No | No |
 
-### Health inputs
+### Health Inputs
 | File | Description | Source | Required | Zenodo |
 | ----- | ----- | ----- | ----- | ----- |
 | ces3results.xlsx | CalEnviroScreen 3.0 results | Office of Environmental Health Hazard Assessment (OEHHA) | Yes | Yes |
@@ -125,14 +139,14 @@ The following section documents all inputs needed to conduct the study. The “R
 | n/a (InMap data can be obtained from InMap open source repository) | InMap data and open source model | https://github.com/spatialmodel/inmap | Yes | No |
 | n/a (BenMAP data can be obtained by downloading the software from the US EPA) | BenMAP Community Edition (BenMAP-CE) underlying data | https://www.epa.gov/benmap | Yes | No |
 
-### Labor inputs
+### Labor Inputs
 | File | Description | Source | Required | Zenodo |
 | ----- | ----- | ----- | ----- | ----- |
 | n/a (proprietary data can be obtained through a license with IMPLAN)* | County-specific employment and compensation multipliers for the oil extraction and refining industries | IMPLAN, 2018 edition (app.implan.com) | Yes | No |
 | n/a (proprietary data can be obtained through a license with IMPLAN)* | County and industry-specific Multi-Region Input/Output analysis results. Includes direct, indirect, and induced impacts. | IMPLAN, 2018 edition (app.implan.com) | Yes | No |
 | fte-convert.xlsx | Industry-specific ratios of the number of job-years per FTE worker | IMPLAN (https://implanhelp.zendesk.com/hc/en-us/articles/115002782053-IMPLAN-to-FTE-Conversions)  | Yes | Yes |
 
-### Scenario inputs
+### Scenario Inputs
 | File | Description and source | Zenodo |
 | ----- | ----- | ----- |
 | innovation_scenarios.csv | Innovation scenario inputs developed for study | Yes |
@@ -144,8 +158,164 @@ The following section documents all inputs needed to conduct the study. The “R
 `*` Indicates data files that are not public.
 
 
-## Code scripts
-This section describes the code scripts developed to conduct this study. All code related to this study is available in the GitHub repository `ca-transport-supply-decarb`. The headings below represent folder names and paths.
+## Intermediate Data
+
+The intermediate public data is all data necessary for the final extraction model. This data is made public in order for the results and figures to be recreated. There are 2 subfolders in the intermediate subfolder: energy and health. There is also the `scenario_id_list_targets.csv`, an essential data set that contains all of the potential scenarios for oil price, setback scenario, production quota, carbon price scenario, carbon price scenario, carbon capture scenario, innovation scenario, and excise tax scenario. While all of these scenarios were essential for the original study done by the clients, our capstone project is only concerned with the BAU and setback scenarios, namely the added 3,200 foot setback scenario. 
+
+The following metadata is provided for the intermediate data:
+
+`scenario_id_list_targets.csv`
+* 81432 by 13
+* Column names: scen_id, oil_price_scenario, setback_scenario, prod_quota_scenario, carbon_price_scenario, ccs_scenario, innovation_scenario, excise_tax_scenario, target, target_policy, subset_scens, BAU_scen, setback_existing
+* Contains information on various energy scenario combinations. Used to analyze the impact of these factors on emissions
+
+`/energy/location/setback_coverage_R.csv`
+* 1370 by 8
+* Column names: doc_field_code, NAME, area_sq_mi, area_acre, orig_area_m2, setback_scenario, rel_coverage, n_wells
+* Contains information about oil and gas fields. used to analyze the impact of different setback distances on the coverage and production of oil and gas resources in oil fields.
+
+`/energy/location/coverage_map_files/`
+* Contains spatial files of 1000, 2500, 3200, and 5280ft setback coverages. 
+
+`/energy/production/crude_prod_x_field_revised.csv`
+* 11395 by 4
+* Column names: doc_field_code, doc_fieldname, year, and total_bbls
+* Contains information on crude oil production by field and year. This dataset is used to analyze historical trends in crude oil production across different fields over time.
+
+`/energy/production/entry_df_final_revised.csv`
+* 11309 by 24
+* Column names: doc_field_code, doc_fieldname, year, doc_prod, capex, capex_bbl_rp, capex_per_bbl_reserves, capex_per_bbl_nom, opex, opex_bbl_rp, opex_per_bbl_nom, m_cumsum_div_my_prod, m_cumsum_div_max_res, capex_imputed, wm_capex_imputed, opex_imputed, wm_opex_imputed, wm_cumsum_div_my_prod, wm_cumsum_div_max_res, wm_cumsum_eer_prod_bbl, brent, new_prod, n_new_wells, top_field
+* Contains information on oil fields and is be used for in-depth analysis of the economic performance and operational characteristics of oil fields over time.
+
+`/energy/production/field_capex_opex_forecast_revised.csv`
+* 6838 by 6
+* Column names: doc_field_code, year, m_opex_imputed, m_capex_imputed, wm_opex_imputed, wm_capex_imputed
+* Used to project future costs associated with oil production operations.
+
+`/energy/production/field-year_peak-production_yearly.csv`
+* 3161 by 8
+* Column names: doc_fieldname, doc_field_code, start_year, peak_prod_year, peak_tot_prod, no_wells, peak_avg_well_prod, peak_well_prod_rate
+* Contains information about the peak production year for each oil field. Used to analyze the performance and decline characteristics of oil fields based on their peak production levels.
+
+`/energy/production/forecasted_decline_parameters_2020_2045.csv`
+* 6838 by 8
+* Column names: doc_field_code, doc_fieldname, year, q_i, D, b, d, int_year
+* Contains forecasted decline parameters for oil fields from 2020 to 2045. It includes the field identification codes, field names, years of the forecast, initial production rates (q_i), decline rates (D), hyperbolic decline exponents (b), exponential decline rates (d), and the number of years since the start of production (int_year). These parameters are used to project future oil production from oil fields.
+
+`/energy/production/ghg_emissions_x_field_2018-2045.csv`
+* 7420 by 5
+* Column names: doc_field_code, doc_fieldname, year, steam_field, upstream_kgCO2e_bbl
+* Contains information about greenhouse gas (GHG) emissions for oil fields from 2018 to 2045. It includes the field identification codes, field names, years of the data, a binary indicator for whether the field uses steam injection (steam_field), and the upstream GHG emissions intensity in kilograms of CO2 equivalent per barrel of oil produced (upstream_kgCO2e_bbl). This dataset is used to analyze the carbon footprint of oil production across different fields and to project future GHG emissions based on production forecasts.
+
+`/energy/production/pred_prod_no_exit_2020-2045_field_start_year_revised.csv`
+* 410930 by 8
+* Column names: doc_field_code, doc_fieldname, setback_scenario, start_year, no_wells, adj_no_wells, year, production_bbl
+* Contains predicted oil production volumes for fields from 2020 to 2045, considering different setback scenarios and assuming no field exits. It includes the field identification codes, field names, setback scenarios, the starting year of production for each field, the number of wells in the field, the adjusted number of wells based on the setback scenario, the year of the production forecast, and the forecasted production volume in barrels (production_bbl). This dataset is used to analyze the impact of different setback regulations on future oil production at the field level.
+
+`/health/emission_reduction_90.csv`
+* 1 by 1
+* Column names: emission_reduction, ghg_emission_MtCO2e
+* Provides the corresponding GHG emissions in million metric tons of CO2 equivalent (MtCO2e) in the 90% reduction scenario. 
+
+`/health/excise_tax_non_target_scens.csv`
+* 156 by 4
+Column names: year, tax_rate, excise_tax_scenario, units
+* Contains information about excise tax rates for non-target scenarios from 2020 to 2058. It includes the year, the tax rate as a fraction of the oil price, the excise tax scenario, and the units of the tax rate (specified as "fraction of oil price"). This dataset is used to analyze the impact of different excise tax scenarios on oil production and revenues.
+
+`health/inmap_processed_srm/srm_XX_fieldYY.shp`
+* Contains spatial information on the distribution of NH3, NOX, PM2.5, SOX, and VOC for 26 oil fields across California.
+
+`health/inmap_processed_srm/srm_XX_fieldYY.csv`
+* 130 x 58 by 4
+* Column names: GEOID, total chemical amount (NH3, NOX, PM2.5, SOX, VOC), and average weighted chemical amount
+* Contains information about the impact of a specific oil field (referred to as "field1") on air quality in different counties of California. The "GEOID" column represents the unique identifier for each county, while "totalXX" and "totalXX_aw" columns represent the chemical concentrations and area-weighted chemical concentrations resulting from emissions related to the oil field's operations. Used to assess the spatial distribution of air quality impacts from the oil field across different counties in California.
+
+## Output Data
+
+Output data is all data generated from the final extraction model and all subsequent data. (`00_extraction_steps.R`). There are 4 categories of output data: health, labor, model, and results. The model subfolder contains the data from the final extraction model runs. The results folder is a catch-all that contains all other outputted data.
+
+`/health-out/extraction_cluster_affectedpop.csv`
+* 26 by 4
+* Column names: id, share_dac, share_dac_weighted, and numA
+* contain information about the population affected by oil extraction clusters.
+
+`/health-out/social_cost_carbon.csv`
+* 124 by 5
+* Column names: year, discount_rate, social_cost_co2, social_cost_co2_19, scc_ref
+* Used to assess the economic costs associated with CO2 emissions over time
+
+`labor-out/indust_emissions_2000-2019.csv`
+* 140 by 5
+* Column names: segment, unit, year, value, source
+* Used to analyze trends and patterns in industrial greenhouse gas emissions in California over the past two decades, and to identify the major contributing sectors or subsectors to overall industrial emissions in the state.
+
+`/model-out/extraction/state-results/subset_state_results.csv`
+* 3078 by 32
+* Column names: scen_id, year, oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, state_pop, total_state_bbl, total_state_revenue, total_state_ghg_kgCO2, c.dire_emp, c.indi_emp, c.indu_emp, c.dire_comp, c.indi_comp, c.indu_comp, total_emp, total_comp, mortality_delta, mortality_level, cost_2019, cost, cost_2019_PV, cost_PV, mean_total_pm25, mean_delta_total_pm25, target, target_policy
+* Provides information on the potential impacts of various policy scenarios on California's oil industry, economy, public health, and environmental outcomes over the next two decades.
+
+`/model-out/extraction/state-results/XX_state_results.csv`
+* 27 by 30
+* Column names: scen_id, year, oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, state_pop, total_state_bbl, total_state_revenue, total_state_ghg_kgCO2, c.dire_emp, c.indi_emp, c.indu_emp, c.dire_comp, c.indi_comp, c.indu_comp, total_emp, total_comp, mortality_delta, mortality_level, cost_2019, cost, cost_2019_PV, cost_PV, mean_total_pm25, and mean_delta_total_pm25
+* Provides information on the potential impacts of a specific policy scenario on California's oil industry, economy, public health, and environmental outcomes over the next two decades.
+
+`model-out/extraction/county-results/subset_county_results.csv`
+* 52083 by 27
+* Column names: scen_id, oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, county, dac_share, median_hh_income, year, county_pop, total_county_bbl, total_county_ghg_kgCO2e, revenue, c.dire_emp, c.indi_emp, c.indu_emp, c.dire_comp, c.indi_comp, c.indu_comp, total_emp, total_comp, target, target_policy
+* Provides information on the potential impacts of various policy scenarios on California's oil industry, economy, and environmental outcomes at the county level over the next two decades.
+
+`model-out/extraction/county-results/XX_county_results.csv`
+* 432 by 25
+* Column names: scen_id, oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, county, dac_share, median_hh_income, year, county_pop, total_county_bbl, total_county_ghg_kgCO2e, revenue, c.dire_emp, c.indi_emp, c.indu_emp, c.dire_comp, c.indi_comp, c.indu_comp, total_emp, total_comp
+* Provides information on the potential impacts of this specific policy scenario on California's oil industry, economy, and environmental outcomes at the county level over the next two decades.
+
+`model-out/extraction/census-tract-results/subset_census_tract_results.csv`
+* 24799446 by 19
+* Column names: scen_id, census_tract, CES3_score, disadvantaged, median_hh_income, year, weighted_incidence, pop, total_pm25, bau_total_pm25, delta_total_pm25, mortality_delta, mortality_level, cost_2019, cost, cost_2019_PV, cost_PV, target, target_policy
+* Contains census tract-level results for various policy scenarios related to oil production in California from 2019 to 2045. Allows for a highly granular analysis of the potential impacts of various policy scenarios on California's communities at the census tract level over the next two decades.
+
+`model-out/extraction/census-tract-results/XX_ct_results.csv`
+* 217539 by 17
+* Column names: scen_id, census_tract, CES3_score, disadvantaged, median_hh_income, year, weighted_incidence, pop, total_pm25, bau_total_pm25, delta_total_pm25, mortality_delta, mortality_level, cost_2019, cost, cost_2019_PV, cost_PV
+* Provides information on of the potential impacts of this specific policy scenario on California's communities at the census tract level over the next two decades. 
+
+`model-out/extraction/state-results/health-sens/subset_state_hs_results.csv`
+* 3708 by 32
+* Column names: scen_id, year, oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, state_pop, total_state_bbl, total_state_revenue, total_state_ghg_kgCO2, c.dire_emp, c.indi_emp, c.indu_emp, c.dire_comp, c.indi_comp, c.indu_comp, total_emp, total_comp, mortality_delta, mortality_level, cost_2019, cost, cost_2019_PV, cost_PV, mean_total_pm25, mean_delta_total_pm25, target, target_policy
+* Contains information related to oil production in California from 2019 to 2045. Includes annual projections for variables such as state population, total oil production (in barrels), state revenue, greenhouse gas emissions (in kg CO2), direct, indirect, and induced employment and compensation in the oil industry, total employment and compensation, changes in mortality rates and costs associated with air pollution (PM2.5), and policy targets.
+
+`model-out/extraction/health-county-results/subset_county_hs_results.csv`
+* 178524 by 18
+* Column names: scen_id, GEOID, county, year, dac_share, weighted_incidence, pop, total_pm25, bau_total_pm25, delta_total_pm25, mortality_delta, mortality_level, cost_2019, cost, cost_2019_PV, cost_PV, target, target_policy
+* Contains county-level results for various policy scenarios related to oil production in California from 2019 to 2045. Includes annual projections for variables at the county level, such as the county GEOID, county name, share of disadvantaged communities (DACs), population-weighted PM2.5 incidence, population, total PM2.5 concentrations, business-as-usual (BAU) PM2.5 concentrations, changes in PM2.5 concentrations, mortality impacts (changes and levels), and the associated costs (in 2019 dollars and present value terms)
+
+`results-out/county_level_out_adjusted.csv`
+* 459 by 19
+* Column names: scen_id, oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, county, dac_share, median_hh_income, year, county_pop, total_county_bbl, total_county_ghg_kgCO2e, revenue, total_emp, total_comp
+* Contains county-level results for a specific policy scenario related to oil production in California from 2019 to 2045. Used to analyze the potential impacts of each policy scenario combination on California's oil industry, economy, and environmental outcomes at the county level over the next two decades, with a focus on the distribution of these impacts across different counties and communities within the state.
+
+`results-out/extraction_field_cluster_xwalk.csv`
+* 262 by 4
+* Column names: id, input_fid, NAME, doc_field_code
+* Used to link information from other datasets that use either the extraction cluster ID or the oil field ID as a key, enabling analyses that combine data at both the cluster and field levels.
+
+`results-out/extraction_fields.shp`
+* Spatial data on all of the oil extraction fields across California.
+
+`results-out/new_wells_pred_revised.csv`
+* 11046 by 4
+* Column names: doc_field_code, year, n_new_wells, new_wells_pred
+* Contains information about the number of new wells drilled in each oil field in California from 1978 to 2020, along with predictions for the number of new wells. Used to analyze historical trends in new well drilling activity across different oil fields in California and to compare the actual number of new wells with the predicted values. 
+
+`well_prod_m_processed.csv`
+* 38649622 by 27
+* Column names: ReportType, APINumber, api_ten_digit, doc_field_code, doc_fieldname, county, county_name, AreaCode, PoolCode, WellTypeCode, well_type_name, ProductionReportDate, year, month, month_year, ProductionStatus, CasingPressure, TubingPressure, BTUofGasProduced, MethodOfOperation, APIGravityofOil, WaterDisposition, OilorCondensateProduced, DaysProducing, GasProduced, WaterProduced, ReportedOrEstimated
+* Contains detailed monthly production data for individual oil and gas wells in California from 1984 to 2019. Used to measure the production trends over the time period.
+
+
+## Code Scripts
+This section contains a summary of the scripts in the project workflow, along with the input and output data associated with each script. The headings below represent folder names and paths.
+
 
 ### health/
 `scripts/health_data.R`
@@ -160,6 +330,9 @@ Calculates population increase up until 2045. Analyzes various health and dempog
   * ct_incidence_ca.csv
   * ct_inc_45.csv
   * ct_pop_45.csv
+  
+
+
 
 `scripts/source_receptor_matrix.R`
 Reads and transforms shapefiles for census tracts and counties, selects specific areas by excluding islands, determines spatial resolution for source-receptor matrices (SRM), processed pollution data files for different pollutants, and saves the processed data for further analysis.
@@ -495,9 +668,8 @@ Integrates field-level oil production data with greenhouse gas (GHG) emissions f
 
 #### extraction-segment/model-prep 
 
-**`well_setback_sp_prep.R`**
+`well_setback_sp_prep.R`
 Processes spatial data from the FracTracker Setback dataset to analyze and visualize sensitive receptors (e.g., dwellings, playgrounds, healthcare facilities) around oil and gas extraction sites in California. It involves reading and transforming spatial layers from a Geographic Database (GDB), applying buffers to identify setback areas, simplifying complex geometries for efficiency, and ultimately creating and saving spatial buffers around sensitive sites, which are then visualized using various GIS and mapping libraries.
-
 
 - Inputs:
   * FracTrackerSetbackdata.gdb (layers SetbackOutlines_SR_Dwellings_082220, PlaygroundsinCities, DayCareCenters, reselderlyCare, CHHS_adultdayhealthcare_csv_Events, CHHS_altbirthing_csv_Events, CHHS_Dialysis_csv_Events, CHHS_healthcare_facility_locations_csv_Events, CHHS_intermedcarefac_csv_Events, CHHS_PrimaryCareClinic_csv_Events, CHHS_psychclinics_csv_Events,
@@ -750,6 +922,7 @@ Predicts future oil production from existing wells that have not exited producti
   * wells_in_setbacks_revised.csv (from `gen_well_setback_status.R`)
 - Outputs:
   * pred_prod_no_exit_2020-2045_field_start_year_revised.csv
+  * n_wells_area.csv
 
 `analyze-parameters.R`
 Analyzes decline curve parameters for oil production, projecting these parameters from historical data to forecast future production trends from 2020 to 2045. It cleans and processes parameter data, predicts future parameters using linear models, fills in missing field data with median values, and ultimately compiles and saves a comprehensive dataset of forecasted decline parameters for each field and start year. The output is used in v1 of the model, but not the final model. 
