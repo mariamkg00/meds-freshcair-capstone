@@ -1,6 +1,4 @@
-## freshcair-meds-capstone
-
-## Assessing the Social and Environmental Impacts of Supply Side Oil Policies in California
+# Assessing the Social and Environmental Impacts of Supply Side Oil Policies in California
 
 Group members: Haejin Kim (haejin_kim@ucsb.edu), Maxwell Patterson (maxwellpatterson@ucsb.edu), and Mariam Garcia (mkgarcia@ucsb.edu)
 
