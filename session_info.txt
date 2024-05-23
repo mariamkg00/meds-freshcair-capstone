@@ -1,0 +1,89 @@
+─ Session info ───────────────────────────────────────────────────────────────────────────────────
+ setting  value
+ version  R version 4.2.2 (2022-10-31)
+ os       Ubuntu 22.04.2 LTS
+ system   x86_64, linux-gnu
+ ui       RStudio
+ language (EN)
+ collate  en_US.UTF-8
+ ctype    en_US.UTF-8
+ tz       Etc/UTC
+ date     2024-05-23
+ rstudio  2022.12.0+353.pro20 Elsbeth Geranium (server)
+ pandoc   2.19.2 @ /usr/lib/rstudio-server/bin/quarto/bin/tools/ (via rmarkdown)
+
+─ Packages ───────────────────────────────────────────────────────────────────────────────────────
+ ! package     * version date (UTC) lib source
+ P bit           4.0.5   2022-11-15 [?] CRAN (R 4.2.2)
+ P bit64         4.0.5   2020-08-30 [?] CRAN (R 4.2.2)
+ P cachem        1.0.8   2023-05-01 [?] CRAN (R 4.2.2)
+ P class         7.3-20  2022-01-16 [?] CRAN (R 4.2.2)
+ P classInt      0.4-10  2023-09-05 [?] CRAN (R 4.2.2)
+ P cli           3.6.2   2023-12-11 [?] CRAN (R 4.2.2)
+ P crayon        1.5.2   2022-09-29 [?] CRAN (R 4.2.2)
+ P DBI           1.2.2   2024-02-16 [?] CRAN (R 4.2.2)
+ P devtools      2.4.5   2022-10-11 [?] CRAN (R 4.2.2)
+ P digest        0.6.33  2023-07-07 [?] CRAN (R 4.2.2)
+ P dplyr         1.1.4   2023-11-17 [?] CRAN (R 4.2.2)
+ P e1071         1.7-13  2023-02-01 [?] CRAN (R 4.2.2)
+ P ellipsis      0.3.2   2021-04-29 [?] CRAN (R 4.2.2)
+ P evaluate      0.21    2023-05-05 [?] CRAN (R 4.2.2)
+ P fansi         1.0.5   2023-10-08 [?] CRAN (R 4.2.2)
+ P fastmap       1.1.1   2023-02-24 [?] CRAN (R 4.2.2)
+ P fs            1.6.3   2023-07-20 [?] CRAN (R 4.2.2)
+ P generics      0.1.3   2022-07-05 [?] CRAN (R 4.2.2)
+ P glue          1.7.0   2024-01-09 [?] CRAN (R 4.2.2)
+ P hms           1.1.3   2023-03-21 [?] CRAN (R 4.2.2)
+ P htmltools     0.5.6   2023-08-10 [?] CRAN (R 4.2.2)
+ P htmlwidgets   1.6.2   2023-03-17 [?] CRAN (R 4.2.2)
+ P httpuv        1.6.9   2023-02-14 [?] CRAN (R 4.2.2)
+ P KernSmooth    2.23-20 2021-05-03 [?] CRAN (R 4.2.2)
+ P knitr         1.43    2023-05-25 [?] CRAN (R 4.2.2)
+ P later         1.3.0   2021-08-18 [?] CRAN (R 4.2.2)
+ P lifecycle     1.0.4   2023-11-07 [?] CRAN (R 4.2.2)
+ P magrittr      2.0.3   2022-03-30 [?] CRAN (R 4.2.2)
+ P maps          3.4.1   2022-10-30 [?] CRAN (R 4.2.2)
+ P memoise       2.0.1   2021-11-26 [?] CRAN (R 4.2.2)
+ P mime          0.12    2021-09-28 [?] CRAN (R 4.2.2)
+ P miniUI        0.1.1.1 2018-05-18 [?] CRAN (R 4.2.2)
+ P pillar        1.9.0   2023-03-22 [?] CRAN (R 4.2.2)
+ P pkgbuild      1.4.4   2024-03-17 [?] CRAN (R 4.2.2)
+ P pkgconfig     2.0.3   2019-09-22 [?] CRAN (R 4.2.2)
+ P pkgload       1.3.2   2022-11-16 [?] CRAN (R 4.2.2)
+ P profvis       0.3.8   2023-05-02 [?] CRAN (R 4.2.2)
+ P promises      1.2.0.1 2021-02-11 [?] CRAN (R 4.2.2)
+ P proxy         0.4-27  2022-06-09 [?] CRAN (R 4.2.2)
+ P purrr         1.0.2   2023-08-10 [?] CRAN (R 4.2.2)
+ P R6            2.5.1   2021-08-19 [?] CRAN (R 4.2.2)
+ P Rcpp          1.0.12  2024-01-09 [?] CRAN (R 4.2.2)
+ P readr       * 2.1.4   2023-02-10 [?] CRAN (R 4.2.2)
+ P remotes       2.5.0   2024-03-17 [?] CRAN (R 4.2.2)
+   renv          0.17.3  2023-04-06 [1] CRAN (R 4.2.2)
+ P rlang         1.1.3   2024-01-10 [?] CRAN (R 4.2.2)
+ P rmarkdown     2.24    2023-08-14 [?] CRAN (R 4.2.2)
+ P rstudioapi    0.16.0  2024-03-24 [?] CRAN (R 4.2.2)
+ P sessioninfo   1.2.2   2021-12-06 [?] CRAN (R 4.2.2)
+ P sf            1.0-14  2023-07-11 [?] CRAN (R 4.2.2)
+ P shiny         1.7.4   2022-12-15 [?] CRAN (R 4.2.2)
+ P stringi       1.7.12  2023-01-11 [?] CRAN (R 4.2.2)
+ P stringr       1.5.0   2022-12-02 [?] CRAN (R 4.2.2)
+ P tibble        3.2.1   2023-03-20 [?] CRAN (R 4.2.2)
+ P tidyselect    1.2.0   2022-10-10 [?] CRAN (R 4.2.2)
+ P tzdb          0.4.0   2023-05-12 [?] CRAN (R 4.2.2)
+ P units         0.8-4   2023-09-13 [?] CRAN (R 4.2.2)
+ P urlchecker    1.0.1   2021-11-30 [?] CRAN (R 4.2.2)
+ P usethis       2.2.3   2024-02-19 [?] CRAN (R 4.2.2)
+ P utf8          1.2.3   2023-01-31 [?] CRAN (R 4.2.2)
+ P vctrs         0.6.5   2023-12-01 [?] CRAN (R 4.2.2)
+ P vroom         1.6.3   2023-04-28 [?] CRAN (R 4.2.2)
+ P withr         2.5.1   2023-09-26 [?] CRAN (R 4.2.2)
+ P xfun          0.40    2023-08-09 [?] CRAN (R 4.2.2)
+ P xtable        1.8-4   2019-04-21 [?] CRAN (R 4.2.2)
+ P yaml          2.3.7   2023-01-23 [?] CRAN (R 4.2.2)
+
+ [1] /capstone/freshcair/meds-freshcair-capstone/renv/library/R-4.2/x86_64-pc-linux-gnu
+ [2] /Users/maxwellpatterson/.cache/R/renv/sandbox/R-4.2/x86_64-pc-linux-gnu/99f2a2ef
+
+ P ── Loaded and on-disk path mismatch.
+
+──────────────────────────────────────────────────────────────────────────────────────────────────
