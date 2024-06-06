@@ -13,10 +13,10 @@ external_save <- 1
 ## paths
 main_path     <- '/capstone/freshcair/meds-freshcair-capstone/'
 academic_out_path <- file.path(main_path, 'processed') 
-input_path        <- file.path(main_path, 'data/processed') 
+# input_path        <- file.path(main_path, 'data-str/processed') # not use - HK
 
 ## read in saved rds files - updates as needed
-extraction_folder = 'extraction_2024-05-13/'
+extraction_folder = 'extraction_2024-06-05_rf/'
 
 external_path <- '/capstone/freshcair/meds-freshcair-capstone/data/processed' 
 
@@ -24,7 +24,7 @@ external_path <- '/capstone/freshcair/meds-freshcair-capstone/data/processed'
 
 if(external_save == 1) {
   
-  compiled_path = paste0(main_path, 'data/processed/extraction_2024-05-13/')
+  compiled_path = paste0(main_path, 'data/processed/extraction_2024-06-05_rf/')
 } else {
   
   compiled_path  = paste0(academic_out_path, extraction_folder)
@@ -32,7 +32,7 @@ if(external_save == 1) {
 }
 
 ## sub folders
-field_path     = paste0(compiled_path, 'field-results/')
+field_path     = paste0(compiled_path, 'field-results/') # not use
 state_path     = paste0(compiled_path , 'state-results/')
 state_hs_path  = paste0(compiled_path , 'state-results/health_sens/')
 county_path    = paste0(compiled_path, 'county-results/')
@@ -40,12 +40,9 @@ ct_path        = paste0(compiled_path, 'census-tract-results/')
 ct_hs_path     = paste0(compiled_path, 'health-county-results/')
 
 
-## files
-scen_file <- 'scenario_id_list_targets_finalv2.csv'
 
 ## load files
-scen_list <- fread(file.path('data/processed/scenario_id_list_targets_final.csv'), header = T) 
-
+scen_list <- fread(file.path('data/processed/scenario_id_list_targets_finalv2.csv'), header = T) 
 # # Added - MP
 # setback_scenarios <- c("no_setback", "setback_3200ft")
 # subset_list <- scen_list[scen_list$setback_scenario %in% setback_scenarios]
@@ -98,27 +95,23 @@ state_hs_out_list <- list()
 ct_out_list       <- list()
 ct_hs_out_list    <- list()
 
-### ADDED MP
-# Print the scenarios in scen_sel
-print("Scenarios in scen_sel:")
-print(scen_sel)
-
+# Added MP
 # Check if the scenario directories exist
-invalid_scenarios <- character()
-for (scen in scen_sel$scen_id) {
-  scenario_dir <- file.path(save_info_path, 'state-out', paste0(scen, '_state.rds'))
-  if (!file.exists(scenario_dir)) {
-    invalid_scenarios <- c(invalid_scenarios, scen)
-  }
-}
-
-# Print invalid scenarios (if any)
-if (length(invalid_scenarios) > 0) {
-  print("The following scenarios do not have a corresponding state output file:")
-  print(invalid_scenarios)
-} else {
-  print("All scenarios in scen_sel have a corresponding state output file.")
-}
+# invalid_scenarios <- character()
+# for (scen in scen_sel$scen_id) {
+#   scenario_dir <- file.path(save_info_path, 'state-out', paste0(scen, '_state.rds'))
+#   if (!file.exists(scenario_dir)) {
+#     invalid_scenarios <- c(invalid_scenarios, scen)
+#   }
+# }
+# 
+# # Print invalid scenarios (if any)
+# if (length(invalid_scenarios) > 0) {
+#   print("The following scenarios do not have a corresponding state output file:")
+#   print(invalid_scenarios)
+# } else {
+#   print("All scenarios in scen_sel have a corresponding state output file.")
+# }
 
 ### END ADDED MP
 
@@ -183,3 +176,10 @@ fwrite(county_subset_all, paste0(county_path, "subset_county_results.csv"))
 fwrite(state_subset_all, paste0(state_path, "subset_state_results.csv"))
 fwrite(state_hs_subset_all, paste0(state_hs_path, "subset_state_hs_results.csv")) # include health census 
 
+
+
+
+# add new file directory --- # add new data directory HK
+fwrite(ct_subset_all, paste0(academic_out_path, "subset_census_tract_results.csv"))
+fwrite(county_subset_all, paste0(academic_out_path, "subset_county_results.csv"))
+fwrite(state_subset_all, paste0(academic_out_path, "subset_state_results.csv"))

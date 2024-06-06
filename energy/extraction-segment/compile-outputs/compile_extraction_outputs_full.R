@@ -32,7 +32,7 @@ main_path_external     <- '/capstone/freshcair/meds-freshcair-capstone/'
 sp_data_path     <- paste0(main_path, "data/input/gis/")
 
 ## UPDATE THESE WITH NEW RUNS!!!!!
-extraction_folder_path <- 'data/processed/extraction_2024-05-13'
+extraction_folder_path <- 'data/processed/extraction_2024-06-05_rf'
 extraction_folder_name <- 'revision-setbacks/'
 data_path  <-'data/processed/'
 
@@ -43,10 +43,10 @@ inmap_ex_path  <- paste0(main_path, "data/processed/extraction")
 if(save_external == 1) {
   
   ## UPDATE THIS WITH NEW RUNS!!!!!
-  extraction_path <- paste0('data/processed/extraction_2024-05-13/revision-setbacks/')
+  extraction_path <- paste0('data/processed/extraction_2024-06-05_rf/revision-setbacks/')
   
-  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-05-13/academic-out/'), showWarnings = FALSE)
-  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-05-13/')
+  dir.create(paste0(main_path_external, 'data/processed/extraction_2024-06-04/academic-out/'), showWarnings = FALSE)
+  compiled_save_path  <- paste0(main_path_external, 'data/processed/extraction_2024-06-05_rf/')
 
 } else {
   
@@ -185,6 +185,8 @@ fname_lut <- well_prod %>%
   dplyr::select(doc_field_code, doc_fieldname) %>%
   unique() 
 
+fname_lut$doc_field_code = as.character(fname_lut$doc_field_code)
+
 ## get relative county production (most recent year of nonzero production available for each field)
 prod_x_county <- well_prod %>%
   left_join(county_lut) %>%
@@ -202,6 +204,8 @@ prod_x_county <- well_prod %>%
   dplyr::ungroup() %>%
   dplyr::select(doc_field_code, adj_county_name, rel_prod)
 
+prod_x_county$doc_field_code = as.character(prod_x_county$doc_field_code)
+
 ## how many fields with positive prod?
 # View(field_out[, c(prod = sum(total_prod_bbl, na.rm = T)), by = doc_field_code][V1 > 0])
 
@@ -214,6 +218,9 @@ init_prod <- well_prod %>%
   dplyr::ungroup()
 
 setDT(init_prod)
+
+# Added MP
+init_prod$doc_field_code = as.character(init_prod$doc_field_code)
 
 ## merge with ghg factors
 init_prod <- merge(init_prod, ghg_factors_2019,
@@ -238,7 +245,7 @@ init_prod <- init_prod[!doc_field_code %in% c("302", "502", "000")]
 
 #  Load extraction source receptor matrix (srm) #######
 n_cores <- availableCores() - 1
-plan(multisession, workers = n_cores, gc = TRUE)
+#plan(multisession, workers = n_cores, gc = TRUE)
 
 #fields vector
 fields_vector <- c(1:26)
@@ -329,11 +336,6 @@ extraction_field_clusters_10km <- read.csv('data/intermediate-zenodo/intermediat
 # Removed sep=""
 extraction_fields_xwalk <- foreign::read.dbf('data/intermediate-zenodo/intermediate/extraction-model/extraction_fields_xwalk_id.dbf') %>%
   dplyr::rename(input_fid = id, doc_field_code = dc_fld_)  
-  
-extraction_fields_xwalk$doc_field_code = as.numeric(extraction_fields_xwalk$doc_field_code) # Added MP
-extraction_fields_xwalk$doc_field_code = as.character(extraction_fields_xwalk$doc_field_code)
-
-
 
 
 ## Add Old Wilmington to xwalk
@@ -345,6 +347,7 @@ extraction_fields_xwalk <- rbind(extraction_fields_xwalk, oldw_df)
 
 extraction_xwalk <- extraction_field_clusters_10km %>%
   left_join(extraction_fields_xwalk, by = c("input_fid")) 
+
 
 
 ## (2.1) Load demographic data
@@ -528,6 +531,7 @@ for (i in 1:length(field_files_to_process)) {
                              by = c("doc_field_code"),
                              all.x = T)
   
+  # Added doc_fieldname in the merge - MP
   full_site_df_2019 <- merge(full_site_df_2019[, .(scen_id, oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario,
                                                    setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, doc_field_code,
                                                    doc_fieldname, year)], init_prod,
@@ -571,7 +575,7 @@ for (i in 1:length(field_files_to_process)) {
   ## save site level output for production 
   saveRDS(full_site_out, paste0(field_save_path, scenario_id_tmp, "_field_results.rds"))
   
-  t <- readRDS("/capstone/freshcair/meds-freshcair-capstone/data/processed/extraction_2024-05-13/field-results/high oil price-no_setback-no quota-carbon_target_90perc_reduction-no ccs-low innovation-no tax-0_field_results.rds")
+  t <- readRDS("/capstone/freshcair/meds-freshcair-capstone/data/processed/extraction_2024-05-14/field-results/high oil price-no_setback-no quota-carbon_target_90perc_reduction-no ccs-low innovation-no tax-0_field_results.rds")
   
   # new_t <- t%>% 
   #   group_by(year) %>% 
@@ -583,10 +587,6 @@ for (i in 1:length(field_files_to_process)) {
                       by = c("doc_field_code"),
                       all.x = T,
                       allow.cartesian = T)
-  
-  county_out_test1 <- county_out %>% 
-    group_by(year) %>% 
-    summarise(prod = sum(total_prod_bbl, na.rm=T))
   
   setcolorder(county_out, c('scen_id', 'oil_price_scenario', 'innovation_scenario', 'carbon_price_scenario', 'ccs_scenario',
                             'setback_scenario', 'setback_existing', 'prod_quota_scenario', 'excise_tax_scenario', 
@@ -607,9 +607,6 @@ for (i in 1:length(field_files_to_process)) {
   #                              total_county_ghg_kgCO2e = sum(county_ghg_kgCO2e)), by = .(scen_id, oil_price_scenario, innovation_scenario, carbon_price_scenario,
   #                                                                                        ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario,
   #                                                                                        year, adj_county_name)]
-  county_out_test <- county_out %>% 
-    group_by(year) %>% 
-    summarise(prod = sum(total_county_bbl, na.rm=T))
   
   ## add oil price
   county_out <- merge(county_out, oilpx_scens,
@@ -689,18 +686,16 @@ for (i in 1:length(field_files_to_process)) {
   ## save county outputs (labor, production, and revenue)
   saveRDS(county_out, paste0(county_save_path, scenario_id_tmp, "_county_results.rds"))
   
-  county_out_t <- county_out %>% 
-    group_by(year) %>% 
-    summarise(prod = sum(total_county_bbl, na.rm=T))
-  
-  # THIS VALUE IS TOO SMALL!!!!!
-  
   ## HEALTH IMPACTS: calculate census level health impacts
   ## -------------------------------------------------------------
   
+  # Added MP
+  extraction_xwalk$doc_field_code <- as.character(extraction_xwalk$doc_field_code)
+  extraction_xwalk$doc_field_code <- sub("^0+", "", extraction_xwalk$doc_field_code)
+  
   ## merge extraction production scenarios with extraction cluster 
   health_site_out <- merge(full_site_out, extraction_xwalk,
-                           by = c("doc_field_code"),
+                           by = "doc_field_code",
                            all.x = T)
   
   ## summarize extraction production per cluster
@@ -720,7 +715,7 @@ for (i in 1:length(field_files_to_process)) {
            voc = total_prod_bbl * 0.02614 / 1000)
   
   total_clusters <- total_clusters %>%
-    right_join(srm_all_pollutants_extraction, by = c("id")) %>%
+    dplyr::right_join(srm_all_pollutants_extraction, by = c("id")) %>%
     dplyr::mutate(tot_nh3 = weighted_totalpm25nh3 * nh3,
            tot_nox = weighted_totalpm25nox * nox,
            tot_sox = weighted_totalpm25sox * sox,
@@ -863,7 +858,6 @@ bau_scens <- c('reference case-no_setback-no quota-price floor-no ccs-low innova
 bau_out <- list()
 
 for(i in 1:length(bau_scens)) {
-  
   scen_tmp <- bau_scens[i]
   
   bau_tmp <- readRDS(paste0(ct_save_path, scen_tmp)) %>%
