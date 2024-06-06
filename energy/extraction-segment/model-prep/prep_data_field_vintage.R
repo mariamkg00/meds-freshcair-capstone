@@ -18,15 +18,15 @@ library(extrafont)
 # read in data ------
 
 # monthly wellstar production data -- Updated - MP
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
 ## start year -- Updated - MP
-init_prod <- fread("data/processed/well_start_prod_api10_revised.csv", colClasses = c('api_ten_digit' = 'character',
+init_prod <- fread("data-str/private/production/well_start_prod_api10_revised.csv", colClasses = c('api_ten_digit' = 'character',
                                              'doc_field_code' = 'character'))
 
 ## entry df -- Updated - MP
-entry_df = fread("data/processed/entry_df_final_revised.csv", header = T, colClasses = c('doc_field_code' = 'character'))
+entry_df = fread("data-str/public/intermediate/energy/production/entry_df_final_revised.csv", header = T, colClasses = c('doc_field_code' = 'character'))
 
 # get field code + field name matches -----
 
@@ -104,7 +104,7 @@ prod_fv_month[, well_prod := tot_oil_prod/no_wells ] # avg production per well f
 
 prod_fv_month = prod_fv_month[order(doc_fieldname, vintage, month_no)]
 prod_fv_month[, prod_rate := well_prod/30.5, by = c('doc_fieldname', 'doc_field_code', 'vintage')] # bbls/day for each well
-prod_fv_year[, decline_rate := (prod_rate - data.table::shift(prod_rate))/prod_rate, by = .(doc_fieldname, doc_field_code, vintage)]
+#prod_fv_year[, decline_rate := (prod_rate - data.table::shift(prod_rate))/prod_rate, by = .(doc_fieldname, doc_field_code, vintage)]
 
 # ggplot(prod_fv_month, aes(x = month_no, y = prod_rate/1000, group = vintage, color = vintage)) + geom_line() +
 #   facet_wrap(. ~ FieldName, nrow = 4, scales = "free_y") +
@@ -257,10 +257,10 @@ prod_fv_year_2[, peak_year_diff := as.numeric(year_no) - as.numeric(peak_prod_ye
 
 # export data -----
 
-fwrite(peak_fv_year, paste0('data/processed/field-vintage_peak-production_yearly_revised.csv'), row.names = F)
-fwrite(prod_fv_year_2, paste0('data/processed/production_field-vintange_yearly_entry_revised.csv'), row.names = F)
+fwrite(peak_fv_year, paste0('data-str/private/well-fields/field-vintage_peak-production_yearly_revised.csv'), row.names = F)
+fwrite(prod_fv_year_2, paste0('data-str/private/production/production_field-vintange_yearly_entry_revised.csv'), row.names = F)
 
-fwrite(well_prod3, paste0('data/processed/production_api10_monthly_revised.csv'), row.names = F)
+fwrite(well_prod3, paste0('data-str/private/production/production_api10_monthly_revised.csv'), row.names = F)
 
 # fwrite(peak_fv_month, paste0(save_dir, 'field-vintage_peak-production_monthly.csv'), row.names = F)
 # fwrite(prod_fv_month_2, paste0(save_dir, 'production_field-vintange_monthly_entry.csv'), row.names = F)

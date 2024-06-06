@@ -14,10 +14,10 @@ library(data.table)
 library(maps)
 library(mapview)
 
-## paths 
-main_path       <- "/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn"
-buffer_path     <- "data/GIS/processed/fracktracker-sr"
-data_directory  <- "data/stocks-flows/processed/"
+## paths # add new data directory HK
+#main_path       <- "/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn"
+#buffer_path     <- "data/GIS/processed/fracktracker-sr"
+# data_directory  <- "data/stocks-flows/processed/"
 
 setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
 getwd()
@@ -33,28 +33,28 @@ ca <- st_as_sf(map("state", plot = FALSE, fill = TRUE)) %>%
   st_transform(ca_crs)
 
 ## counties boundaries -- Upated - MP
-county_boundaries <- st_read("data/inputs/gis/CA_Counties/CA_Counties_TIGER2016.shp") %>% 
+county_boundaries <- st_read("data-str/public/inputs/gis/CA_Counties/CA_Counties_TIGER2016.shp") %>% 
   st_transform(ca_crs) %>%
   dplyr::select(adj_county_name = NAME) 
 
 ## field boundaries -- Updated - MP
-boundaries <- st_read("data/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp") %>% st_transform(ca_crs)
+boundaries <- st_read("data-str/public/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp") %>% st_transform(ca_crs)
 
 
 ################################# READ DATA AND TRANSFORM
 
-buff1000 <- sf::st_read("data/processed/buffer_1000ft.shp")
+buff1000 <- sf::st_read("data-str/private/setback-buffs/buffer_1000ft.shp")
 
-buff2500 <- sf::st_read("data/processed/buffer_2500ft.shp")
+buff2500 <- sf::st_read("data-str/private/setback-buffs/buffer_2500ft.shp")
 
-buff3200 <- sf::st_read("data/processed/buffer_3200ft.shp")
+buff3200 <- sf::st_read("data-str/private/setback-buffs/buffer_3200ft.shp")
 
-buff5280 <- sf::st_read("data/processed/buffer_5280ft.shp")
+buff5280 <- sf::st_read("data-str/private/setback-buffs/buffer_5280ft.shp")
 
 ## production
 
 ## monthly well production -- Updated - MP
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
 ## fields that produce oil in time horizon
@@ -122,7 +122,7 @@ county_setbacks <- rbind(county_coverage_df_1000, county_coverage_df_2500, count
 
 # save output
 # Updated - MP
-write_csv(county_setbacks, file.path("data/processed/county_level_setback_coverage.csv"))
+write_csv(county_setbacks, file.path("data-str/private/setback-cov/county_level_setback_coverage.csv"))
 
 
 ## map 

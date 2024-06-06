@@ -7,16 +7,16 @@ setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on T
 getwd()
 
 # inputs ------
-# Updated - MP
+# Updated - MP # add new data directory HK
 # para_dir      = "outputs/decline-historic/parameters/"
 # yr_fil        = "fitted-parameters_field-vintage_yearly_entry_modeled_only.csv"
-yr_file         = "data/processed/fitted-parameters_field-start-year_yearly_entry.csv"
-prod_file       = "data/processed/crude_prod_x_field_revised.csv"
-entry_file      = 'data/processed/entry_df_final_revised.csv'
+yr_file         = "data-str/private/well-fields/fitted-parameters_field-start-year_yearly_entry.csv"
+prod_file       = "data-str/public/intermediate/energy/production/crude_prod_x_field_revised.csv"
+entry_file      = 'data-str/public/intermediate/energy/production/entry_df_final_revised.csv'
 
 # outputs -------
-# Updated - MP
-save_path       = "data/processed/"
+# Updated - MP # add new data directory HK
+save_path       = "data-str/public/intermediate/energy/production"
 save_file       = "forecasted_decline_parameters_2020_2045.csv"
 
 # load libraries -------- 

@@ -9,7 +9,7 @@ library(data.table)
 
 # paths -----
 scen_path         = '/capstone/freshcair/meds-freshcair-capstone/data-str/public/inputs/scenarios'
-file_path         = '/capstone/freshcair/meds-freshcair-capstone/data-str/private/health' # added file path, b/c read and store at the same place
+file_path         = '/capstone/freshcair/meds-freshcair-capstone/data-str/private/scens' # added file path, b/c read and store at the same place
 
 ## files
 ccs_ext_file      = 'ccs_extraction_scenarios.csv'
