@@ -19,7 +19,7 @@ if(zenodo_repo) {
   # args = commandArgs(trailingOnly = TRUE)
   run_name        = "revision-setbacks"
   # save_path     = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/predict-production'
-  save_path       = 'data/processed' 
+  save_path       = 'data/processed'  # add new data directory HK
   
 }
 
@@ -33,7 +33,8 @@ if(zenodo_repo) {
 
 
 
-# create save path that is based on the specified path and the run date ------
+
+# create save path that is based on the specified path and the run date ------ 
 
 cur_date              = Sys.Date()
 save_path             = file.path(save_path, paste0('extraction_', cur_date))
@@ -67,25 +68,20 @@ library(foreach)
 # source from other scripts -------
 
 # source load_input_info.R to load input info
-source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', 'load_input_info.R'))
+source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', 'load_input_info_fc.R'))
 
 # source function to predict extraction
 source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', 'fun_extraction_model_targets.R'))
-# source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', 'fun_extraction_model_targets_test.R'))
-
+# source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', 'fun_extraction_model_targets_fc.R'))
 
 ## step 0: load the inputs
 
-scen_id_list = fread(file.path('data/processed/scenario_id_list_targets.csv'), header = T)
-scen_id_list_final = fread(file.path('data/processed/scenario_id_list_targets_v3.csv'), header = T)
-scen_id_list_z = fread(file.path('data/intermediate-zenodo/intermediate/extraction-model/scenario_id_list_targets-z.csv'), header = T)
-
-## filter for scenarios to run
-selected_scens <- scen_id_list[subset_scens == 1]
-
-selected_scens_z <- scen_id_list_z[subset_scens == 1]
+scen_id_list_final = fread(file.path('data/processed/scenario_id_list_targets_finalv2.csv'), header = T)
 
 selected_scens_final <- scen_id_list_final[subset_scens == 1]
+
+# Select model: 1 for Poisson, 2 for Random Forest, 3 for Gradient Boosted
+model_choice = 3
 
 # step 1: run extraction model and get outputs -------
 
