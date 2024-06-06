@@ -11,6 +11,10 @@ library(openxlsx)
 library(rebus)
 
 
+# Set directory 
+setwd('/capstone/freshcair/meds-freshcair-capstone/') # Sets directory based on Taylor structure
+getwd()
+
 # # paths -----
 # outputs_path      = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs'
 # data_path         = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/processed'
@@ -22,8 +26,8 @@ library(rebus)
 # load data -----
 
 ## load oil price data -- Updated - MP
-# Reading in with readxl due to errors
-oilpx_scens = setDT(read_excel(path = 'data/inputs/extraction/oil_price_projections_revised.xlsx',
+# Reading in with readxl due to errors # add new data directory HK
+oilpx_scens = setDT(read_excel(path = 'data-str/public/inputs/extraction/oil_price_projections_revised.xlsx',
                                sheet = 'nominal',
                                col_names = TRUE))
 
@@ -45,25 +49,25 @@ setorderv(oilpx_scens, c('oil_price_scenario', 'year'))
 ## unique oil px scens
 oilpx_scens_names <- distinct(oilpx_scens[, .(oil_price_scenario)])
 
-## load innovation scenarios -- Updated - MP
-innovation_scens = fread(file.path("data/inputs/scenarios/innovation_scenarios.csv"), header = T)
+## load innovation scenarios -- Updated - MP # add new data directory HK
+innovation_scens = fread(file.path("data-str/public/inputs/scenarios/innovation_scenarios.csv"), header = T)
 
 innovation_scens_name <- distinct(innovation_scens[, .(innovation_scenario)])
 
-## load carbon px scens -- Updated - MP
-carbonpx_scens = fread(file.path("data/inputs/scenarios/carbon_prices_revised.csv"), header = T)
+## load carbon px scens -- Updated - MP # add new data directory HK
+carbonpx_scens = fread(file.path("data-str/public/inputs/scenarios/carbon_prices_revised.csv"), header = T)
 
 carbonpx_scens_name <- distinct(carbonpx_scens[, .(carbon_price_scenario)])
 
 ## load ccs scenarios -- Updated - MP
-ccs_scens = fread(file.path("data/processed/ccs_extraction_scenarios_revised.csv"), header = T)
+ccs_scens = fread(file.path("data-str/private/scens/ccs_extraction_scenarios_revised.csv"), header = T)
 ccs_scens[, ccs_price_usd_per_kg := ccs_price/1000] # convert from usd per metric ton to usd per kg
 ccs_scens = ccs_scens[, c('year', 'ccs_scenario', 'ccs_price_usd_per_kg')]
 ccs_scens[, ccs_scenario := factor(ccs_scenario, levels = c('no ccs', 'high CCS cost', 'medium CCS cost', 'low CCS cost'))]
 
 
 ## load setback scenarios -- Updated - MP
-setback_scens = fread(file.path('data/processed/setback_coverage_R.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
+setback_scens = fread(file.path('data-str/private/setback-buffs/setback_coverage_R.csv'), header = T, colClasses = c('doc_field_code' = 'character'))
 
 setback_scens[, setback_scenario := fifelse(setback_scenario == "no_setback", setback_scenario, paste0(setback_scenario, "ft"))]
 
@@ -71,18 +75,18 @@ setback_scens_name <- distinct(setback_scens[, .(setback_scenario)])
 
 
 # load production quota file -- Updated - MP
-prod_quota_scens = fread(file.path("data/inputs/scenarios/prod_quota_scenarios.csv"), header = T)
+prod_quota_scens = fread(file.path("data-str/public/inputs/scenarios/prod_quota_scenarios.csv"), header = T)
 
 prod_quota_scens_names <- distinct(prod_quota_scens[, .(prod_quota_scenario)])
 
-# load excise tax file
-excise_tax_scens = fread(file.path("data/processed/excise_tax_non_target_scens.csv"), header = T)
+# load excise tax file # add new data directory HK
+excise_tax_scens = fread(file.path("data-str/public/intermediate/health/excise_tax_non_target_scens.csv"), header = T)
 
 excise_tax_scens_name <- distinct(excise_tax_scens[, .(excise_tax_scenario)])
 
 # load ccs incentives file 
-# Reading in with read_excel due to errors
-incentives_scens = setDT(read_excel(path = "data/inputs/scenarios/CCS_LCFS_45Q.xlsx",
+# Reading in with read_excel due to errors # add new data directory HK
+incentives_scens = setDT(read_excel(path = "data-str/public/inputs/scenarios/CCS_LCFS_45Q.xlsx",
                                     sheet = "scenarios",
                                     col_names = TRUE))
 
@@ -264,6 +268,39 @@ setcolorder(carbon_target_df, c('scen_id', 'oil_price_scenario', 'setback_scenar
 ## bind
 target_scens <- rbind(excise_target_df, carbon_target_df)
 
+
+# Adding SB 1137 scenario
+# Add a new setback scenario starting in 2025
+setback_scens_2025 <- setback_scens
+setback_scens_2025[year < 2025 & setback_scenario == 'setback_3200ft', setback_scenario := 'no_setback']
+setback_scens_2025[year >= 2025 & setback_scenario == 'no_setback', setback_scenario := 'setback_3200ft']
+
+# Combine with existing setback scenarios
+setback_scens_combined <- rbind(setback_scens, setback_scens_2025)
+setback_scens_combined_name <- distinct(setback_scens_combined[, .(setback_scenario)])
+
+# Update the scenario combinations with the new setback scenario
+scen_sel_combined <- expand.grid(oil_price_scenario = unique(oilpx_scens_names[, oil_price_scenario]),
+                                 setback_scenario = unique(setback_scens_combined_name[, setback_scenario]),
+                                 prod_quota_scenario = unique(prod_quota_scens_names[, prod_quota_scenario]),
+                                 carbon_price_scenario = unique(carbonpx_scens_name[, carbon_price_scenario]),
+                                 ccs_scenario = unique(ccs_scens_names[, ccs_scenario]),
+                                 innovation_scenario = unique(innovation_scens_name[, innovation_scenario]),
+                                 excise_tax_scenario = unique(excise_tax_scens_name[, excise_tax_scenario]))
+
+setDT(scen_sel_combined)
+
+# Add ID column
+scen_sel_combined[, scen_id := paste(oil_price_scenario, setback_scenario, prod_quota_scenario,
+                                     carbon_price_scenario, ifelse(ccs_scenario %like% "- 45Q", "no ccs", ccs_scenario),
+                                     innovation_scenario, excise_tax_scenario, sep = "-")]
+
+setcolorder(scen_sel_combined, c('scen_id', 'oil_price_scenario', 'setback_scenario', 'prod_quota_scenario',
+                                 'carbon_price_scenario', 'ccs_scenario', 'innovation_scenario', 'excise_tax_scenario'))
+
+# Combine the new scenarios with the original scenarios
+scen_sel <- rbind(scen_sel, scen_sel_combined)
+
 ## add target scens to scen sel
 ## --------------------------------------------------
 scen_sel <- rbind(scen_sel, target_scens)
@@ -281,29 +318,35 @@ scen_sel_toggle <- left_join(setback_toggle, scen_sel) %>%
 ## find scen selection
 ## ------------------------------
 
-## Updated - MP
 subset_dt = unique(## non-taget (all oil, all setback, all carbon px, no tax, low inno, no ccs, no quota)
   scen_sel_toggle[(innovation_scenario == 'low innovation' &
                      carbon_price_scenario == "price floor" &
-                     ccs_scenario %in% c("no ccs") & 
+                     ccs_scenario %in% c("no ccs") &
                      excise_tax_scenario == 'no tax' &
                      prod_quota_scenario == 'no quota') |
                     ## targets
                     (innovation_scenario == 'low innovation' &
-                       !carbon_price_scenario %in% c("price ceiling", "central SCC") & 
+                       !carbon_price_scenario %in% c("price ceiling", "central SCC") &
                        prod_quota_scenario == 'no quota' &
                        ccs_scenario %in% c("no ccs") &
-                       excise_tax_scenario %in% c("no tax", "tax_setback_1000ft", "tax_setback_2500ft", "tax_setback_3200ft", "tax_setback_5280ft", "tax_90perc_reduction") &   
+                       excise_tax_scenario %in% c("no tax", "tax_setback_1000ft", "tax_setback_2500ft", "tax_setback_3200ft", "tax_setback_5280ft", "tax_90perc_reduction") &
                        target != "no_target")])
 
 
-## indicate scenarios
+
+# ## indicate scenarios
 scen_sel_toggle[, subset_scens := fifelse(scen_id %in% subset_dt[, scen_id], 1, 0)]
+
+# # Updating above to include SB 1137 scenario
+# scen_sel_toggle_combined <- expand.grid(scen_id = unique(scen_sel_combined$scen_id),
+#                                         setback_existing = c(1, 0))
+# scen_sel_toggle_combined[, subset_scens := fifelse(scen_id %in% subset_dt_combined[, scen_id], 1, 0)]
+
 
 ## set col order
 setcolorder(scen_sel_toggle, c('scen_id', 'oil_price_scenario', 'setback_scenario', 'prod_quota_scenario',
                                'carbon_price_scenario', 'ccs_scenario', 'innovation_scenario', 'excise_tax_scenario', 'target', 'target_policy', 'subset_scens', 'BAU_scen'))
 
 
-# Updated - MP
-fwrite(scen_sel_toggle, file.path('data/processed/scenario_id_list_targets_v5.csv'), row.names = F)
+# Updated - MP # add new data directory HK
+fwrite(scen_sel_toggle, file.path('data-str/public/intermediate/scenario_id_list_targets_new.csv'), row.names = F)
