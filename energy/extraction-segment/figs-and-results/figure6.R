@@ -145,8 +145,8 @@ prod_fig_sb <- ggplot(levels_dt %>% filter(metric == "total_state_bbl",
         legend.key.width= unit(1, 'cm'),
         legend.box="vertical",
         axis.ticks.length.y = unit(0.1, 'cm'),
-        axis.ticks.length.x = unit(0.1, 'cm'), 
-        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm")) 
+        axis.ticks.length.x = unit(0.1, 'cm')) 
+        # plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm")) Removing for now MP
 
 ## view
 prod_fig_sb
@@ -193,8 +193,7 @@ line_legend <- ggplot(levels_dt %>% filter(metric == "total_state_bbl",
         legend.text = element_text(size = 10),
         legend.title = element_text(size = 10),
         axis.ticks.length.y = unit(0.1, 'cm'),
-        axis.ticks.length.x = unit(0.1, 'cm'),
-        legend.margin = margin(-0.5,0,0,0, unit="cm")) 
+        axis.ticks.length.x = unit(0.1, 'cm')) 
 
 ## View
 line_legend
@@ -240,8 +239,7 @@ lty_legend <- ggplot(levels_dt %>% filter(metric == "total_state_bbl",
         legend.text = element_text(size = 10),
         legend.title = element_text(size = 10),
         axis.ticks.length.y = unit(0.1, 'cm'),
-        axis.ticks.length.x = unit(0.1, 'cm'),
-        legend.margin = margin(-0.5,0,0,0, unit="cm")) 
+        axis.ticks.length.x = unit(0.1, 'cm')) 
 
 ## View
 lty_legend
@@ -303,8 +301,7 @@ ghg_cumul_fig_v2 <- ggplot(cumul_ghg %>%
         axis.ticks.length.x = unit(0.1, 'cm'),
         legend.box="vertical",
         legend.text = element_text(size = 10),
-        legend.title = element_text(size = 10),
-        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm")) 
+        legend.title = element_text(size = 10)) 
 ## View
 ghg_cumul_fig_v2
 
@@ -390,7 +387,7 @@ npv_dt[, measure_unit := fifelse(unit == "value_billion", "2019 USD billion", "2
 
 npv_dt <- npv_dt[target != 'no_target']
 
-npv_dt$target <- factor(npv_dt$target, levels = c('setback_1000ft', 'setback_2500ft', 'setback_5280ft',
+npv_dt$target <- factor(npv_dt$target, levels = c('setback_1000ft', 'setback_2500ft', 'setback_3200ft', 'setback_5280ft',
                                                   '90perc_reduction'))
 
 
@@ -442,8 +439,8 @@ fig_bxm_c <- ggplot(npv_dt %>% filter(target != 'BAU',
         plot.title = element_text(hjust = 0),
         axis.text.x = element_text(vjust = 0.5, hjust = 1),
         axis.ticks.length.y = unit(0.1, 'cm'),
-        axis.ticks.length.x = unit(0.1, 'cm'),
-        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm")) 
+        axis.ticks.length.x = unit(0.1, 'cm'))
+        # plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm")) # Removing for now MP
 
 ## View
 fig_bxm_c
@@ -467,8 +464,8 @@ fig_bxm_d <- ggplot(npv_dt %>% filter(target != 'BAU',
         plot.title = element_text(hjust = 0),
         axis.text.x = element_text(vjust = 0.5, hjust = 1),
         axis.ticks.length.y = unit(0.1, 'cm'),
-        axis.ticks.length.x = unit(0.1, 'cm'),
-        plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm"))
+        axis.ticks.length.x = unit(0.1, 'cm'))
+        # plot.margin = unit(c(0.1, 0.1, 0.1, 0.1), "cm")) Removing for now MP
 
 ## View
 fig_bxm_d
@@ -565,8 +562,8 @@ fig_dac_bau_h <- ggplot(dac_bau_dt %>% filter(type == "DAC share",
         legend.key.width= unit(1, 'cm'),
         axis.text.x = element_text(vjust = 0.5, hjust=1),
         axis.ticks.length.y = unit(0.1, 'cm'),
-        axis.ticks.length.x = unit(0.1, 'cm'),
-        plot.margin = unit(c(0.3, 0.1, 0.1, 0.1), "cm")) 
+        axis.ticks.length.x = unit(0.1, 'cm'))
+        # plot.margin = unit(c(0.3, 0.1, 0.1, 0.1), "cm")) Removing for now MP
 
 ## View
 fig_dac_bau_h
@@ -593,8 +590,8 @@ fig_dac_bau_l <- ggplot(dac_bau_dt %>% filter(type == "DAC share",
         axis.text.x = element_text(vjust = 0.5, hjust=1),
         axis.ticks.length.y = unit(0.1, 'cm'),
         axis.ticks.length.x = unit(0.1, 'cm'),
-        axis.title = element_text(size = 7),
-        plot.margin = unit(c(0.3, 0.1, 0.1, 0.1), "cm"))
+        axis.title = element_text(size = 7))
+        # plot.margin = unit(c(0.3, 0.1, 0.1, 0.1), "cm")) Removing for now MP
 
 ## View
 fig_dac_bau_l

@@ -42,33 +42,33 @@ if(zenodo_repo) {
   county_out_file        = 'subset_county_results_adj.csv'
   
 } else {
-
-## drive paths 
-main_path              = '/capstone/freshcair/meds-freshcair-capstone/'
-extraction_folder_path = paste0('outputs/academic-out/extraction/extraction_', comp_result_date, '/')
-county_save_path       = paste0(main_path, extraction_folder_path, 'county-results/')
-ct_save_path           = paste0(main_path, extraction_folder_path, 'census-tract-results/')
-state_save_path        = paste0(main_path, extraction_folder_path, 'state-results/')
-benmap_path            = "data/processed/"
-stocks_flows_path      = paste0(main_path, 'data/processed/')
-# field_out              = paste0(main_path, "outputs/predict-production/extraction_", energy_result_date, "/revision-setbacks/field-out/")
-health_out             = paste0(main_path, "outputs/")
-
-county_out_file        = 'subset_county_results.csv'
-
-# ## external paths
-# extraction_folder_path = '/Volumes/calepa/academic-out/extraction_2022-11-16/'
-# state_save_path        = '/Volumes/calepa/academic-out/extraction_2022-11-16/state-results/'
-# field_out              = '/Volumes/calepa/extraction-out/extraction_2022-11-15/revision-setbacks/field-out/'
-# health_out             = '/Volumes/calepa/academic-out/extraction_2022-11-16/health/'
-
+  
+  ## drive paths 
+  main_path              = '/capstone/freshcair/meds-freshcair-capstone/'
+  extraction_folder_path = paste0('outputs/academic-out/extraction/extraction_', comp_result_date, '/')
+  county_save_path       = paste0(main_path, extraction_folder_path, 'county-results/')
+  ct_save_path           = paste0(main_path, extraction_folder_path, 'census-tract-results/')
+  state_save_path        = paste0(main_path, extraction_folder_path, 'state-results/')
+  benmap_path            = "data/processed/"
+  stocks_flows_path      = paste0(main_path, 'data/processed/')
+  # field_out              = paste0(main_path, "outputs/predict-production/extraction_", energy_result_date, "/revision-setbacks/field-out/")
+  health_out             = paste0(main_path, "outputs/")
+  
+  county_out_file        = 'subset_county_results.csv'
+  
+  # ## external paths
+  # extraction_folder_path = '/Volumes/calepa/academic-out/extraction_2022-11-16/'
+  # state_save_path        = '/Volumes/calepa/academic-out/extraction_2022-11-16/state-results/'
+  # field_out              = '/Volumes/calepa/extraction-out/extraction_2022-11-15/revision-setbacks/field-out/'
+  # health_out             = '/Volumes/calepa/academic-out/extraction_2022-11-16/health/'
+  
 }
 
 ## define location to save outputs
 if(zenodo_repo) {
   save_info_path <- save_info_path
 } else { 
-  save_info_path <- paste0(main_path, 'outputs/')
+  save_info_path <- paste0(main_path, 'data/outputs/')
 }
 dir.create(save_info_path, showWarnings = FALSE) 
 
@@ -254,7 +254,7 @@ state_levels[, policy_intervention := fifelse(carbon_price_scenario != "price fl
                                               fifelse(setback_scenario != "no_setback" & carbon_price_scenario == 'price floor' & excise_tax_scenario == 'no tax', "setback",
                                                       fifelse(excise_tax_scenario != "no tax" & setback_scenario == "no_setback", "excise tax",
                                                               fifelse(excise_tax_scenario != 'no tax' & setback_scenario != 'no_setback', 'excise tax & setback',
-                                                                fifelse(carbon_price_scenario != 'price floor' & setback_scenario != "no_setback", "carbon tax & setback", "BAU")))))]
+                                                                      fifelse(carbon_price_scenario != 'price floor' & setback_scenario != "no_setback", "carbon tax & setback", "BAU")))))]
 
 
 ## adjust so that setback is target
@@ -351,10 +351,10 @@ rel_health_levels <- rel_health_levels[, .(scen_id, oil_price_scenario, setback_
 
 ## BAU outputs for labor and energy
 bau_out <- state_levels[target == "no_target" & policy_intervention == "BAU" & metric %in% c("total_state_bbl",
-                                                                                       "total_state_ghg_MtCO2",
-                                                                                       "total_emp",
-                                                                                       "total_comp_usd19",
-                                                                                       "total_comp_PV")]
+                                                                                             "total_state_ghg_MtCO2",
+                                                                                             "total_emp",
+                                                                                             "total_comp_usd19",
+                                                                                             "total_comp_PV")]
 
 setnames(bau_out, "value", "bau_value")
 bau_out <- bau_out[, .(oil_price_scenario, setback_existing, year, metric, bau_value)]
@@ -406,7 +406,7 @@ scc_value[, scc_avoided_ghg_pv := scc_avoided_ghg / ((1 + discount_rate) ^ (year
 ## summarise
 cumul_scc_value <- scc_value[, .(scc_avoided_ghg = sum(scc_avoided_ghg, na.rm = T),
                                  scc_avoided_ghg_pv = sum(scc_avoided_ghg_pv)), by = .(scen_id, oil_price_scenario, setback_existing,
-                                                                                            policy_intervention, target)]
+                                                                                       policy_intervention, target)]
 
 
 cumul_rel_vals_bau <- state_rel_vals[, .(diff_bau = sum(diff_bau)), by = .(scen_id, oil_price_scenario, setback_existing, policy_intervention,
@@ -451,15 +451,15 @@ npv_x_metric[, value := fifelse(metric == 'cost_2019_PV', value * -1, value)]
 npv_x_metric[, value_per_ghg := value / (total_state_ghg_MtCO2 * -1)]
 npv_x_metric[, value_billion := value / 1e9]
 npv_x_metric[, value_per_ghg_million := value_per_ghg / 1e6]
-npv_x_metric[, title := fifelse(metric == "total_comp_PV", "Labor: Compensation",
+npv_x_metric[, title := fifelse(metric == "total_comp_PV", "Labor: Codmpensation",
                                 fifelse(metric == "cost_2019_PV", "Health: Avoided mortality", "Abated GHG"))]
 
 
 npv_x_metric[, value_per_ghg_million := fifelse(is.na(value_per_ghg_million), 0, value_per_ghg_million)]
 
 npv_x_metric <- merge(npv_x_metric, ghg_2045,
-                       by = c('scen_id', 'oil_price_scenario', 'setback_existing'),
-                       all.x = T)
+                      by = c('scen_id', 'oil_price_scenario', 'setback_existing'),
+                      all.x = T)
 
 ## join with target label
 npv_x_metric <- merge(npv_x_metric, setback_2045,
@@ -493,7 +493,7 @@ fwrite(npv_x_metric, paste0('data/outputs/npv_x_metric_all_oil.csv'))
 ## -------------------------------------------------------------
 
 ## labor, county
-labor_out <- fread('data/processed/extraction_2024-04-14/county-results/subset_county_results.csv')
+labor_out <- fread('data/processed/extraction_2024-05-13/county-results/subset_county_results.csv')
 # labor_out <- fread(paste0(extraction_folder_path, 'county-results/subset_county_results.csv'))
 
 
@@ -567,8 +567,8 @@ health_out[, target := NULL]
 
 ## add target, policy intervention, ccs_option
 health_scens <- merge(health_out, unique(state_levels[, .(scen_id, policy_intervention, setback_existing, target)]),
-                     by = "scen_id",
-                     all.x = T)
+                      by = "scen_id",
+                      all.x = T)
 
 ## save ct-level outputs
 fwrite(health_scens, paste0(save_info_path, 'health_ct_results.csv'))
@@ -601,11 +601,11 @@ health_dac_state[, dac_mort_pv := dac_multiplier * cost_PV]
 
 ## aggregate at state level
 health_dac_state <- health_dac_state[, .(cumul_dac_mort = sum(dac_mort), 
-                                     cumul_total_mort = sum(mortality_level),
-                                     cumul_dac_cost = sum(dac_mort_cost),
-                                     cumul_total_cost = sum(cost),
-                                     cumul_dac_pv = sum(dac_mort_pv),
-                                     cumul_total_pv = sum(cost_PV)), by = .(scen_id, setback_existing, target, target_policy, policy_intervention)]
+                                         cumul_total_mort = sum(mortality_level),
+                                         cumul_dac_cost = sum(dac_mort_cost),
+                                         cumul_total_cost = sum(cost),
+                                         cumul_dac_pv = sum(dac_mort_pv),
+                                         cumul_total_pv = sum(cost_PV)), by = .(scen_id, setback_existing, target, target_policy, policy_intervention)]
 
 health_dac_state[, dac_share_mort := cumul_dac_mort / cumul_total_mort]
 health_dac_state[, dac_share_cost := cumul_dac_cost / cumul_total_cost]
@@ -613,12 +613,12 @@ health_dac_state[, dac_share_pv := cumul_dac_pv / cumul_total_pv]
 
 # prepare for binding with labor
 health_dac_bind <- melt(health_dac_state, measure.vars = c("cumul_dac_mort", "cumul_total_mort", "dac_share_mort",
-                                                          "cumul_dac_cost", "cumul_total_cost", "dac_share_cost",
-                                                          "cumul_dac_pv", "cumul_total_pv", "dac_share_pv"),
-                       variable.name = "metric", value.name = "value")
+                                                           "cumul_dac_cost", "cumul_total_cost", "dac_share_cost",
+                                                           "cumul_dac_pv", "cumul_total_pv", "dac_share_pv"),
+                        variable.name = "metric", value.name = "value")
 
 health_dac_bind[, type := fifelse(metric %in% c("cumul_dac_mort", "cumul_dac_pv", "cumul_dac_cost"), "DAC",
-                                 fifelse(metric %in% c("cumul_total_mort", "cumul_total_cost", "cumul_total_pv"), "Total", "DAC share"))]
+                                  fifelse(metric %in% c("cumul_total_mort", "cumul_total_cost", "cumul_total_pv"), "Total", "DAC share"))]
 
 
 health_dac_bind[, category := "Mortality"]
@@ -633,11 +633,11 @@ dac_df <- merge(dac_df, setback_2045,
                 all.x = T)
 
 dac_df[, target_label := fifelse(policy_intervention == "BAU", target,
-                                       fifelse(target == "90perc_reduction", "90%", target_label))]
+                                 fifelse(target == "90perc_reduction", "90%", target_label))]
 
 dac_df <- merge(dac_df, ghg_2045,
-                      by = c("scen_id", "setback_existing", "oil_price_scenario"),
-                      all.x = T)
+                by = c("scen_id", "setback_existing", "oil_price_scenario"),
+                all.x = T)
 
 
 fwrite(dac_df, paste0('data/outputs/dac_health_labor_all_oil.csv'))
@@ -678,8 +678,8 @@ labor_bau_dac <- labor_bau_dac[, .(cumul_dac_emp_loss = sum(dac_emp),
                                    cumul_total_comp_loss = sum(diff_comp),
                                    cumul_dac_pv_loss = sum(dac_pv),
                                    cumul_total_pv_loss = sum(diff_pv)), by = .(scen_id, oil_price_scenario, carbon_price_scenario,
-                                                                           setback_scenario, setback_existing, excise_tax_scenario,
-                                                                           target, target_policy, policy_intervention)]
+                                                                               setback_scenario, setback_existing, excise_tax_scenario,
+                                                                               target, target_policy, policy_intervention)]
 
 labor_bau_dac[, dac_share_emp := cumul_dac_emp_loss / cumul_total_emp_loss]
 labor_bau_dac[, dac_share_comp := cumul_dac_comp_loss / cumul_total_comp_loss]
@@ -703,14 +703,14 @@ labor_bau_dac[, dac_share_pv := cumul_dac_pv_loss / cumul_total_pv_loss]
 # labor_ghg_df[, dac_share_loss_ghg := dac_loss_ghg / total_loss_ghg]
 
 labor_bau_dac <- melt(labor_bau_dac, id.vars = c("scen_id", "oil_price_scenario", "setback_existing",
-                                               "target", "policy_intervention", "target_policy"),
-                     measure.vars = c("cumul_dac_emp_loss", "cumul_total_emp_loss", "dac_share_emp",
-                                      "cumul_dac_comp_loss", "cumul_total_comp_loss", "dac_share_comp",
-                                      "cumul_dac_pv_loss", "cumul_total_pv_loss", "dac_share_pv"),
-                     variable.name = "metric", value.name = "value")
+                                                 "target", "policy_intervention", "target_policy"),
+                      measure.vars = c("cumul_dac_emp_loss", "cumul_total_emp_loss", "dac_share_emp",
+                                       "cumul_dac_comp_loss", "cumul_total_comp_loss", "dac_share_comp",
+                                       "cumul_dac_pv_loss", "cumul_total_pv_loss", "dac_share_pv"),
+                      variable.name = "metric", value.name = "value")
 
 labor_bau_dac[, type := fifelse(metric %in% c("cumul_dac_emp_loss", "cumul_dac_comp_loss", "cumul_dac_pv_loss"), "DAC population",
-                               fifelse(metric %in% c("cumul_total_emp_loss", "cumul_total_comp_loss", "cumul_total_pv_loss"), "Total population", "DAC share"))]
+                                fifelse(metric %in% c("cumul_total_emp_loss", "cumul_total_comp_loss", "cumul_total_pv_loss"), "Total population", "DAC share"))]
 
 labor_bau_dac$type <- factor(labor_bau_dac$type, levels = c("Total population", "DAC population", "DAC share"))
 
@@ -752,14 +752,14 @@ health_dac_bau[, dac_share_av_pv := cumul_dac_av_mort_pv / cumul_total_av_mort_p
 # health_dac_ghg[, DAC_share_av_mort_ghg := dac_av_mort_ghg / total_av_mort_ghg]
 # 
 health_dac_bau <- melt(health_dac_bau, id.vars = c("scen_id", "oil_price_scenario", "setback_existing", "target", "policy_intervention",
-                                                        "target_policy"),
-                            measure.vars = c("cumul_dac_av_mort", "cumul_total_av_mort", "dac_share_av_mort",
-                                             "cumul_dac_av_mort_cost", "cumul_total_av_mort_cost", "dac_share_av_cost",
-                                             "cumul_dac_av_mort_pv", "cumul_total_av_mort_pv", "dac_share_av_pv"),
-                            variable.name = "metric", value.name = "value")
+                                                   "target_policy"),
+                       measure.vars = c("cumul_dac_av_mort", "cumul_total_av_mort", "dac_share_av_mort",
+                                        "cumul_dac_av_mort_cost", "cumul_total_av_mort_cost", "dac_share_av_cost",
+                                        "cumul_dac_av_mort_pv", "cumul_total_av_mort_pv", "dac_share_av_pv"),
+                       variable.name = "metric", value.name = "value")
 
 health_dac_bau[, type := fifelse(metric %in% c("cumul_dac_av_mort", "cumul_dac_av_mort_cost", "cumul_dac_av_mort_pv"), "DAC population",
-                                          fifelse(metric %in% c("cumul_total_av_mort", "cumul_total_av_mort_cost", "cumul_total_av_mort_pv"), "Total population", "DAC share"))]
+                                 fifelse(metric %in% c("cumul_total_av_mort", "cumul_total_av_mort_cost", "cumul_total_av_mort_pv"), "Total population", "DAC share"))]
 
 health_dac_bau$type <- factor(health_dac_bau$type, levels = c("Total population", "DAC population", "DAC share"))
 
@@ -770,15 +770,15 @@ health_dac_bau[, category := "Avoided mortalities"]
 dac_bau_df <- rbind(labor_bau_dac, health_dac_bau)
 
 dac_bau_df <- merge(dac_bau_df, setback_2045,
-                by = c("oil_price_scenario", "target", "setback_existing"),
-                all.x = T)
+                    by = c("oil_price_scenario", "target", "setback_existing"),
+                    all.x = T)
 
 dac_bau_df[, target_label := fifelse(policy_intervention == "BAU", target,
-                                 fifelse(target == "90perc_reduction", "90%", target_label))]
+                                     fifelse(target == "90perc_reduction", "90%", target_label))]
 
 dac_bau_df <- merge(dac_bau_df, ghg_2045,
-                by = c("scen_id", "oil_price_scenario", "setback_existing"),
-                all.x = T)
+                    by = c("scen_id", "oil_price_scenario", "setback_existing"),
+                    all.x = T)
 
 
 fwrite(dac_bau_df, paste0('data/outputs/dac_bau_health_labor_all_oil.csv'))
