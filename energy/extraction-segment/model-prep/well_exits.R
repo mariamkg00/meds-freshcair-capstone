@@ -62,8 +62,8 @@ calc_adj_val <- function(x, pval) {
 setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
 getwd()
 
-## well production
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+## well production # add new data directory HK
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                                        'doc_field_code' = 'character'))
 
 
@@ -78,8 +78,8 @@ well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('a
 
 
 
-## all wells
-all_wells <- fread("data/inputs/extraction/AllWells_20210427.csv", colClasses = c('API' = 'character')) %>%
+## all wells # add new data directory HK
+all_wells <- fread("data-str/public/inputs/extraction/AllWells_20210427.csv", colClasses = c('API' = 'character')) %>%
   mutate(spud_date = as.Date(SpudDate, format = "%m/%d/%Y")) 
 
 # old_all_wells <- read_xlsx("/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/data/stocks-flows/raw/All_wells_20200417.xlsx")
@@ -332,7 +332,7 @@ exit_prod_output <- exit_prod %>%
 #          diff_wells = n_wells - old_n_wells)
 
 # UPDATED - MP
-write_csv(exit_prod_output, file = "data/processed/well_exit_volume_x_field_v1_revised.csv")
+write_csv(exit_prod_output, file = "data-str/private/entry-exit/well_exit_volume_x_field_v1_revised.csv")
 
 
 

@@ -14,8 +14,8 @@ wd               <- "/capstone/freshcair/meds-freshcair-capstone/"
 buffer_path        <- "data-str/private/setback-buffs/"
 wells_dir     <- "data-str/private/inputs/AllWells_gis/"
 doggr_path <- "data-str/public/inputs/gis/field-boundaries/"
-#save_path <- "data-str/processed/setback-cov/" # remove - Haejin
-save_path1 <- "data-str/public/intermediate/energy/location" # update - Haejin
+save_path <- "data-str/private/setback-cov/" 
+save_path1 <- "data-str/public/intermediate/energy/location/" # update - Haejin
 save_path_prop <- "data-str/private/setback-cov/" # update - Haejin
 
 # Set working directory 
@@ -75,7 +75,7 @@ boundaries <- st_read(paste0(doggr_path, "DOGGR_Admin_Boundaries_Master.shp")) %
   st_transform(3488) 
 
 ## monthly well production -- Updated - MP
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
 ## wells that produce oil in time horizon
@@ -398,7 +398,7 @@ field_boundaries3 <- field_boundaries2 %>%
 # save output
 
 # Updated - MP
-write_csv(field_boundaries3, paste0(save_path, "setback_coverage_R.csv"))
+write_csv(field_boundaries3, paste0(save_path1, "setback_coverage_R.csv"))
 
 
 ## save maps for examining

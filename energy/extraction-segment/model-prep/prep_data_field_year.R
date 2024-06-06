@@ -21,22 +21,23 @@
 # load libraries -------- 
 
 library(data.table)  
+library(dplyr)
 
 # read in data ------
 
-# monthly wellstar production data -- Updated - MP
-well_prod = fread(file.path("data/processed/well_prod_m_processed.csv"), colClasses = c('api_ten_digit' = 'character',
-                                                                 'doc_field_code' = 'character'))
+# monthly wellstar production data -- Updated - MP # add new data directory HK
+well_prod = fread(file.path("data-str/public/outputs/results-out/well_prod_m_processed.csv"), colClasses = c('api_ten_digit' = 'character',
+                                                                 'doc_field_code' = 'character')) # add new data directory HK
 
-# start year -- Updated - MP
-init_prod = fread(file.path("data/processed/well_start_prod_api10_revised.csv"), colClasses = c('api_ten_digit' = 'character',
-                                                                 'doc_field_code' = 'character'))
+# start year -- Updated - MP # add new data directory HK
+init_prod = fread(file.path("data-str/private/production/well_start_prod_api10_revised.csv"), colClasses = c('api_ten_digit' = 'character',
+                                                                 'doc_field_code' = 'character')) # add new data directory HK
 
-# entry df -- Updated - MP
-entry_df = fread(file.path("data/processed/entry_df_final_revised.csv"), header = T, colClasses = c('doc_field_code' = 'character'))
+# entry df -- Updated - MP # add new data directory HK
+entry_df = fread(file.path("data-str/public/intermediate/energy/production/entry_df_final_revised.csv"), header = T, colClasses = c('doc_field_code' = 'character'))
 
-# well status -- Updated - MP
-wells <- sf::st_read("data/proprietery-data/AllWells_gis/Wells_All.shp") %>% 
+# well status -- Updated - MP # add new data directory HK
+wells <- sf::st_read("data-str/private/inputs/AllWells_gis/Wells_All.shp") %>% 
   dplyr::select(API, WellStatus) %>%
   unique() %>%
   as_tibble() %>%
@@ -206,18 +207,19 @@ peak_prod_plugged_perc_all <- merge(status_df, peak_prod_plugged_perc,
 peak_prod_plugged_perc_all[, ":=" (doc_field_code = substr(id, 1, 3),
                                    start_year = stringr::str_sub(id, -4, -1),
                                    rel_prod = fifelse(is.na(rel_prod), 0, rel_prod))]
-plugged_fig <- ggplot(peak_prod_plugged_perc %>% filter(plugged_status == "Plugged"), aes(x = rel_prod)) +
-  geom_histogram(binwidth = 0.01) +
-  labs(y = "count",
-       x = "relative peak production (plugged wells)")
+
+# plugged_fig <- ggplot(peak_prod_plugged_perc %>% filter(plugged_status == "Plugged"), aes(x = rel_prod)) +
+#   geom_histogram(binwidth = 0.01) +
+#   labs(y = "count",
+#        x = "relative peak production (plugged wells)")
 
 
 peak_prod_adj_val <- peak_prod_plugged_perc_all[plugged_status == "Other", .(doc_field_code, start_year, rel_prod)]
 setnames(peak_prod_adj_val, "rel_prod", "non_plug_rel_prod")
 
 # save outputs ------
-# Updated - MP
-fwrite(peak_fv_year, file.path("data/processed/field-year_peak-production_yearly.csv"))
-fwrite(prod_fv_year_2, file.path("data/processed/production_field-year_yearly_entry.csv"))
-fwrite(well_prod3, file.path("data/processed/production_api10_yearly_start_year.csv"))
-fwrite(peak_prod_adj_val, file.path("data/processed/adj_val_field-year_pred_prod.csv"))
+# Updated - MP # add new data directory HK
+fwrite(peak_fv_year, file.path("data-str/public/intermediate/energy/production/field-year_peak-production_yearly.csv"))
+fwrite(prod_fv_year_2, file.path("data-str/private/production/production_field-year_yearly_entry.csv"))
+fwrite(well_prod3, file.path("data-str/private/production/production_api10_yearly_start_year.csv"))
+fwrite(peak_prod_adj_val, file.path("data-str/private/production/adj_val_field-year_pred_prod.csv"))
