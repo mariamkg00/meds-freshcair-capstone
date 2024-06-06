@@ -2,24 +2,24 @@
 ## september 22, 2020
 ## predict production from existing wells without exit
 # Updated 2/28/24 MP
-# Updated 4/7/28
 
 # inputs ------
-setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
+setwd('/capstone/freshcair/meds-freshcair-capstone/') # Sets directory based on Taylor structure
 getwd()
 
 # Updated - MP
-prod_file       = 'data/processed/production_api10_yearly_start_year.csv' # meas-note: update to use "production_api10_yearly_start_year.csv"
-param_file      = 'data/processed/fitted-parameters_field-start-year_yearly_entry.csv' # meas-note: update to use "fitted-parameters_field-start-year_yearly_entry.csv"
-peak_file       = 'data/processed/field-year_peak-production_yearly.csv' # meas-note: update to use "field-year_peak-production_yearly.csv"
-prod_adj_file   = 'data/processed/adj_val_field-year_pred_prod.csv'
-w_setback_file  = 'data/processed/wells_in_setbacks_revised.csv'
+prod_file       = 'data-str/private/production/production_api10_yearly_start_year.csv' # meas-note: update to use "production_api10_yearly_start_year.csv"
+param_file      = 'data-str/private/well-fields/fitted-parameters_field-start-year_yearly_entry.csv' # meas-note: update to use "fitted-parameters_field-start-year_yearly_entry.csv"
+peak_file       = 'data-str/public/intermediate/energy/production/field-year_peak-production_yearly.csv' # meas-note: update to use "field-year_peak-production_yearly.csv"
+prod_adj_file   = 'data-str/private/production/adj_val_field-year_pred_prod.csv'
+w_setback_file  = 'data-str/private/setback-cov/wells_in_setbacks_revised.csv'
 
 
 # outputs ------
 
 # save_path       = '/Volumes/GoogleDrive/Shared drives/emlab/projects/current-projects/calepa-cn/outputs/predict-production/existing_production/'
-save_path         = 'data/processed/' # Updated - MP
+save_path         = 'data-str/public/intermediate/energy/production/' # Updated - MP
+save_path1        = 'data-str/private/setback-cov/' # Updated - MP
 # load libraries -------- 
 
 library(data.table)  
@@ -139,7 +139,7 @@ n_wells_area <- op_wells %>%
   ungroup() %>%
   mutate(adj_no_wells = n_wells - n_wells_in_setback)
 
-fwrite(n_wells_area, paste0(save_path, 'n_wells_area.csv'))
+fwrite(n_wells_area, paste0(save_path1, 'n_wells_area.csv'))
 
 # create input for predict production
 op_wells_agg <- op_wells %>%
