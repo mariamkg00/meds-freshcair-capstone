@@ -110,7 +110,7 @@ na_asset2 <- na_asset %>%
 
 ## step 1: filter for relevant assets
 ## ---------------------------------------------------------
-field_assets <- read_csv("data-str/public/inputs/extraction/asset_latlon.csv")
+field_assets <- read_csv("data-str/private/inputs/asset_latlon.csv")
 
 rystad_prod <- read_csv("data-str/private/rystad-processed/ca_oil_production.csv")
 

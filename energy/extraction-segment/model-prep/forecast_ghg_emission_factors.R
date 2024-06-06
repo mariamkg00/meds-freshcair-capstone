@@ -4,20 +4,22 @@
 # Updated 2/28/24 - MP but not finished yet
 
 setwd('/capstone/freshcair/meds-freshcair-capstone/')
+emlab_path = '/capstone/freshcair/meds-freshcair-capstone'
 
 # inputs ------------
 
-res_path        = 'data/proprietery-data/opgee_results/' # add data to this folder
-prod_file       = 'data/processed/crude_prod_x_field_revised.csv'
-entry_file      = 'data/processed/entry_df_final_revised.csv'
-inj_file        = 'data/processed/injection-by-well-type-per-field-per-year_1977-2018_revised.csv'
+res_path        = 'data-str/private/inputs/opgee_results/' # add data to this folder
+prod_file       = 'data-str/public/intermediate/energy/production/crude_prod_x_field_revised.csv'
+entry_file      = 'data-str/public/intermediate/energy/production/entry_df_final_revised.csv'
+inj_file        = 'data-str/private/well-fields/injection-by-well-type-per-field-per-year_1977-2018_revised.csv'
 
 # outputs -----------
 
-save_path       = 'data/processed/'
-out_path        = 'data/processed/'
-out_file        = 'ghg_emissions_x_field_2018-2045.csv' # cheating and stole this from zenodo intermediate - MP
-hist_file       = 'ghg_emissions_x_field_historic.csv'
+save_path       = 'data-str/public/outputs/results-out'
+out_path        = 'data-str/public/intermediate/energy/production'
+out_path1       = 'data-str/private/well-fields/'
+out_file        = 'ghg_emissions_x_field_2018-2045.csv' # public: cheating and stole this from zenodo intermediate - MP
+hist_file       = 'ghg_emissions_x_field_historic.csv' # private
 
 # load packages ------
 library(dplyr)
@@ -79,7 +81,7 @@ historic_vals[doc_fieldname == 'Elwood S. Offshore', doc_fieldname := 'Elwood  S
 
 historic_vals[, field_name := NULL]
 
-fwrite(historic_vals, file.path(out_path, hist_file), row.names = F)
+fwrite(historic_vals, file.path(out_path1, hist_file), row.names = F)
 
 # get all fields that ever have sor > 0 ------
 

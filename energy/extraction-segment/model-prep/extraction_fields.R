@@ -15,14 +15,14 @@ library(sf)
 # field_fname         = "diagnostic-field-level-results.csv"
 
 ## files
-entry_file        = 'data/processed/entry_df_final_revised.csv'
-prod_vintage_file = 'data/processed/pred_prod_no_exit_2020-2045_field_start_year_revised.csv'
+entry_file        = 'data-str/public/intermediate/energy/production/entry_df_final_revised.csv'
+prod_vintage_file = 'data-str/public/intermediate/energy/production/pred_prod_no_exit_2020-2045_field_start_year_revised.csv'
 
 ## save path
-save_path           = 'data/processed/'
+save_path           = 'data-str/public/outputs/results-out/'
 
 ## field boundaries
-boundaries <- st_read(file.path("data/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp")) %>% st_transform(3488)
+boundaries <- st_read(file.path("data-str/public/inputs/gis/field-boundaries/DOGGR_Admin_Boundaries_Master.shp")) %>% st_transform(3488)
 
 
 ## read in output file
