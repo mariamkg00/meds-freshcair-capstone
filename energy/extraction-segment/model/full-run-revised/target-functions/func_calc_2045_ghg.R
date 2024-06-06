@@ -1,3 +1,4 @@
+
 ## Tracey Mangin
 ## January 31, 2022
 ## function for finding 2045 ghg value
@@ -1032,9 +1033,3 @@ calc_2045_ghg <- function(inputs, scen) {
   
   
 }
-
-
-
-
-
-
