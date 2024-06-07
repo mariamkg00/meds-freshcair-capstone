@@ -132,10 +132,6 @@ new_3200 <- st_read('data/processed/final_buffer_3200ft.shp')
 ```
 
 ```{r}
-
-```
-
-```{r}
 total_diff_area <- sum(st_area(diff_area))
 print(total_diff_area)
 ```

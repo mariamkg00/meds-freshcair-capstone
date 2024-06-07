@@ -27,7 +27,7 @@ library(tidyverse)
 
 setwd('/capstone/freshcair/meds-freshcair-capstone') # Update with existing directory
 main_path = "/capstone/freshcair/meds-freshcair-capstone/" # Update with existing path to directory
-labor_out = "data-str/private/labor/"
+labor_out = "data-str/private/labor-out/" # add new data directory HK
 
 ############################################################################################ 
 
@@ -35,7 +35,7 @@ labor_out = "data-str/private/labor/"
 
 
 # UPDATED - MG 2/19/2024
-fte_convert <- read_xlsx('data/inputs/labor/fte-convert.xlsx')%>% 
+fte_convert <- read_xlsx('data-str/public/inputs/labor/fte-convert.xlsx')%>%  # add new data directory HK
   dplyr::rename(fte_per_job = FTEperTotalEmp, ind_code = Implan546Index) %>% 
   dplyr::select(ind_code,fte_per_job)
 
@@ -46,7 +46,7 @@ fte_convert <- read_xlsx('data/inputs/labor/fte-convert.xlsx')%>%
 
 ### NOTE: all multipliers are for $1 million of output value in an industry 
 
-setwd('/capstone/freshcair/meds-freshcair-capstone/data/inputs/labor/ica')
+setwd('/capstone/freshcair/meds-freshcair-capstone/data-str/public/inputs/labor/ica') # add new data directory HK
 
 ### Kern
 
@@ -1248,7 +1248,7 @@ ica_total_all_counties_interpolated <- ica_total_all_counties %>%
 
 
 # updating working directory to processed data folder in meds-freshcair
-setwd('/capstone/freshcair/meds-freshcair-capstone/data/processed/')
+#setwd('/capstone/freshcair/meds-freshcair-capstone/data/processed/') # check this again HK
 
 ## ICA file 
 
