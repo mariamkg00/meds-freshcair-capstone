@@ -21,7 +21,7 @@ lapply(1:length(packages), function(x)
          require(packages[x],character.only=TRUE)))
 
 # Set directory 
-setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
+setwd('/capstone/freshcair/meds-freshcair-capstone/') # Sets directory based on Taylor structure
 getwd()
 
 # Load and process data #####################################
@@ -31,9 +31,9 @@ getwd()
 #census tract age-population
 
 # UPDATED - MP
-ct_raw <- read.csv("data/inputs/health/nhgis0001_ts_geog2010_tract.csv", stringsAsFactors = FALSE); str(ct_raw)
+ct_raw <- read.csv("data-str/public/inputs/health/nhgis0001_ts_geog2010_tract.csv", stringsAsFactors = FALSE); str(ct_raw)
 # UPDATED - MP
-ct_age_desc <- read.csv("data/inputs/health/age_group_desc.csv", stringsAsFactors = FALSE); str(ct_age_desc)
+ct_age_desc <- read.csv("data-str/public/inputs/health/age_group_desc.csv", stringsAsFactors = FALSE); str(ct_age_desc)
 
 ct_ca <- ct_raw %>%
   `colnames<-`(tolower(colnames(ct_raw)))%>%
@@ -58,17 +58,54 @@ age_group_ct <- ct_ca %>%
 
 #CDOF demographic projections
 
+# # Testing below
+# cdof_raw_test <- fread("data-str/public/inputs/health/CDOF_p2_Age_1yr_Nosup.csv", stringsAsFactors = FALSE, blank.lines.skip = TRUE)
+# column_labels <- unlist(cdof_raw_test[1, ])
+# cdof_raw_test <- cdof_raw_test[-1, ]
+# setnames(cdof_raw_test, names(cdof_raw_test), column_labels)
+# cdof_raw_test <- cdof_raw_test %>%
+#   select(-Column1:-Column16331) %>%
+#   pivot_longer(cols = `2010`:`2060`, names_to = "year", values_to = "pop") %>%
+#   mutate(
+#     pop = as.numeric(str_replace(pop, ",", "")),
+#     County = str_replace(County, " County", ""),
+#     year = as.integer(year),
+#     Age = as.numeric(Age),
+#     Age = replace_na(Age, 99)
+#   )
+
 # UPDATED - MP
-cdof_raw <- fread("data/inputs/health/CDOF_p2_Age_1yr_Nosup.csv", stringsAsFactors = FALSE, blank.lines.skip = TRUE)%>%
-  dplyr::select(-V54:-V16344)%>%
-  gather(year,pop,'V3':'V53')%>%
+cdof_raw <- fread("data-str/public/inputs/health/CDOF_p2_Age_1yr_Nosup.csv", stringsAsFactors = FALSE, blank.lines.skip = TRUE) %>%
+  dplyr::select(-Column1:-Column16331)%>% # changes to orignial states - HK 
+  gather(year,pop,'2010':'2060')%>%
   mutate(pop = as.numeric(str_replace(pop,",","")),
          County = str_replace(County," County",""),
          year = as.numeric(year),
          Age = as.numeric(Age),
          Age = replace_na(Age,99)); cdof_raw
 
+# Added MP
+# colnames(cdof_raw_test) <- tolower(colnames(cdof_raw_test))
+
 colnames(cdof_raw) <- tolower(colnames(cdof_raw)) 
+
+# Added MP
+# cdof_pred_test <- cdof_raw_test %>% 
+#   mutate(year = as.integer(year)) %>%  # Convert year to integer
+#   filter(year<2046)%>% 
+#   fuzzyjoin::fuzzy_left_join(
+#     age_group_ct,
+#     by = c("age" = "lower_age",
+#            "age" = "upper_age"),
+#     match_fun = list(`>=`, `<=`))%>%
+#   #mutate(upper_age = ifelse(age==0,0,upper_age),
+#   #       lower_age = ifelse(age>0 & age<5,1,lower_age))%>% # Don't think I need to do this...
+#   group_by(county,year,lower_age)%>%
+#   summarize(upper_age = unique(upper_age),pop=sum(pop))%>%
+#   group_by(county,lower_age)%>%
+#   arrange(year)%>%
+#   mutate(change_pct = (pop - dplyr::lag(pop))/dplyr::lag(pop))%>%
+#   arrange(county,lower_age);cdof_pred
 
 ## Yearly growth rate for each year county and age group
 
@@ -93,7 +130,7 @@ cdof_pred <- cdof_raw %>%
 #County name to merged with BenMAP row/col county indicators
 
 # UPDATED - MP
-ct <- read_sf("data/inputs/health/County_def.shp")
+ct <- read_sf("data-str/public/inputs/health/County_def.shp")
 county <- as.data.frame(cbind(ct$NAME, ct$STATE_NAME, ct$ROW, ct$COL), stringsAsFactors = F) 
 colnames(county) <- c("county","state", "row", "col")
 
@@ -103,7 +140,7 @@ county$col <- as.integer(county$col)
 # Mortality incidence data (2015 baseline)
 
 # UPDATED - MP
-incidence_ca <- read.csv("data/inputs/health/Mortality Incidence (2015).csv", stringsAsFactors = F) %>%
+incidence_ca <- read.csv("data-str/public/inputs/health/Mortality Incidence (2015).csv", stringsAsFactors = F) %>%
   filter(Endpoint == "Mortality, All Cause") %>%
   dplyr::select(-Endpoint.Group,-Race:-Ethnicity, -Type)%>%
   left_join(county, by = c("Column"="col","Row"="row"))%>%
@@ -153,8 +190,8 @@ ct_incidence_ca <- temp_ct_ca %>%
          -county.x,-county.y,-value.x,-value.y)
 
 # UPDATED - MP
-write.csv(ct_incidence_ca,file = "data/processed/ct_incidence_ca.csv", row.names = FALSE)
-ct_incidence_ca <- read.csv("data/processed/ct_incidence_ca.csv", stringsAsFactors =  FALSE)
+write.csv(ct_incidence_ca,file = "data-str/private/health/ct_incidence_ca.csv", row.names = FALSE)
+ct_incidence_ca <- read.csv("data-str/private/health/ct_incidence_ca.csv", stringsAsFactors =  FALSE)
 
 ##Projected population data and mortality incidence
 
@@ -186,8 +223,8 @@ ct_inc_45 <- ct_inc_45_temp%>%
 ## Output final population and mortality incidence data
 
 # UPDATED - MP
-write.csv(ct_inc_45,file = "data/processed/ct_inc_45.csv", row.names = FALSE)
-ct_inc_45 <- fread("data/processed/ct_inc_45.csv", stringsAsFactors = FALSE)
+write.csv(ct_inc_45,file = "data-str/public/outputs/health-out/ct_inc_45.csv", row.names = FALSE)
+ct_inc_45 <- fread("data-str/public/outputs/health-out/ct_inc_45.csv", stringsAsFactors = FALSE)
 
 
 
@@ -199,4 +236,4 @@ ct_pop_45 <- ct_inc_45 %>%
             pop = sum(pop))
 
 # UPDATED - MP
-write.csv(ct_pop_45,file = "data/processed/ct_pop_45.csv", row.names = FALSE)
+write.csv(ct_pop_45,file = "data-str/public/intermediate/health/ct_pop_45.csv", row.names = FALSE)

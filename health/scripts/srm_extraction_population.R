@@ -26,9 +26,9 @@ library(janitor)
 # setting working directory 
 setwd('/capstone/freshcair/meds-freshcair-capstone')
 
-# UPDATED - MG
+# UPDATED - MG # add new data directory HK
 # (0) Load CES3.0
-ces3<-read_csv("data/inputs/health/ces3results_part.csv")
+ces3<-read_csv("data-str/public/inputs/health/ces3results_part.csv")
 
 ces3 <- ces3 %>% 
   janitor::clean_names()
@@ -52,18 +52,18 @@ fields_vector <- c(1:26)
 
 # field_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction'
 
-# Updated - MP
-field_data <- '/capstone/freshcair/meds-freshcair-capstone/data/processed/extraction/county'
+# Updated - MP # add new data directory HK
+field_data <- '/capstone/freshcair/meds-freshcair-capstone/data-str/public/intermediate/health/inmap_processed_srm/'
 
 read_extraction <- function(buff_field){
   
   bfield <- buff_field
-  
-  nh3<-read_csv(paste0(field_data,"/nh3/srm_nh3_field",bfield,".csv",sep=""))%>%mutate(poll="nh3")
-  nox<-read_csv(paste0(field_data,"/nox/srm_nox_field",bfield,".csv",sep=""))%>%mutate(poll="nox")
-  pm25<-read_csv(paste0(field_data,"/pm25/srm_pm25_field",bfield,".csv",sep=""))%>%mutate(poll="pm25")
-  sox<-read_csv(paste0(field_data,"/sox/srm_sox_field",bfield,".csv",sep=""))%>%mutate(poll="sox")
-  voc<-read_csv(paste0(field_data,"/voc/srm_voc_field",bfield,".csv",sep=""))%>%mutate(poll="voc")
+  # add new data structure - HK .csv to .shp
+  nh3<-read_csv(paste0(field_data,"nh3/srm_nh3_field",bfield,".csv",sep="")) %>% mutate(poll="nh3")
+  nox<-read_csv(paste0(field_data,"nox/srm_nox_field",bfield,".csv",sep="")) %>%mutate(poll="nox")
+  pm25<-read_csv(paste0(field_data,"pm25/srm_pm25_field",bfield,".csv",sep="")) %>%mutate(poll="pm25")
+  sox<-read_csv(paste0(field_data,"sox/srm_sox_field",bfield,".csv",sep="")) %>%mutate(poll="sox")
+  voc<-read_csv(paste0(field_data,"voc/srm_voc_field",bfield,".csv",sep="")) %>%mutate(poll="voc")
   
   all_polls<-rbind(nh3,nox,pm25,sox,voc)
   
@@ -128,7 +128,7 @@ measures<-measures%>%
   dplyr::select(id,share_dac,share_dac_weighted,numA)
 
 setwd('/capstone/freshcair/meds-freshcair-capstone')
-write_csv(measures,"data/processed/extraction_cluster_affectedpop.csv")
+write_csv(measures,"data-str/public/outputs/health-out/extraction_cluster_affectedpop.csv") # add new data directory HK
 
 
 ######EXTRACTION FIELDS
@@ -136,7 +136,7 @@ write_csv(measures,"data/processed/extraction_cluster_affectedpop.csv")
 # UPDATED - MG -3/19
 setwd('/capstone/freshcair/meds-freshcair-capstone')
 
-extraction_data <- '/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/extraction-model'
+extraction_data <- '/capstone/freshcair/meds-freshcair-capstone/data-str/public/outputs/results-out' # add new data directory HK
 
 extraction_field_clusters_10km<-read_csv(paste0(extraction_data,"/extraction_fields_clusters_10km.csv",sep=""))%>%
   dplyr::select(OUTPUT_FID,INPUT_FID)
@@ -155,7 +155,7 @@ extraction_xwalk$doc_field_code=as.numeric(as.character(extraction_xwalk$doc_fie
 setwd('/capstone/freshcair/meds-freshcair-capstone')
 
 
-write_csv(extraction_xwalk,"data/processed/extraction_xwalk.csv")
+write_csv(extraction_xwalk,"data-str/private/well-fields/extraction_xwalk.csv") # add new data directory HK
 
 
 
