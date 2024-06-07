@@ -1,8 +1,7 @@
 ## Updated 4/14/24 - MP
 
 
-
-scen_list = fread(file.path('data/processed/scenario_id_list_targets_v3.csv'), header = T)
+scen_list = fread(file.path('data/processed/scenario_id_list_targets_finalv2.csv'), header = T)
 
 # filter for scenarios to run
 selected_scens <- scen_list[subset_scens == 1]
@@ -10,6 +9,7 @@ selected_scens <- scen_list[subset_scens == 1]
 run_extraction_model_fc <- function(input_scenarios) {
   # paste0("Scenario: ", input_scenarios)
   # scen_sel <- input_scenarios
+  
   
   scen_sel = selected_scens # MP
   
@@ -22,55 +22,56 @@ run_extraction_model_fc <- function(input_scenarios) {
   ## --------------------------------------------------  
   
   func_yearly_production <- function(z) {
-    # paste0("Starting scenario ", z)
-    z=1
-    #print(z)
+    z=40
     scen = scen_sel[z]
     scenario_name_z <- scen[, scen_id][1]
     # print(scenario_name_z) # 
-    target_pol <- scen[, target_policy[1]]
-    # print(target_pol) #
-    if(target_pol == "excise_tax") {
-      
-      excise_tax_df <- find_excise_tax(scen_z = scen)
-      # print("excise tax target policy") #
-      
-      excise_tax_scens_z <- tibble(year = c(2020:2045)) %>%
-        mutate(tax_rate = excise_tax_df[, tax_est_val][1],
-               excise_tax_scenario = scen[, excise_tax_scenario][1]) %>%
-        as.data.table()
-      
-      carbonpx_scens_z <- copy(carbonpx_scens)
-      
-      target_ghg_val = excise_tax_df[, target_val][1]
-      
-    } else if (target_pol == "carbon_tax") {
-      # print("carbon tax target policy") #
-      
-      carbonpx_df <- find_carbonpx_start(scen_z = scen)
-      
-      carbonpx_scens_z <- tibble(year = c(2020:2045)) %>%
-        mutate(carbon_price = carbonpx_df[, carbonpx_est_val[1]],
-               tval = row_number() - 1) %>%
-        fill(carbon_price) %>%
-        mutate(carbon_price = ifelse(tval == 0, carbon_price, calculate_carbonpx_val(x0 = carbon_price, r = perc_inc, t = tval)),
-               carbon_price_usd_per_kg = carbon_price / 1000,
-               carbon_price_scenario = scen[, carbon_price_scenario][1]) %>%
-        dplyr::select(year, carbon_price_scenario, carbon_price_usd_per_kg) %>%
-        as.data.table()
-      
-      excise_tax_scens_z <- copy(excise_tax_scens)
-      
-      target_ghg_val = carbonpx_df[, target_val[1]]
-      
-    } else {
-      # print("other target policy")
-      
-      carbonpx_scens_z <- copy(carbonpx_scens)
-      
-      excise_tax_scens_z <- copy(excise_tax_scens)
-      
-    }
+    # target_pol <- scen[, target_policy[1]]
+    # # print(target_pol) #
+    # if(target_pol == "excise_tax") {
+    #   print("Excise tax target policy")
+    #   print("Dimensions of excise_tax_df:")
+    #   excise_tax_df <- find_excise_tax(scen_z = scen)
+    #   print(dim(excise_tax_df))
+    #   # print("excise tax target policy") #
+    #   
+    #   excise_tax_scens_z <- tibble(year = c(2020:2045)) %>%
+    #     mutate(tax_rate = excise_tax_df[, tax_est_val][1],
+    #            excise_tax_scenario = scen[, excise_tax_scenario][1]) %>%
+    #     as.data.table()
+    #   
+    #   carbonpx_scens_z <- copy(carbonpx_scens)
+    #   
+    #   target_ghg_val = excise_tax_df[, target_val][1]
+    #   
+    # } else if (target_pol == "carbon_tax") {
+    #   # print("carbon tax target policy") #
+    #   
+    #   carbonpx_df <- find_carbonpx_start(scen_z = scen)
+    #   
+    #   carbonpx_scens_z <- tibble(year = c(2020:2045)) %>%
+    #     mutate(carbon_price = carbonpx_df[, carbonpx_est_val[1]],
+    #            tval = row_number() - 1) %>%
+    #     fill(carbon_price) %>%
+    #     mutate(carbon_price = ifelse(tval == 0, carbon_price, calculate_carbonpx_val(x0 = carbon_price, r = perc_inc, t = tval)),
+    #            carbon_price_usd_per_kg = carbon_price / 1000,
+    #            carbon_price_scenario = scen[, carbon_price_scenario][1]) %>%
+    #     dplyr::select(year, carbon_price_scenario, carbon_price_usd_per_kg) %>%
+    #     as.data.table()
+    #   
+    #   excise_tax_scens_z <- copy(excise_tax_scens)
+    #   
+    #   target_ghg_val = carbonpx_df[, target_val[1]]
+    #   
+    # } else {
+    #   # print("other target policy")
+    #   
+    #   carbonpx_scens_z <- copy(carbonpx_scens)
+    #   
+    #   excise_tax_scens_z <- copy(excise_tax_scens)
+    #   
+    # } Removing target policy since issues from target functions arising MP 5/30 -- need to account for
+    #                                                                               all subsequent removals
     
     
     ## create input sheet
@@ -82,17 +83,19 @@ run_extraction_model_fc <- function(input_scenarios) {
     # print(scenarios_dt_z) #
     scenarios_dt_z = scenarios_dt_z[innovation_scens, on = .(year, innovation_scenario), nomatch = 0]
     # print(scenarios_dt_z) #
-    scenarios_dt_z = scenarios_dt_z[carbonpx_scens_z, on = .(year, carbon_price_scenario), nomatch = 0]
+    # Removing below for now MP
+    # scenarios_dt_z = scenarios_dt_z[carbonpx_scens_z, on = .(year, carbon_price_scenario), nomatch = 0]
     scenarios_dt_z = scenarios_dt_z[ccs_scens_all, on = .(year, ccs_scenario), nomatch = 0]
     # scenarios_dt_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     # setback_scens[, doc_field_code := as.numeric(doc_field_code)] # Added MP
     # Testing below
-    scenarios_dt_z = scenarios_dt_z[setback_scens, on = .(doc_field_code, setback_scenario, setback_existing), nomatch = 0]
-    scenarios_dt_z = scenarios_dt_z[prod_quota_scens, on = .(year, prod_quota_scenario), nomatch = 0]
     # scenarios_dt_z = scenarios_dt_z[setback_scens, on = .(doc_field_code, setback_scenario, setback_existing), nomatch = 0]
     # scenarios_dt_z = scenarios_dt_z[prod_quota_scens, on = .(year, prod_quota_scenario), nomatch = 0]
-    scenarios_dt_z = scenarios_dt_z[excise_tax_scens_z, on = .(year, excise_tax_scenario), nomatch = 0]
-    print(scenarios_dt_z) #
+    scenarios_dt_z = scenarios_dt_z[prod_quota_scens, on = .(year, prod_quota_scenario), nomatch = 0]
+    # Removing below scenario MP 5/30
+    # scenarios_dt_z = scenarios_dt_z[excise_tax_scens_z, on = .(year, excise_tax_scenario), nomatch = 0]
+    # Added year to account for setback starting in 2025 update MP
+    scenarios_dt_z = scenarios_dt_z[setback_scens, on = .(doc_field_code, setback_scenario, setback_existing), nomatch = 0]
     
     ## compute tax
     scenarios_dt_z[, tax := tax_rate * oil_price_usd_per_bbl]
@@ -124,12 +127,11 @@ run_extraction_model_fc <- function(input_scenarios) {
     setnames(depl_2019_z, 'depl', 'depl2019')
     
     # prod_hist[, doc_field_code := as.numeric(doc_field_code)]
-    prod_2019_z = prod_hist[year == 2019, .(doc_field_code, total_bbls)]
+    prod_2019_z = prod_hist[year == 2019, .(doc_field_code, total_bbls)] # Added top field MP
     print(prod_2019_z) #
     
     trr_2020_z = unique(scenarios_dt_z[year == 2020, .(doc_field_code, oil_price_scenario, innovation_scenario, carbon_price_scenario, 
                                                        ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, resource)])
-    print(trr_2020_z) # 
     setDT(prod_2019_z) #
     setDT(trr_2020_z) #
     setDT(depl_2019_z) #
@@ -148,7 +150,7 @@ run_extraction_model_fc <- function(input_scenarios) {
     dt_depl_z = depl_2020_z[, .(doc_field_code, 
                                 oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
                                 setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario, 
-                                year, depl)]
+                                year, depl)] # Added top field MP
     
     # calculate ccs costs in 2020 using 2019 production ------
     
@@ -294,7 +296,6 @@ run_extraction_model_fc <- function(input_scenarios) {
     prod_existing_vintage_z[, doc_fieldname := NULL]
     
     for (i in seq_along(pred_years)) {
-      i = 1
       t = pred_years[i]
       
       # print(t)
@@ -304,7 +305,6 @@ run_extraction_model_fc <- function(input_scenarios) {
       #new_wells[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       #coefs_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       #dt_depl_z[, doc_field_code := as.numeric(doc_field_code)] # Added MP
-      print(length(unique(new_wells$doc_field_code))) # 
       setDT(new_wells)
       new_wells = new_wells[dt_depl_z[year == t], on = .(doc_field_code,
                                                          oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario,
@@ -315,7 +315,6 @@ run_extraction_model_fc <- function(input_scenarios) {
       setDT(coefs_dt)
       new_wells = new_wells[coefs_dt, on = .(doc_field_code, doc_fieldname), nomatch = NA]
       # new_wells = new_wells[coefs_dt, on = .(doc_field_code, doc_fieldname), nomatch = 0] # OG
-      print(length(unique(new_wells$doc_field_code))) #
       
       
       # # poisson regression for all fields -- OLD
@@ -323,24 +322,27 @@ run_extraction_model_fc <- function(input_scenarios) {
       #                                         exp(brent_hat*oil_price_usd_per_bbl + capex_hat*m_capex_imputed + opex_hat*m_opex_imputed_adj + depl_hat*depl) * fixed_effect,
       #                                         0)]
       
-      # NEW ----
-      source(here::here('energy', 'extraction-segment', 'model', 'full-run-revised', 'entry-func.R'))
-      # Prepare the entry_df for predict_new_wells function
-      entry_df <- new_wells %>%
-        rename(top_field = doc_fieldname, capex_imputed = m_capex_imputed, opex_imputed = m_opex_imputed_adj) %>%
-        mutate(year = as.integer(year))
+      # # NEW MODEL IMPLEMENTATION  -----------------------------------
+      new_wells_filtered <- new_wells[!is.na(oil_price_usd_per_bbl) & 
+                                        !is.na(wm_capex_imputed) & 
+                                        !is.na(wm_opex_imputed_adj) & 
+                                        !is.na(depl) &
+                                        !is.na(top_field)]
       
-      # Get the new wells prediction using the random forest function
-      predicted_new_wells <- predict_new_wells(entry_df)
+      x_new_wells <- as.matrix(new_wells[, .(oil_price_usd_per_bbl, wm_capex_imputed, wm_opex_imputed, depl, top_field)]) %>% 
+        na.omit()
       
-      # Merge the predicted new wells back into the new_wells dataframe
-      new_wells <- merge(new_wells, predicted_new_wells, by = c("doc_field_code", "year"))
+      predictions <- predict(lasso_model_entry, newx = x_new_wells, s = best_lambda_entry) # Lasso model
+      predictions <- abs(predictions)
+      # predictions <- predict(rf_model_entry, newx = x_new_wells) # Random forest model 
       
-      # Use the predicted new wells
-      new_wells[, m_new_wells_pred := new_wells_pred]
-      new_wells[, new_wells_pred := NULL]  # Clean up the temporary column
+      new_wells_filtered[, m_new_wells_pred := predictions]
       
-      # NEW END ---
+      new_wells <- merge(new_wells, new_wells_filtered[, .(doc_field_code, year, m_new_wells_pred)], 
+                         by = c("doc_field_code", "year"), all.x = TRUE)
+      
+      # # NEW MODEL IMPLEMENTATION END -----------------------------------
+      
       setorder(new_wells, 'doc_field_code')
       
       # round number of wells to integer
@@ -383,7 +385,7 @@ run_extraction_model_fc <- function(input_scenarios) {
       } else { exit_dt_t = rbind(prod_existing_exit_t, new_wells_exit_t)}
       
       ## create df of exit params
-      exit_dt_t = exit_dt_t[order(doc_field_code, start_year)] # 293 fields??? MP
+      exit_dt_t = exit_dt_t[order(doc_field_code, start_year)] 
       
       exit_model_dt = dt_info_z[year == t, .(doc_field_code, oil_price_usd_per_bbl, m_opex_imputed)]
       
@@ -403,28 +405,42 @@ run_extraction_model_fc <- function(input_scenarios) {
       # # OLD exit model
       # exit_model_dt[, n_well_exit := calc_num_well_exits(fe_val = fixed_effect,
       #                                                    bhat = brent_hat,
-      #                                                    p_oil = oil_price_usd_per_bbl, 
+      #                                                    p_oil = oil_price_usd_per_bbl,
       #                                                    op_hat = opex_hat,
-      #                                                    opex_val = m_opex_imputed, 
-      #                                                    dhat = depl_hat, 
+      #                                                    opex_val = m_opex_imputed,
+      #                                                    dhat = depl_hat,
       #                                                    depl_val = depl)]
-      
       # NEW exit model
-      # Prepare the exit_df for predict_exit_wells function
-      exit_df <- exit_model_dt %>%
-        rename(depl = depl, top_field = doc_fieldname, capex_imputed = m_capex_imputed, opex_imputed = m_opex_imputed) %>%
-        mutate(year = as.integer(year))
+      # Added top_field MP
+      required_features <- c("oil_price_usd_per_bbl", "m_opex_imputed", "depl", "top_field") 
       
-      # Get the exit wells prediction using the random forest function
-      predicted_exit_wells <- predict_exit_wells(exit_df)
+      # Filter out rows with missing values for the required features
+      exit_model_filtered <- exit_model_dt[!is.na(oil_price_usd_per_bbl) & 
+                                             !is.na(m_opex_imputed) & 
+                                             !is.na(depl) &
+                                             !is.na(top_field)]
       
-      # Merge the predicted exit wells back into the exit_model_dt dataframe
-      exit_model_dt <- merge(exit_model_dt, predicted_exit_wells, by = c("doc_field_code", "year"))
+      # Prepare the data for prediction
+      x_exit_model <- exit_model_filtered[, ..required_features] 
       
-      # Use the predicted exit wells
-      exit_model_dt[, n_well_exit := exit_wells_pred]
-      exit_model_dt[, exit_wells_pred := NULL]  # Clean up the temporary column
-      # END NEW exit model
+      # Convert to matrix and remove any remaining NA values
+      x_exit_model <- as.matrix(x_exit_model) %>% 
+        na.omit()
+      
+      # Make predictions using the random forest model
+      # predictions <- predict(rf_model_exit, newdata = x_exit_model) # Random forest model
+      predictions <- predict(lasso_model_exit, newx = x_exit_model, s = best_lambda_exit) # Lasso model
+      
+      predictions <- abs(predictions)
+      
+      # Add predictions to the filtered data
+      exit_model_filtered[, n_well_exit := predictions]
+      
+      # Merge the predictions back into the original data table
+      exit_model_dt <- merge(exit_model_dt, exit_model_filtered[, .(doc_field_code, n_well_exit)], 
+                             by = c("doc_field_code"), all.x = TRUE)
+      
+      # # END NEW exit model 
       
       ## store it
       exit_save = copy(exit_model_dt)
@@ -657,13 +673,19 @@ run_extraction_model_fc <- function(input_scenarios) {
                       ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario,
                       excise_tax_scenario),
           names_from = cost_type,
-          values_from = c(cost, cost_rank) 
+          values_from = c(cost, cost_rank),
+          values_fill = list(cost = NA, cost_rank = NA)
         ) %>%
         as.data.table()
       
-      ## rename
-      setnames(dt_info_rank, 'cost_rank_cost_new', 'cost_new_rank')
-      setnames(dt_info_rank, 'cost_rank_cost_existing', 'cost_existing_rank')
+      ## create missing columns if they don't exist
+      if (!"cost_new_rank" %in% colnames(dt_info_rank)) {
+        dt_info_rank[, cost_new_rank := NA]
+      }
+      
+      if (!"cost_existing_rank" %in% colnames(dt_info_rank)) {
+        dt_info_rank[, cost_existing_rank := NA]
+      }
       
       # ## select columns
       # temp_dt_info_rank = dt_info_rank[, c("doc_field_code","doc_fieldname",
@@ -700,7 +722,7 @@ run_extraction_model_fc <- function(input_scenarios) {
       
       # set up dataframe with production in year t for existing field-vintages 
       ## ---------------------------------------------------------
-      
+       
       
       ## filter dt_info_z for year t since actual quota number, ccs adoption, and ghg emissions intensity change year to year
       temp_prod_existing_vintage = dt_info_z[year == t, . (doc_field_code, doc_fieldname, oil_price_scenario, innovation_scenario, carbon_price_scenario, 
@@ -787,11 +809,9 @@ run_extraction_model_fc <- function(input_scenarios) {
                                      "carbon_price_scenario", "ccs_scenario", "setback_scenario", "setback_existing", "prod_quota_scenario", 
                                      "excise_tax_scenario"),
                               all.x = T)
-      print(length(unique(temp_prod_quota$doc_field_code))) #
       
       # create column with appropriate cost rank based on if vintage is new as of year t
       temp_prod_quota[, cost_rank := fifelse(vintage_start == t, cost_new_rank, cost_existing_rank)]
-      print(length(unique(temp_prod_quota$doc_field_code))) #
       # remove other cost rank columns
       temp_prod_quota[, c('cost_existing_rank', 'cost_new_rank') := NULL]
       print(length(unique(temp_prod_quota$doc_field_code))) #
@@ -1189,8 +1209,9 @@ run_extraction_model_fc <- function(input_scenarios) {
         depl_next_year = unique(depl_next_year)
         
         ## bind to dt_depl_z
-        dt_depl_z = rbindlist(list(dt_depl_z, depl_next_year))
-        
+        # dt_depl_z = rbindlist(list(dt_depl_z, depl_next_year))
+        # Replacing above to adjust for top_fields addition
+        rbindlist(list(dt_depl_z, depl_next_year))        
         
         # calculate adjustments to input variables for next year
         ## ----------------------------------------------------
@@ -1280,7 +1301,7 @@ run_extraction_model_fc <- function(input_scenarios) {
                            "setback_scenario", "setback_existing", "prod_quota_scenario", "excise_tax_scenario")
         
         if (all(required_cols %in% names(info_next_year))) {
-          info_next_year[, mean_b := solve_mean_b(a, ccs_price_usd_per_kg * 1e3, 'extraction'), 
+          info_next_year[, mean_b := solve_mean_b(a, ccs_price_usd_per_kg * 1e3, 'extraction_2024-05-16'), 
                          by = .(oil_price_scenario, innovation_scenario, carbon_price_scenario, ccs_scenario, 
                                 setback_scenario, setback_existing, prod_quota_scenario, excise_tax_scenario)]
         } else {
@@ -1325,9 +1346,8 @@ run_extraction_model_fc <- function(input_scenarios) {
         info_next_year = unique(info_next_year)
         
         
-        # combine input variables
-        dt_info_z = rbindlist(list(dt_info_z, info_next_year), use.names = T)
-        
+        # combine input variables -- removing top_field from dt_info_z to permit bind MP
+        dt_info_z_combined <- rbindlist(list(dt_info_z, info_next_year))        
         
         
       }  
@@ -1577,33 +1597,34 @@ run_extraction_model_fc <- function(input_scenarios) {
     state_all[, total_ghg_mtCO2e := total_ghg_kgCO2e/1e9]
     
     ## add excise tax val, carbon px val, target, and target pol to state df
-    state_all[, target_policy := target_pol]
-    state_all[, target := scen[, target][1]]
+    # state_all[, target_policy := target_pol] Removed for testing MP 5/30
+    # state_all[, target := scen[, target][1]] Removed for testing MP 5/30
     
-    if(scen[, target][1] == "no_target") {
-      
-      state_tmp <- state_all[year == 2045, .(total_ghg_mtCO2e)]
-      
-      target_ghg_val <- state_tmp[, total_ghg_mtCO2e][1]
-      
-    } 
+    # Removed for testing MP 5/30 
+    # if(scen[, target][1] == "no_target") {
+    #   
+    #   state_tmp <- state_all[year == 2045, .(total_ghg_mtCO2e)]
+    #   
+    #   target_ghg_val <- state_tmp[, total_ghg_mtCO2e][1]
+    #   
+    # } 
     
-    
-    state_all[, target_val := target_ghg_val]
+    # Removed for testing MP 5/30
+    # state_all[, target_val := target_ghg_val]
     setDT(state_all)
-    setDT(excise_tax_scens_z)
-    setDT(carbonpx_scens_z)
+    #setDT(excise_tax_scens_z) Removing for now MP 5/30
+    # setDT(carbonpx_scens_z) Removing for now MP 5/30
     setDT(state_all)
-    state_all <- state_all[excise_tax_scens_z, on = .(year, excise_tax_scenario), allow.cartesian = T, nomatch = 0]
-    state_all <- state_all[carbonpx_scens_z, on = .(year, carbon_price_scenario), allow.cartesian = T, nomatch = 0]
+    # Removing 2 below for now MP 5/30
+    # state_all <- state_all[excise_tax_scens_z, on = .(year, excise_tax_scenario), allow.cartesian = T, nomatch = 0]
+    # state_all <- state_all[carbonpx_scens_z, on = .(year, carbon_price_scenario), allow.cartesian = T, nomatch = 0]
     
     
     ## save rds for each scenario
     ## -------------------------------------------
-    
     ## vintage
     vintage_fname_z = paste0(scenario_name_z, '_vintage.csv')
-    fwrite(vintage_all, file.path(save_info_path, 'vintage-out', vintage_fname_z), row.names = F)
+    fwrite(vintage_all, file.path(save_info_path, 'vintage-out/', vintage_fname_z), row.names = F)
     
     # field
     field_fname_z = paste0(scenario_name_z, '_field.rds')
@@ -1629,7 +1650,6 @@ run_extraction_model_fc <- function(input_scenarios) {
     # output_scen = list(vintage_all,
     #                    field_all,
     #                    state_all,
-    #                    density_dt,
     #                    exit_out,
     #                    dt_depl_z)
     
@@ -1670,7 +1690,7 @@ run_extraction_model_fc <- function(input_scenarios) {
   run_info = data.table(start_time = start_time,
                         end_time = end_time,
                         duration = paste0(round(time_diff[[1]]), ' minutes'))
-  fwrite(run_info, file.path('data/outputs/run_info.csv'), row.names = F)
+  fwrite(run_info, file.path('data-str/public/outputs/model-out/run_info.csv'), row.names = F)
   
   # save outputs to csv -----
   

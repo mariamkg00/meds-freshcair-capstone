@@ -1,13 +1,14 @@
 ## Updated 4/14/24 - MP
+## Updated 5/30/24 - MP
 
 
 
-# scen_list = fread(file.path('data/processed/scenario_id_list_targets_v3.csv'), header = T)
+# scen_id_list_final = fread(file.path('data/processed/scenario_id_list_targets_finalv2.csv'), header = T)
 
-# filter for scenarios to run
-# selected_scens <- scen_list[subset_scens == 1]
 
-run_extraction_model <- function(input_scenarios) {
+# selected_scens <- scen_id_list_final[subset_scens == 1]
+
+run_extraction_model <- function(input_scenarios, current_year) {
   # paste0("Scenario: ", input_scenarios)
   scen_sel <- input_scenarios
   
@@ -23,8 +24,8 @@ run_extraction_model <- function(input_scenarios) {
   
   func_yearly_production <- function(z) {
     # paste0("Starting scenario ", z)
-    # z=1
     #print(z)
+    # z=1
     scen = scen_sel[z]
     scenario_name_z <- scen[, scen_id][1]
     # print(scenario_name_z) # 
@@ -92,7 +93,6 @@ run_extraction_model <- function(input_scenarios) {
     # scenarios_dt_z = scenarios_dt_z[setback_scens, on = .(doc_field_code, setback_scenario, setback_existing), nomatch = 0]
     # scenarios_dt_z = scenarios_dt_z[prod_quota_scens, on = .(year, prod_quota_scenario), nomatch = 0]
     scenarios_dt_z = scenarios_dt_z[excise_tax_scens_z, on = .(year, excise_tax_scenario), nomatch = 0]
-    print(scenarios_dt_z) #
     
     ## compute tax
     scenarios_dt_z[, tax := tax_rate * oil_price_usd_per_bbl]
@@ -317,13 +317,77 @@ run_extraction_model <- function(input_scenarios) {
       print(length(unique(new_wells$doc_field_code))) #
     
       
-      # poisson regression for all fields
-      new_wells[, m_new_wells_pred := fifelse(depl < 0.9999,
-                                              exp(brent_hat*oil_price_usd_per_bbl + capex_hat*m_capex_imputed + opex_hat*m_opex_imputed_adj + depl_hat*depl) * fixed_effect,
-                                              0)]
-      # new_wells[, wm_new_wells_pred := fifelse(depl < 0.9999,
-      #                                           exp(brent_hat*oil_price_usd_per_bbl + capex_hat*wm_capex_imputed + opex_hat*wm_opex_imputed_adj + depl_hat*depl) * fixed_effect,
-      #                                           0)]
+      # # poisson regression for all fields -- OLD
+      # # new_wells[, m_new_wells_pred := fifelse(depl < 0.9999,
+      # #                                         exp(brent_hat*oil_price_usd_per_bbl + capex_hat*m_capex_imputed + opex_hat*m_opex_imputed_adj + depl_hat*depl) * fixed_effect,
+      # #                                         0)]
+      # 
+      # # # NEW MODEL IMPLEMENTATION  -----------------------------------
+      # new_wells_filtered <- new_wells[!is.na(oil_price_usd_per_bbl) & 
+      #                                   !is.na(wm_capex_imputed) & 
+      #                                   !is.na(wm_opex_imputed_adj) & 
+      #                                   !is.na(depl)]
+      # 
+      # # Convert doc_field_code to numeric 
+      # new_wells_filtered$doc_field_code_numeric <- as.numeric(new_wells_filtered$doc_field_code)
+      # 
+      # x_new_wells <- as.matrix(new_wells_filtered[, .(oil_price_usd_per_bbl, wm_capex_imputed, wm_opex_imputed, depl, doc_field_code)]) 
+      # 
+      # x_new_wells <- as.data.frame(x_new_wells)
+      # 
+      # # predictions <- predict(rf_model_entry, newdata = x_new_wells) # Random forest model 
+      # predictions <- predict(gbm_model_entry, newdata = x_new_wells, n.trees = best_trees_entry) # Gradient boosted model
+      # 
+      # new_wells_filtered[, m_new_wells_pred := predictions]
+      # 
+      # # Convert doc_field_code back to character
+      # new_wells_filtered$doc_field_code <- as.character(new_wells_filtered$doc_field_code)
+      # 
+      # new_wells <- merge(new_wells, new_wells_filtered[, .(doc_field_code, year, m_new_wells_pred)], 
+      #                    by = c("doc_field_code", "year"), all.x = TRUE)
+      # 
+      # ## END NEW MODEL IMPLEMENTATION
+      # 
+      # # new_wells[, wm_new_wells_pred := fifelse(depl < 0.9999,
+      # #                                           exp(brent_hat*oil_price_usd_per_bbl + capex_hat*wm_capex_imputed + opex_hat*wm_opex_imputed_adj + depl_hat*depl) * fixed_effect,
+      # #                                           0)]
+      
+      # Running selected model for new wells
+      if (model_choice == 1) {
+        # Poisson Model
+        new_wells[, m_new_wells_pred := fifelse(depl < 0.9999,
+                                                exp(brent_hat*oil_price_usd_per_bbl + capex_hat*m_capex_imputed + opex_hat*m_opex_imputed_adj + depl_hat*depl) * fixed_effect,
+                                                0)]
+      } else if (model_choice == 2) {
+        # Random Forest Model
+        new_wells_filtered <- new_wells[!is.na(oil_price_usd_per_bbl) & 
+                                          !is.na(wm_capex_imputed) & 
+                                          !is.na(wm_opex_imputed_adj) & 
+                                          !is.na(depl)]
+        new_wells_filtered[, m_new_wells_pred := fifelse(depl < 0.9999, {
+          x_new_wells <- as.matrix(new_wells_filtered[, .(oil_price_usd_per_bbl, wm_capex_imputed, wm_opex_imputed, depl, doc_field_code)])
+          x_new_wells <- as.data.frame(x_new_wells)
+          predictions <- predict(rf_model_entry, newdata = x_new_wells)
+          predictions
+        }, 0)]
+        new_wells <- merge(new_wells, new_wells_filtered[, .(doc_field_code, year, m_new_wells_pred)], 
+                           by = c("doc_field_code", "year"), all.x = TRUE)
+      } else if (model_choice == 3) {
+        # Gradient Boosted Model
+        new_wells$doc_field_code = as.factor()
+        new_wells_filtered <- new_wells[!is.na(oil_price_usd_per_bbl) & 
+                                          !is.na(wm_capex_imputed) & 
+                                          !is.na(wm_opex_imputed_adj) & 
+                                          !is.na(depl)]
+        new_wells_filtered[, m_new_wells_pred := fifelse(depl < 0.9999, {
+          x_new_wells <- as.matrix(new_wells_filtered[, .(oil_price_usd_per_bbl, wm_capex_imputed, wm_opex_imputed, depl)])
+          x_new_wells <- as.data.frame(x_new_wells)
+          predictions <- predict(gbm_model_entry, newdata = x_new_wells, n.trees = best_trees_entry)
+          predictions
+        }, 0)]
+        new_wells <- merge(new_wells, new_wells_filtered[, .(doc_field_code, year, m_new_wells_pred)], 
+                           by = c("doc_field_code", "year"), all.x = TRUE)
+      }
       
       setorder(new_wells, 'doc_field_code')
       
@@ -384,14 +448,71 @@ run_extraction_model <- function(input_scenarios) {
                             all.x = T)
       #exit_model_dt[, doc_field_code := as.numeric(doc_field_code)] # Added MP
       
-      # Where RF will be implemented
-      exit_model_dt[, n_well_exit := calc_num_well_exits(fe_val = fixed_effect,
-                                                         bhat = brent_hat,
-                                                         p_oil = oil_price_usd_per_bbl, 
-                                                         op_hat = opex_hat,
-                                                         opex_val = m_opex_imputed, 
-                                                         dhat = depl_hat, 
-                                                         depl_val = depl)]
+      # OLD exit model
+      # exit_model_dt[, n_well_exit := calc_num_well_exits(fe_val = fixed_effect,
+      #                                                    bhat = brent_hat,
+      #                                                    p_oil = oil_price_usd_per_bbl, 
+      #                                                    op_hat = opex_hat,
+      #                                                    opex_val = m_opex_imputed, 
+      #                                                    dhat = depl_hat, 
+      #                                                    depl_val = depl)]
+      
+      # NEW exit model
+      # Running selected model for well exit
+      if (model_choice == 1) {
+        # Poisson Model
+        exit_model_dt[, n_well_exit := calc_num_well_exits(fe_val = fixed_effect,
+                                                           bhat = brent_hat,
+                                                           p_oil = oil_price_usd_per_bbl, 
+                                                           op_hat = opex_hat,
+                                                           opex_val = m_opex_imputed, 
+                                                           dhat = depl_hat, 
+                                                           depl_val = depl)]
+      } else if (model_choice == 2) {
+        # Random Forest Model
+        required_features_rf <- c("oil_price_usd_per_bbl", "m_opex_imputed", "depl", "doc_field_code")
+        exit_model_filtered_rf <- exit_model_dt[!is.na(oil_price_usd_per_bbl) & 
+                                                  !is.na(m_opex_imputed) & 
+                                                  !is.na(depl)]
+        exit_model_filtered_rf$doc_field_code <- as.numeric(exit_model_filtered_rf$doc_field_code)
+        x_exit_model_rf <- exit_model_filtered_rf[, ..required_features_rf] 
+        x_exit_model_rf <- as.data.frame(x_exit_model_rf)
+        predictions <- predict(rf_model_exit, newdata = x_exit_model_rf)
+        exit_model_filtered_rf[, n_well_exit := predictions]
+        exit_model_filtered_rf$doc_field_code <- as.character(exit_model_filtered_rf$doc_field_code)
+        exit_model_dt <- merge(exit_model_dt, exit_model_filtered_rf[, .(doc_field_code, n_well_exit)], 
+                               by = "doc_field_code", all.x = TRUE)
+      } else if (model_choice == 3) {
+        # Gradient Boosted Model
+        required_features <- c("oil_price_usd_per_bbl", "m_opex_imputed", "depl")
+        
+        # Filter out rows with missing values for the required features
+        exit_model_filtered <- exit_model_dt[!is.na(oil_price_usd_per_bbl) & 
+                                               !is.na(m_opex_imputed) & 
+                                               !is.na(depl)]
+        
+        x_exit_model <- exit_model_filtered[, ..required_features] 
+        x_exit_model <- as.data.frame(x_exit_model)
+        predictions <- predict(gbm_model_exit, newdata = x_exit_model, n.trees = best_trees_exit)
+        exit_model_filtered[, n_well_exit := predictions]
+        exit_model_dt <- merge(exit_model_dt, exit_model_filtered[, .(n_well_exit)], 
+                               by = "doc_field_code", all.x = TRUE)
+      }
+      
+      # # predictions <- predict(rf_model_exit, newdata = x_exit_model) # Random forest model
+      # predictions <- predict(gbm_model_exit, newdata = x_exit_model, n.trees = best_trees_exit) # Gradient boosted model
+      # 
+      # exit_model_filtered[, n_well_exit := predictions]
+      # 
+      # # Convert doc_field_code back to character
+      # exit_model_filtered$doc_field_code <- as.character(exit_model_filtered$doc_field_code)
+      # 
+      # # Merge the predictions back into the original data table
+      # exit_model_dt <- merge(exit_model_dt, exit_model_filtered[, .(doc_field_code, n_well_exit)], 
+      #                        by = "doc_field_code", all.x = TRUE)
+      # 
+      # # # END NEW exit model 
+      
       ## store it
       exit_save = copy(exit_model_dt)
       exit_save[, year := t]
@@ -623,7 +744,8 @@ run_extraction_model <- function(input_scenarios) {
                       ccs_scenario, setback_scenario, setback_existing, prod_quota_scenario,
                       excise_tax_scenario),
           names_from = cost_type,
-          values_from = c(cost, cost_rank) 
+          values_from = c(cost, cost_rank),
+          values_fill = list(cost = NA, cost_rank = NA)
         ) %>%
   as.data.table()
       
@@ -1027,6 +1149,7 @@ run_extraction_model <- function(input_scenarios) {
       
       # added conversion to data.table - MP
       new_wells_prod_long <- as.data.table(new_wells_prod_long)
+      
       new_wells_prod_long[, year := as.numeric(as.character(year))]
       
       
@@ -1529,6 +1652,11 @@ run_extraction_model <- function(input_scenarios) {
     field_all[, n_wells_exit := fifelse(year == 2020, prev_n_well - n_wells_after_exit, 
                                         prev_n_well + new_wells - n_wells_after_exit)]
     
+    
+    
+    # Added MP 6/2
+    field_all[, n_wells_exit := n_pred_exit]
+    
     field_all[, ':=' (adj_no_wells = NULL, 
                       prev_n_well = NULL)]
     
@@ -1636,7 +1764,7 @@ run_extraction_model <- function(input_scenarios) {
   run_info = data.table(start_time = start_time,
                         end_time = end_time,
                         duration = paste0(round(time_diff[[1]]), ' minutes'))
-  fwrite(run_info, file.path('data/outputs/run_info.csv'), row.names = F)
+  fwrite(run_info, file.path('data-str/public/outputs/model-out/run_info.csv'), row.names = F)
   
   # save outputs to csv -----
   
