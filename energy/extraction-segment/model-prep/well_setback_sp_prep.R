@@ -331,11 +331,51 @@ create_buffer <- function(dist_ft) {
   
 }
 
+dashboard_path <- '/capstone/freshcair/freshcair-shiny/shinydashboard/data'
 purrr::map(buffer_dist_ft, create_buffer) 
 
 
 
+# generating 3200 ft buffer and specifiying dashboard as output directory - MG 6/6/2024
+create_buffer2 <- function(dist_ft) {
+  
+  buff_dist_ft_name <- paste0(dist_ft, "ft")
+  
+  dist_m <- dist_ft * ft_meter_val
+  
+  pt_buff_tmp <- sr_pts %>%
+    st_buffer(dist = dist_m) %>%
+    st_union() 
+  
+  # looking good!!!
+  plot(pt_buff_tmp, xlim = xcheck, ylim = ycheck)
+  plot(sr_pts, xlim = xcheck, ylim = ycheck, add = TRUE, pch = 16, cex = .5)
+  
+  # Issue was here
+  schl_buff_tmp <- sr_s %>%
+    st_buffer(dist = dist_m) %>% 
+    st_union()
+  
+  dwelling_buff_tmp <- simp_sr_dwell %>%
+    st_buffer(dist = dist_m) %>%
+    st_union()
+  
+  out_tmp1 <- st_union(pt_buff_tmp, schl_buff_tmp)
+  
+  out_tmp2 <- st_union(dwelling_buff_tmp, out_tmp1)
+  
+  # uncomment to check
+  # plot(out_tmp2, xlim = xcheck, ylim = ycheck)
+  # plot(sr_pts, xlim = xcheck, ylim = ycheck, add = TRUE, pch = 16, cex = .5)
+  # plot(simp_sr_dwell, xlim = xcheck, ylim = ycheck, add = TRUE, col = "red")
+  # plot(sr_s, xlim = xcheck, ylim = ycheck, add = TRUE, col = "blue")
+  
+  ## save output
+  st_write(out_tmp2, dsn = paste0(dashboard_path, "generated-buffer_", buff_dist_ft_name, ".shp")) 
+  
+}
 
+create_buffer2(3200)
 
 
 

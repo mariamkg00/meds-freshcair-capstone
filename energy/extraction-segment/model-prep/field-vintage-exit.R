@@ -17,12 +17,12 @@ library(zoo)
 # output_dir <- "/Volumes/GoogleDrive/Shared\ drives/emlab/projects/current-projects/calepa-cn/outputs/exit/"
 
 
-## read in files -- Updated - MP
-well_prod <- fread("data/processed/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
+## read in files -- Updated - MP # add new data directory HK
+well_prod <- fread("data-str/public/outputs/results-out/well_prod_m_processed.csv", colClasses = c('api_ten_digit' = 'character',
                                                                      'doc_field_code' = 'character'))
 
-## read in file of wells with zero production after 5y or 10y -- Updated - MP
-no_prod_wells <- fread("data/proprietery-data/no_prod_wells_out.csv", colClasses = c('api_ten_digit' = 'character'))
+## read in file of wells with zero production after 5y or 10y -- Updated - MP # add new data directory HK
+no_prod_wells <- fread("data-str/private/well-fields/no_prod_wells_out.csv", colClasses = c('api_ten_digit' = 'character')) 
 
 no_prod_5 <- no_prod_wells %>% filter(year_cut_off == 5) %>% select(api_ten_digit) %>% unique()
 no_prod_5_vec <- no_prod_5$api_ten_digit
@@ -31,7 +31,7 @@ no_prod_10 <- no_prod_wells %>% filter(year_cut_off == 10) %>% select(api_ten_di
 no_prod_10_vec <- no_prod_10$api_ten_digit
 
 ## all wells -- Updated - MP
-all_wells <- fread("data/inputs/extraction/AllWells_20210427.csv")
+all_wells <- fread("data-str/public/inputs/extraction/AllWells_20210427.csv") # add new data directory HK
 
 ## wells status
 status <- all_wells %>%
@@ -242,8 +242,8 @@ field_exit_out <- left_join(exit_combos, field_exit_out) %>%
 
 
 
-## Save field-year-level well exit data -- Updated - MP
-write_csv(field_exit_out, file = "data/processed/well_exits.csv")
+## Save field-year-level well exit data -- Updated - MP # add new data directory HK
+write_csv(field_exit_out, file = "data-str/private/entry-exit/well_exits.csv")
 
 field_out_summary <- field_exit_out %>%
   group_by(exit_scen, doc_field_code) %>%

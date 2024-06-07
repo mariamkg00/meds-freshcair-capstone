@@ -9,7 +9,7 @@ proj_dir           <- getwd()
 data_directory     <- "data-str/stocks-flows/processed/"
 output_dir         <- "outputs/stocks-flows/"
 rystad_path        <- "data-str/proprietary-data/"
-save_directory     <- "outputs/stocks-flows/entry-input-df/final/"
+# save_directory     <- "outputs/stocks-flows/entry-input-df/final/"
 
 ## save suffix
 # s_suff <- ""
