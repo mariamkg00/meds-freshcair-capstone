@@ -16,5 +16,5 @@ excise_tax_df2 <- excise_tax_df %>%
   mutate(excise_tax_scenario = ifelse(excise_tax_scenario == "tax_0", "no tax", excise_tax_scenario)) %>%
   mutate(units = "fraction of oil price")
 
-fwrite(excise_tax_df2, 'data/processed/excise_tax_non_target_scens.csv')
+fwrite(excise_tax_df2, 'data-str/public/intermediate/health/excise_tax_non_target_scens.csv') # add new data directory HK
 
