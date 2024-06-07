@@ -1,0 +1,155 @@
+
+```{r}
+library(ggplot2)
+library(randomForest)
+library(caret)
+```
+
+
+```{r}
+source('/capstone/freshcair/meds-freshcair-capstone/energy/extraction-segment/model/full-run-revised/load_input_info_fc.R')
+```
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+# Load historical data
+entry_df <- read_csv("data/processed/entry_df_final_revised.csv")
+entry_df$doc_field_code <- as.numeric(entry_df$doc_field_code)
+entry_df$doc_field_code <- as.character(entry_df$doc_field_code)
+
+# Prepare data for Random Forest model
+entry_df <- entry_df %>%
+  mutate(oil_price_usd_per_bbl = brent) %>% 
+  mutate(depl = m_cumsum_div_my_prod) %>% 
+  na.omit()
+
+### ADDING CUSTOM BRENT VALUES --- 
+
+# https://www.eia.gov/outlooks/steo/realprices/real_prices.xlsx
+# Using 2024 present value 
+
+oil_prices <- c(
+  "1977" = 75.05, 
+  "1978" = 69.94, 
+  "1979" = 93.08, 
+  "1980" = 128.71, 
+  "1981" = 127.77, 
+  "1982" = 108.91, 
+  "1983" = 92.19, 
+  "1984" = 87.01, 
+  "1985" = 78.56, 
+  "1986" = 39.78, 
+  "1987" = 50.00,
+  "1988" = 38.66,
+  "1989" = 45.66,
+  "1990" = 52.09,
+  "1991" = 43.07,
+  "1992" = 40.64,
+  "1993" = 34.97,
+  "1994" = 32.83,
+  "1995" = 35.23,
+  "1996" = 41.17,
+  "1997" = 36.07,
+  "1998" = 23.18,
+  "1999" = 32.47,
+  "2000" = 50.42,
+  "2001"= 38.90,
+  "2002"= 41.29,
+  "2003" = 47.19,
+  "2004" = 59.50,
+  "2005" = 78.41,
+  "2006" = 91.75,
+  "2007" = 101.48,
+  "2008" = 134.69,
+  "2009" = 86.17,
+  "2010" = 108.89,
+  "2011" = 142.83,
+  "2012" = 137.89,
+  "2013" = 131.91,
+  "2014" = 118.59,
+  "2015" = 61.24,
+  "2016" = 50.50,
+  "2017" = 62.58,
+  "2018" = 76.51,
+  "2019" = 70.99
+)
+
+entry_df <- entry_df %>%
+  mutate(year_char = as.character(year)) %>%
+  mutate(oil_price_usd_per_bbl = oil_prices[year_char]) %>%
+  select(-year_char)
+
+### ADDING CUSTOM BRENT VALUES ---
+
+entry_df = as.data.frame(entry_df)
+```
+
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+# Load the necessary data
+new_wells_pred_revised <- read_csv("data/intermediate-zenodo/new_wells_pred_revised.csv") %>%
+  rename(new_wells_poisson = new_wells_pred) 
+
+new_wells_pred_revised$doc_field_code = as.character(new_wells_pred_revised$doc_field_code)
+
+prediction_data <- entry_df %>%
+  select(oil_price_usd_per_bbl, wm_capex_imputed, wm_opex_imputed, depl, doc_field_code)
+
+predictions <- entry_df %>%
+  select(doc_field_code, year, n_new_wells) %>%
+  rename(actual_new_wells = n_new_wells) %>%
+  mutate(
+    rf_pred = predict(rf_model_entry, newdata = x_train)
+  )  %>%
+  left_join(new_wells_pred_revised, by = c("doc_field_code", "year"))
+
+# Calculate performance metrics
+metrics <- predictions %>%
+  group_by(model = "Random Forest", year) %>%
+  summarise(
+    total_new_wells = sum(rf_pred, na.rm = TRUE)
+  ) %>%
+  bind_rows(
+    predictions %>%
+      group_by(model = "Poisson", year) %>%
+      summarise(
+        total_new_wells = sum(new_wells_poisson, na.rm = TRUE)
+      )
+  ) %>%
+  bind_rows(
+    predictions %>%
+      group_by(model = "Actual", year) %>%
+      summarise(
+        total_new_wells = sum(actual_new_wells, na.rm = TRUE)
+      )
+  )
+
+rf_rmse <- sqrt(mean((predictions$rf_pred - predictions$actual_new_wells)^2, na.rm = TRUE))
+poisson_rmse <- sqrt(mean((predictions$new_wells_poisson - predictions$actual_new_wells)^2, na.rm = TRUE))
+
+cat("Random Forest RMSE:", rf_rmse, "\n")
+cat("Poisson RMSE:", poisson_rmse, "\n")
+
+hist_newwells_plt <- ggplot(metrics, aes(x = year, y = total_new_wells, color = model)) +
+  geom_line(size = 1) +
+  scale_color_manual(values = c("Actual" = "black",
+                                 "Random Forest" = "forestgreen",
+                                 "Poisson" = "orange",
+                                 "Gradient Boosted" = "blue")) +
+  labs(x = "Year", y = "Total Number of New Wells", color = "Model") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 12),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14)) +
+  ggtitle("Comparison of New Well Models from 1977 to 2019")
+
+
+
+
+ggsave("outputs/hist_newwells_plt.png", hist_newwells_plt, width = 12, height = 8)
+```
+

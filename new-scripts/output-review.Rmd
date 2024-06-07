@@ -1,0 +1,622 @@
+---
+title: "Output Review"
+---
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+library(tidyr)
+```
+
+
+```{r}
+setwd("/capstone/freshcair/meds-freshcair-capstone")
+county_results <- read_csv("data/processed/extraction_2024-05-13/county-results/subset_county_results.csv")
+state_results <- read_csv("data/processed/extraction_2024-05-13/state-results/subset_state_results.csv")
+ct_results <- read_csv("data/processed/extraction_2024-05-13/census-tract-results/subset_census_tract_results.csv")
+```
+
+```{r}
+county_results_2019 <- county_results %>% 
+  filter(year == 2019)
+
+ggplot(data = county_results_2019) +
+  geom_point(aes(x = dac_share, y = total_county_bbl))
+```
+
+
+```{r}
+setwd("/capstone/freshcair/meds-freshcair-capstone")
+county_health <- read_csv("data/processed/extraction_2024-05-13/health-county-results/subset_county_hs_results.csv")
+
+county_health_sb <- county_health %>% 
+  filter(scen_id == "reference case-setback_3200ft-no quota-price floor-no ccs-low innovation-no tax-0")
+```
+
+```{r}
+library(ggplot2)
+
+county_health_summary <- county_health %>%
+  filter(scen_id == "reference case-setback_3200ft-no quota-price floor-no ccs-low innovation-no tax-0") %>% 
+  group_by(GEOID, county) %>%
+  summarize(bau_pm25_2025 = first(bau_total_pm25),
+            bau_pm25_2045 = last(bau_total_pm25),
+            total_pm25_2025 = first(total_pm25),
+            total_pm25_2045 = last(total_pm25),
+            dac_share = first(dac_share),
+            pop = first(pop)) %>%
+  mutate(bau_pm25_change_pct = (bau_pm25_2045 - bau_pm25_2025) / bau_pm25_2025 * 100,
+         total_pm25_change_pct = (total_pm25_2045 - total_pm25_2025) / total_pm25_2025 * 100,
+         diff_pm25 = total_pm25_change_pct - bau_pm25_change_pct)
+
+oil_prod_change <- county_results %>%
+  filter(scen_id %in% c("reference case-setback_3200ft-no quota-price floor-no ccs-low innovation-no tax-0",
+                        "reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-1")) %>%
+  group_by(county, scen_id) %>%
+  summarize(total_oil_prod = sum(total_county_bbl)) %>%
+  pivot_wider(names_from = scen_id, values_from = total_oil_prod) %>%
+  mutate(oil_prod_change = `reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-1` - `reference case-setback_3200ft-no quota-price floor-no ccs-low innovation-no tax-0`) %>%
+  select(county, oil_prod_change)
+
+county_health_summary <- county_health_summary %>%
+  left_join(oil_prod_change, by = "county") 
+
+county_health_summary <- county_health_summary %>% 
+  filter(!is.na(oil_prod_change))
+
+county_health_summary$rel_pm25_change <- (county_health_summary$bau_pm25_change_pct - county_health_summary$total_pm25_change_pct) / county_health_summary$bau_pm25_change_pct
+
+county_impact <- ggplot(county_health_summary, aes(x = dac_share * 100, y = diff_pm25, size = pop)) +
+  geom_point(alpha = 0.7, shape = 21, color = "#263a49", fill = "#263a49") +
+  scale_size(range = c(4, 20),
+           name = "Impacted Population",
+           labels = scales::comma,
+           guide = guide_legend(override.aes = list(fill = "gray80"))) +
+  labs(title = "County-Level PM2.5 Impacts of SB 1137",
+       subtitle = "Impact of 3,200ft Setback Scenario (2025 to 2045)",
+       x = "Disadvantaged Community Share (%)",
+       y = "Change in PM 2.5 (%)") +
+  scale_y_continuous(expand = c(0, 0), limits = c(-15, 0)) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 18, face = "bold"),
+        plot.subtitle = element_text(size = 12),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        panel.grid.major = element_line(color = "gray90", linetype = "dashed"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "gray30", fill = NA, linewidth = 0.5))
+
+county_impact <- ggplot(county_health_summary, aes(x = dac_share * 100, y = rel_pm25_change * 100, size = pop)) +
+  geom_point(alpha = 0.7, shape = 21, color = "#263a49", fill = "#263a49") +
+  scale_size(range = c(4, 20),
+             name = "Impacted Population",
+             labels = scales::comma,
+             guide = guide_legend(override.aes = list(fill = "gray80"))) +
+  labs(title = "County-Level PM2.5 Impacts of 3,200 Foot Setback",
+       subtitle = "Relative Change from 2020 to 2045",
+       x = "Disadvantaged Community Share (%)",
+       y = "Relative Change in PM2.5 (%)") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(size = 12, hjust = 0.5),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10),
+        panel.grid.major = element_line(color = "gray90", linetype = "dashed"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "gray30", fill = NA, linewidth = 0.5))
+```
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+ggsave("outputs/county_impact.png", county_impact, width = 10, height = 6, dpi = 300)
+```
+
+
+
+```{r}
+state_results_bau <- state_results %>% 
+  filter(oil_price_scenario == "reference case") %>% 
+  filter(innovation_scenario == "low innovation") %>% 
+  filter(carbon_price_scenario == "price floor") %>% 
+  filter(ccs_scenario == "no ccs") %>% 
+  filter(setback_scenario == "no_setback") %>% 
+  filter(setback_existing == 0) %>% 
+  filter(excise_tax_scenario == "no tax")
+
+state_scen_3200 <- state_results %>% 
+  filter(oil_price_scenario == "reference case") %>% 
+  filter(innovation_scenario == "low innovation") %>% 
+  filter(carbon_price_scenario == "price floor") %>% 
+  filter(ccs_scenario == "no ccs") %>% 
+  filter(setback_scenario == "setback_3200ft") %>% 
+  filter(setback_existing == 0) %>% 
+  filter(excise_tax_scenario == "no tax")
+
+state_scen_3200_all <- state_results %>% 
+  filter(oil_price_scenario == "reference case") %>% 
+  filter(innovation_scenario == "low innovation") %>% 
+  filter(carbon_price_scenario == "price floor") %>% 
+  filter(ccs_scenario == "no ccs") %>% 
+  filter(setback_scenario == "setback_3200ft") %>% 
+  filter(setback_existing == 1) %>% 
+  filter(excise_tax_scenario == "no tax")
+
+combined <- bind_rows(state_results_bau, state_scen_3200)
+
+
+```
+
+
+```{r}
+# Filter the datasets for the years 2025 to 2045
+state_scen_3200_filtered <- state_scen_3200 %>% filter(year >= 2025 & year <= 2045)
+state_scen_bau_filtered <- state_results_bau %>% filter(year >= 2025 & year <= 2045)
+
+# Calculate the differences
+differences <- state_scen_3200_filtered %>%
+  inner_join(state_scen_bau_filtered, by = "year", suffix = c("_3200", "_bau")) %>%
+  mutate(
+    total_state_bbl_diff = total_state_bbl_3200 - total_state_bbl_bau,
+    total_state_revenue_diff = total_state_revenue_3200 - total_state_revenue_bau,
+    total_comp_diff = total_comp_3200 - total_comp_bau,
+    mortality_level_diff = mortality_level_3200 - mortality_level_bau,
+    mean_total_pm25_diff = mean_total_pm25_3200 - mean_total_pm25_bau
+  )
+
+# Summarize the total differences between 2025 and 2045
+summary_differences <- differences %>%
+  summarize(
+    total_state_bbl_diff = sum(total_state_bbl_diff, na.rm = TRUE),
+    total_state_revenue_diff = sum(total_state_revenue_diff, na.rm = TRUE),
+    total_comp_diff = sum(total_comp_diff, na.rm = TRUE),
+    mortality_level_diff = sum(mortality_level_diff, na.rm = TRUE),
+    mean_total_pm25_diff = sum(mean_total_pm25_diff, na.rm = TRUE)
+  )
+
+# View the summary of differences
+print(summary_differences)
+```
+
+
+
+```{r}
+library(scales)
+
+# Combine the datasets into a long format
+combined_data <- state_results_bau %>%
+  mutate(scenario = "BAU") %>%
+  bind_rows(state_scen_3200 %>% mutate(scenario = "3200ft setback")) %>%
+  select(year, scenario, total_state_bbl, total_comp, mortality_level)
+
+# Plot for Oil Production
+production_plot <- ggplot(combined_data, aes(x = year, y = total_state_bbl, color = scenario)) +
+  geom_line(linewidth = 1.2) +
+  labs(title = "Oil Production in California",
+       subtitle = "Comparison of BAU and 3200 foot Setback Scenarios",
+       x = "Year",
+       y = "Oil Production (millions of barrels)",
+       color = "") +
+  scale_y_continuous(labels = label_number(suffix = " ", scale = 1e-6)) +
+  scale_color_manual(values = c("orange", "black"),
+                     labels = c("3200 foot setback", "Business as usual")) + 
+  theme_minimal() +
+  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(size = 14, hjust=0.5),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12))
+
+# Plot for Compensation
+compensation_plot <- ggplot(combined_data, aes(x = year, y = total_comp, color = scenario)) +
+  geom_line(linewidth = 1.2) +
+  labs(title = "Total Compensation in California",
+       subtitle = "Comparison of BAU and 3200ft Setback Scenarios",
+       x = "Year",
+       y = "Total Compensation ($)",
+       color = "Scenario") +
+  scale_y_continuous(labels = label_number(suffix = " billion", scale = 1e-9)) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9")) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 18, face = "bold"),
+        plot.subtitle = element_text(size = 14),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12))
+
+# Plot for Mortality Level
+mortality_plot <- ggplot(combined_data, aes(x = year, y = mortality_level, color = scenario)) +
+  geom_line(linewidth = 1.2) +
+  labs(title = "Mortality Level in California",
+       subtitle = "Comparison of BAU and 3200ft Setback Scenarios",
+       x = "Year",
+       y = "Mortality Level (units)",
+       color = "Scenario") +
+  scale_color_manual(values = c("#E69F00", "#56B4E9")) +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 18, face = "bold"),
+        plot.subtitle = element_text(size = 14),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12))
+
+```
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+# Save production plot
+ggsave("outputs/production_plot.png", production_plot, width = 8, height = 6, dpi = 300)
+
+# Save compensation plot
+ggsave("outputs/compensation_plot.png", compensation_plot, width = 8, height = 6, dpi = 300)
+
+# Save mortality plot
+ggsave("outputs/mortality_plot.png", mortality_plot, width = 8, height = 6, dpi = 300)
+
+```
+
+```{r}
+# Filter the data for the desired scenario IDs
+ct_results_filtered <- ct_results %>%
+  filter(scen_id %in% c("reference case-setback_3200ft-no quota-price floor-no ccs-low innovation-no tax-0",
+                        "reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-0"))
+
+# Group the data and calculate the sum of total_pm25
+ct_results_summed <- ct_results_filtered %>%
+  group_by(scen_id, disadvantaged) %>%
+  summarize(total_pm25_sum = sum(total_pm25, na.rm = TRUE))
+
+# Create the bar plot
+ggplot(ct_results_summed, aes(x = disadvantaged, y = total_pm25_sum, fill = scen_id)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Disadvantaged Status", y = "Total PM2.5 Exposure", fill = "Scenario ID") +
+  ggtitle("Total PM2.5 Exposure by Disadvantaged Status and Scenario ID")
+```
+
+```{r}
+# Calculate the average total_pm25 for each tract
+ct_results_avg <- ct_results_filtered %>%
+  group_by(scen_id, census_tract, disadvantaged) %>%
+  summarize(avg_total_pm25 = mean(total_pm25, na.rm = TRUE))
+
+# Create the violin plot
+ggplot(ct_results_avg, aes(x = disadvantaged, y = avg_total_pm25, fill = scen_id)) +
+  geom_violin() +
+  labs(x = "Disadvantaged Status", y = "Average PM2.5 Exposure", fill = "Scenario ID") +
+  theme(legend.position = "bottom")
+```
+
+
+```{r}
+# Filter for the two scenarios you want to compare
+scenarios <- c("reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-0",
+               "reference case-setback_3200ft-no quota-price floor-no ccs-low innovation-no tax-0")
+
+ct_results_avg_filtered <- ct_results_avg %>%
+  filter(scen_id %in% scenarios) %>%
+  mutate(scen_id = recode(scen_id,
+                          "reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-0" = "No Setback",
+                          "reference case-setback_3200ft-no quota-price floor-no ccs-low innovation-no tax-0" = "3,200 foot setback"))
+
+# Calculate the average PM2.5 exposure by disadvantaged status and scenario
+pm25_exposure <- ct_results_avg_filtered %>%
+  group_by(scen_id, disadvantaged) %>%
+  summarise(avg_pm25 = mean(avg_total_pm25, na.rm = TRUE))
+
+# Print the results
+print(pm25_exposure)
+```
+```{r}
+library(sf)
+buffer <- st_read("../data-str/private/setback-buffs/buffer_3200ft.shp")
+
+# Read the wells shapefile
+wells <- sf::st_read("../data/proprietery-data/AllWells_gis/Wells_All.shp")
+```
+
+
+RUN FIGURE 3
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+npv_dt_3200_climate <- npv_dt_sb %>% 
+  filter(oil_price_scenario == "reference case") %>% 
+  filter(title == "Climate: avoided damage") %>% 
+  filter(unit == "value_billion") 
+
+npv_dt_3200_health <- npv_dt_sb %>% 
+  filter(oil_price_scenario == "reference case") %>% 
+  filter(title == "Health: avoided mortality") %>% 
+  filter(unit == "value_billion") 
+
+health_dam <- ggplot(npv_dt_3200_health, aes(x = target, y = value, fill = target)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_text(aes(label = ifelse(target %in% c("setback_1000ft", "setback_2500ft", "setback_3200ft", "setback_5280ft"),
+                               paste0("$", round(value * 1000, 0), " million"),
+                               paste0("$", round(value, 2), " billion"))),
+            vjust = -0.5, size = 4) +
+  scale_fill_manual(values = c("#263a49", "#263a49", "#263a49", "#263a49")) +
+  labs(title = "Avoided Mortality Costs ",
+       subtitle = "Effects at Different Setback Levels from 2020 to 2045",
+       y = "Value in 2019 Dollars (Billions)",
+       x = "Setback Distance") +
+  scale_x_discrete(labels = c("1000 foot", "2500 foot", "3200 foot", "5280 foot")) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 12),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        axis.title.x = element_text(size = 12, face = "bold"),
+        axis.title.y = element_text(size = 12, face = "bold"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_line(color = "black"))
+
+ggsave("outputs/health_benefits.png", plot = health_dam, width = 8, height = 5)
+```
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+clim_dam <- ggplot(npv_dt_3200_climate, aes(x = target, y = value, fill = target)) +
+  geom_bar(stat = "identity", width = 0.6) +
+  geom_text(aes(label = ifelse(target %in% c("setback_1000ft", "setback_2500ft", "setback_3200ft"),
+                               paste0("$", round(value * 1000, 0), " million"),
+                               paste0("$", round(value, 2), " billion"))),
+            vjust = -0.5, size = 4) +
+  scale_fill_manual(values = c("#263a49", "#263a49", "#263a49", "#263a49")) +
+  labs(title = "Avoided Climate Damage",
+       subtitle = "Effects at Different Setback Levels from 2020 to 2045",
+       y = "Value in 2019 Dollars (Billions)",
+       x = "Setback Distance") +
+  scale_x_discrete(labels = c("1000 foot", "2500 foot", "3200 foot", "5280 foot")) +
+  theme_minimal() +
+  theme(legend.position = "none",
+        plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 12),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        axis.title.x = element_text(size = 12, face = "bold"),
+        axis.title.y = element_text(size = 12, face = "bold"),
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_line(color = "black"))
+
+ggsave("outputs/climate_damage.png", plot = clim_dam, dpi = 300, width = 8, height = 5)
+```
+
+
+# Buffer map
+
+```{r}
+library(sf)
+library(mapview)
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+buffer = st_read("data-str/private/setback-buffs/buffer_3200ft.shp")
+```
+
+```{r}
+map = mapview(buffer, col.regions = "blue", alpha.regions = 0.5, layer.name = "3200 foot Buffer")
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+bau_rf = readRDS("data/processed/extraction_2024-06-02/revision-setbacks/field-out/bau_rf.rds")
+```
+
+
+```{r}
+bau_rf_year <- bau_rf %>% 
+  group_by(year) %>% 
+  summarise(new_wells = sum(new_wells, na.rm=TRUE),
+            n_pred_exit = sum(n_pred_exit, na.rm=TRUE),
+            n_wells_exit = sum(n_wells_exit, na.rm=TRUE))
+```
+
+
+
+
+
+## ML PLOTS
+
+```{r}
+# Load historical data
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+entry_df <- read_csv("data/processed/entry_df_final_revised.csv")
+entry_df$doc_field_code <- as.numeric(entry_df$doc_field_code)
+entry_df$doc_field_code <- as.character(entry_df$doc_field_code)
+
+# Prepare data for Random Forest model
+entry_df <- entry_df %>%
+  mutate(oil_price_usd_per_bbl = brent) %>% 
+  mutate(depl = m_cumsum_div_my_prod) %>% 
+  na.omit()
+
+entry_df = as.data.table(entry_df)
+
+# Ensure no duplicates in entry_df
+entry_df <- entry_df[!duplicated(entry_df), ]
+
+# Train Entry RF Model
+x_train_entry <- as.matrix(entry_df[, .(oil_price_usd_per_bbl, wm_capex_imputed, wm_opex_imputed, depl, doc_field_code)])
+y_train_entry <- entry_df$n_new_wells
+
+rf_model_entry <- randomForest(x = x_train_entry, y = y_train_entry, ntree = 500, mtry = 4, importance = TRUE)
+
+# Train Exit RF Model
+exit_df <- read_csv("data/processed/well_exits_pred.csv")
+setDT(exit_df)
+exit_df[, doc_field_code := as.character(doc_field_code)]
+
+entry_df <- merge(entry_df, exit_df[, .(doc_field_code, year, well_exits, well_exits_pred)], 
+                  by = c("doc_field_code", "year"), 
+                  all.x = TRUE)
+
+entry_df <- entry_df %>% 
+  mutate(m_opex_imputed = opex_imputed) 
+
+entry_df <- entry_df[!is.na(well_exits)]
+
+x_train_exit <- as.matrix(entry_df[, .(oil_price_usd_per_bbl, m_opex_imputed, depl, doc_field_code)])
+y_train_exit <- entry_df$well_exits
+
+rf_model_exit <- randomForest(x = x_train_exit, y = y_train_exit, ntree = 500, mtry = 3, importance = TRUE)
+
+# Ensure x_train_entry and x_train_exit match entry_df in row count
+x_train_entry <- as.matrix(entry_df[, .(oil_price_usd_per_bbl, wm_capex_imputed, wm_opex_imputed, depl, doc_field_code)])
+x_train_exit <- as.matrix(entry_df[, .(oil_price_usd_per_bbl, m_opex_imputed, depl, doc_field_code)])
+
+# Predict New Wells
+entry_df$pred_new_wells <- predict(rf_model_entry, newdata = x_train_entry)
+
+# Predict Exit Wells
+entry_df$pred_exit_wells <- predict(rf_model_exit, newdata = x_train_exit)
+```
+
+
+```{r}
+rmse_new_wells <- sqrt(mean((entry_df$pred_new_wells - entry_df$n_new_wells)^2))
+print(paste("RMSE for New Wells: ", rmse_new_wells))
+
+# Calculate MAE for new wells
+mae_new_wells <- mean(abs(entry_df$pred_new_wells - entry_df$n_new_wells))
+print(paste("MAE for New Wells: ", mae_new_wells))
+```
+
+```{r}
+setwd("/capstone/freshcair/meds-freshcair-capstone")
+new_wells_comp = ggplot(entry_df, aes(x = pred_new_wells, y = n_new_wells)) +
+  geom_point(color = "blue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Predicted vs Actual Number of New Wells (1977-2019)",
+       x = "Predicted Number of New Wells",
+       y = "Actual Number of New Wells") +
+  theme_minimal()
+
+ggsave("outputs/new_wells_comp.png", new_wells_comp, width = 8, height = 6, dpi = 300)
+```
+
+```{r}
+setwd("/capstone/freshcair/meds-freshcair-capstone")
+exit_wells_comp <- ggplot(entry_df, aes(x = pred_exit_wells, y = well_exits)) +
+  geom_point(color = "blue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Predicted vs Actual Number of Exit Wells (1977-2019)",
+       x = "Predicted Number of Exit Wells",
+       y = "Actual Number of Exit Wells") +
+  theme_minimal()
+
+ggsave("outputs/exit_wells_comp.png", exit_wells_comp, width = 8, height = 6, dpi = 300)
+```
+
+## Plotting change in wells for each model
+
+
+```{r}
+setwd("/capstone/freshcair/meds-freshcair-capstone")
+
+bau_rf = readRDS("data/processed/extraction_2024-06-02/revision-setbacks/field-out/bau_rf.rds")
+sb_rf = readRDS("data/processed/extraction_2024-06-02/revision-setbacks/field-out/sb_rf.rds")
+bau_poisson = readRDS("data/processed/extraction_2024-05-13/revision-setbacks/field-out/bau_poisson.rds")
+sb_poisson = readRDS("data/processed/extraction_2024-05-13/revision-setbacks/field-out/sb_poisson.rds")
+```
+
+
+```{r}
+
+sb_rf_summary <- sb_rf %>%
+  group_by(year) %>%
+  summarise(
+    new_wells_sb = sum(new_wells),
+    cumulative_wells_sb = sum(cumulative_wells),
+    n_pred_exit_sb = sum(n_pred_exit),
+    n_wells_after_exit_sb = sum(n_wells_after_exit),
+    n_wells_exit_sb = sum(n_wells_exit)
+  )
+
+bau_rf_summary <- bau_rf %>%
+  group_by(year) %>%
+  summarise(
+    new_wells_bau = sum(new_wells),
+    cumulative_wells_bau = sum(cumulative_wells),
+    n_pred_exit_bau = sum(n_pred_exit),
+    n_wells_after_exit_bau = sum(n_wells_after_exit),
+    n_wells_exit_bau = sum(n_wells_exit)
+  )
+
+sb_poisson_summary <- sb_poisson %>% 
+  group_by(year) %>%
+  summarise(
+    new_wells_sb = sum(new_wells),
+    cumulative_wells_sb = sum(cumulative_wells),
+    n_pred_exit_sb = sum(n_pred_exit),
+    n_wells_after_exit_sb = sum(n_wells_after_exit),
+    n_wells_exit_sb = sum(n_wells_exit)
+  )
+
+bau_poisson_summary <- bau_poisson %>% 
+  group_by(year) %>%
+  summarise(
+    new_wells_bau_poisson = sum(new_wells),
+    cumulative_wells_bau_poisson = sum(cumulative_wells),
+    n_pred_exit_bau_poisson = sum(n_pred_exit),
+    n_wells_after_exit_bau_poisson = sum(n_wells_after_exit),
+    n_wells_exit_bau_poisson = sum(n_wells_exit)
+  )
+```
+
+```{r}
+diff_summary <- merge(sb_rf_summary, bau_rf_summary, by = "year")
+
+# Calculate the differences
+diff_summary <- diff_summary %>%
+  mutate(
+    new_wells_diff = new_wells_bau - new_wells_sb,
+    cumulative_wells_diff = cumulative_wells_bau - cumulative_wells_sb,
+    n_pred_exit_diff = n_pred_exit_bau - n_pred_exit_sb,
+    n_wells_after_exit_diff = n_wells_after_exit_bau - n_wells_after_exit_sb,
+    n_wells_exit_diff = n_wells_exit_bau - n_wells_exit_sb
+  )
+
+# Plotting the difference in n_wells_after_exit
+p1=ggplot() +
+  geom_line(data = sb_rf_summary, aes(x = year, y = new_wells_sb, color = "SB RF")) +
+  geom_point(data = sb_rf_summary, aes(x = year, y = new_wells_sb, color = "SB RF")) +
+  geom_line(data = bau_rf_summary, aes(x = year, y = new_wells_bau, color = "BAU RF")) +
+  geom_point(data = bau_rf_summary, aes(x = year, y = new_wells_bau, color = "BAU RF")) +
+  geom_line(data = sb_poisson_summary, aes(x = year, y = new_wells_sb, color = "SB Poisson")) +
+  geom_point(data = sb_poisson_summary, aes(x = year, y = new_wells_sb, color = "SB Poisson")) +
+  geom_line(data = bau_poisson_summary, aes(x = year, y = new_wells_bau_poisson, color = "BAU Poisson")) +
+  geom_point(data = bau_poisson_summary, aes(x = year, y = new_wells_bau_poisson, color = "BAU Poisson")) +
+  ggtitle("Predictions for New Wells in SB and BAU Scenarios (RF and Poisson)") +
+  xlab("Year") +
+  ylab("Predicted New Wells") +
+  scale_color_manual(name = "Scenario", 
+                     values = c("SB RF" = "blue", "BAU RF" = "red", "SB Poisson" = "green", "BAU Poisson" = "purple")) +
+  theme_minimal()
+```
+
+

@@ -1,0 +1,1075 @@
+---
+title: "ML Analysis"
+author: "FreshCAir"
+---
+
+```{r}
+library(tidyverse)
+library(randomForest)
+library(caret)
+library(data.table)
+library(xgboost)
+```
+
+
+```{r}
+source('/capstone/freshcair/meds-freshcair-capstone/energy/extraction-segment/model/full-run-revised/load_input_info_fc.R')
+```
+
+```{r}
+
+# --------------------------------- FEATURE ENGINEERING ---------------------------------
+
+# Loading historical data (1977-2019)
+entry_df <- read_csv("data-str/public/intermediate/energy/production/entry_df_final_revised.csv")
+entry_df$doc_field_code <- as.numeric(entry_df$doc_field_code)
+entry_df$doc_field_code <- as.character(entry_df$doc_field_code)
+
+# No setback production forecasts
+prod_existing_vintage_no_sb <- prod_existing_vintage[setback_scenario == "no_setback"]
+
+# Group production forecasts by field 
+proj_prod_existing_vintage_no_sb <- prod_existing_vintage_no_sb %>% 
+  group_by(year, doc_field_code) %>% 
+  summarise(yearly_production = sum(production_bbl, na.rm=TRUE),
+            no_wells = sum(no_wells, na.rm=TRUE),
+            adj_no_wells = sum(adj_no_wells, na.rm=TRUE))
+
+# 3200ft setback production forecasts
+prod_existing_vintage_3200 <- prod_existing_vintage[setback_scenario == "setback_3200ft"]
+
+# Adding a column of total production over historical period for no setback -- used for depletion
+total_production_existing <- prod_existing_vintage_no_sb[, .(total_bbls_existing = sum(production_bbl, na.rm = TRUE)), by = .(doc_field_code, year)]
+
+# Adding a column of total production over historical period for 3200ft setback -- used for depletion
+total_production_3200 <- prod_existing_vintage_3200[, .(total_bbls_existing = sum(production_bbl, na.rm = TRUE)), by = .(doc_field_code, year)]
+
+vars_dt_rf <- merge(vars_dt, total_production, by = c("doc_field_code", "year"), all.x = TRUE)
+
+# Gets resource by field
+resource <- vars_dt %>%
+  select(doc_field_code, resource) %>%
+  distinct()
+
+# Summarises total production for each field in historical period
+entry_df <- entry_df %>%
+  group_by(doc_field_code) %>%
+  mutate(cumulative_prod = cumsum(doc_prod)) %>%
+  ungroup()
+
+# Extracts the cumulative production and depletion values for 2019
+cumulative_prod_2019 <- entry_df %>%
+  filter(year == 2019) %>%
+  select(doc_field_code, cumulative_prod_2019 = cumulative_prod)
+
+# Gets 2019 depletion values 
+depl_2019 <- entry_df %>%
+  filter(year == 2019) %>%
+  select(doc_field_code, m_cumsum_div_my_prod_2019 = m_cumsum_div_my_prod)
+
+```
+
+
+
+
+
+## Model Comparison
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+entry_df <- read_csv("data-str/public/intermediate/energy/production/entry_df_final_revised.csv")
+entry_df$doc_field_code <- as.numeric(entry_df$doc_field_code)
+entry_df$doc_field_code <- as.character(entry_df$doc_field_code)
+
+entry_df <- entry_df %>% 
+  mutate(depl = m_cumsum_div_my_prod)
+
+
+prediction_data <- entry_df
+prediction_data <- prediction_data %>% 
+  mutate(oil_price_usd_per_bbl = brent)
+
+prediction_data <- prediction_data %>% 
+  select(doc_field_code, year, oil_price_usd_per_bbl, wm_capex_imputed, wm_opex_imputed, depl) %>% 
+  na.omit()
+
+# predicted_n_new_wells <- predict(rf_model_entry, newdata = as.matrix(prediction_data))
+predicted_n_new_wells <- predict(rf_model_entry, newdata = prediction_data)
+
+entry_df$predicted_n_new_wells <- predicted_n_new_wells
+
+
+# Merge the predicted values back into entry_df
+entry_df <- merge(entry_df, predicted_data, by = c("doc_field_code", "year"), all.x = TRUE)
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+poisson = read_csv("data/intermediate-zenodo/new_wells_pred_revised.csv")
+poisson$doc_field_code = as.character(poisson$doc_field_code)
+
+```
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+entry_df <- read_csv("data-str/public/intermediate/energy/production/entry_df_final_revised.csv")
+entry_df$doc_field_code <- as.numeric(entry_df$doc_field_code)
+entry_df$doc_field_code <- as.character(entry_df$doc_field_code)
+entry_df <- entry_df %>% 
+  mutate(depl = m_cumsum_div_my_prod)
+
+# Create a subset of entry_df with the same rows as prediction_data
+entry_df_subset <- entry_df %>%
+  select(doc_field_code, year, brent, wm_capex_imputed, wm_opex_imputed, depl) %>%
+  na.omit()
+
+# Make predictions using the random forest model on the subset data
+predicted_n_new_wells <- predict(rf_model_entry, newdata = entry_df_subset)
+
+# Create a new data table with the predictions
+rf_predictions_dt <- data.table(doc_field_code = entry_df_subset$doc_field_code,
+                                year = entry_df_subset$year,
+                                predicted_n_new_wells = predicted_n_new_wells)
+
+# Merge the predictions back into the original entry_df
+entry_df <- merge(entry_df, rf_predictions_dt, by = c("doc_field_code", "year"), all.x = TRUE)
+```
+
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+entry_df <- read_csv("data-str/public/intermediate/energy/production/entry_df_final_revised.csv")
+poisson = read_csv("data/intermediate-zenodo/new_wells_pred_revised.csv")
+poisson$doc_field_code = as.character(poisson$doc_field_code) 
+entry_df$doc_field_code <- as.numeric(entry_df$doc_field_code)
+entry_df$doc_field_code <- as.character(entry_df$doc_field_code)
+entry_df <- entry_df %>% 
+  mutate(depl = m_cumsum_div_my_prod)
+
+entry_df <- entry_df %>% 
+  mutate(oil_price_usd_per_bbl = brent) %>% 
+  na.omit()
+train_indices <- createDataPartition(entry_df$n_new_wells, p = 0.8, list = FALSE)
+train_data <- entry_df[train_indices, ]
+test_data <- entry_df[-train_indices, ]
+
+# Define the formula for the models
+# brent - brent benchmark oil price in nominal USD per barrel
+# capital expenditure: major purchases used to acquire non consumable goods
+# operational expenditure: day to day expenses to keep oil field functioning
+# depl: depletion
+# outcome variable: number of new wells
+rf_formula <- as.formula(n_new_wells ~ oil_price_usd_per_bbl + wm_capex_imputed + wm_opex_imputed + depl)
+
+# Random Forest
+rf_model <- randomForest(rf_formula, data = train_data, importance = TRUE, ntree = 500, mtry = 3)
+
+test_data$new_wells_pred_rf <- predict(rf_model, newdata = test_data)
+
+rmse_rf <- sqrt(mean((test_data$n_new_wells - test_data$new_wells_pred_rf)^2, na.rm = TRUE))
+print(paste("RMSE of Random Forest on test set:", rmse_rf))
+
+# Applying to full dataset:
+entry_df$new_wells_pred_rf <- predict(rf_model, newdata = entry_df)
+
+# Merge poisson data with entry_df
+entry_df <- entry_df %>%
+  left_join(poisson, by = c("doc_field_code", "year"))
+
+# Summarize data by year for each model
+plot_data <- entry_df %>%
+  group_by(year) %>%
+  summarize(
+    actual = sum(n_new_wells),
+    poisson = sum(new_wells_pred),
+    random_forest = sum(new_wells_pred_rf)
+  ) %>%
+  gather(key = "variable", value = "value", -year)
+
+# Create the plot
+ggplot(plot_data, aes(x = year, y = value, color = variable)) +
+  geom_line(size = 1) +
+  scale_color_manual(values = c("black", "orange", "blue"),
+                     labels = c("Actual", "Poisson", "Random Forest")) +
+  labs(title = "Comparison of New Wells",
+       x = "Year",
+       y = "Number of New Wells",
+       color = "Model") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid.major = element_line(color = "gray90"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 0.5))
+```
+
+
+# Adding projections
+
+```{r}
+bau_poisson_df <- test %>%
+  group_by(year) %>%
+  summarize(bau_poisson = sum(new_wells))
+
+setback_poisson_df <- test2 %>% 
+  group_by(year) %>% 
+  summarise(setback_poisson = sum(new_wells))
+
+bau_rf_df <- test3 %>% 
+  group_by(year) %>% 
+  summarise(bau_rf = sum(new_wells))
+
+setback_rf_df <- test4 %>% 
+  group_by(year) %>% 
+  summarise(setback_rf = sum(new_wells))
+```
+
+
+```{r}
+combined_df <- bind_rows(
+  bau_poisson_df %>% mutate(variable = "bau_poisson", value = bau_poisson) %>% select(year, variable, value),
+  setback_poisson_df %>% mutate(variable = "setback_poisson", value = setback_poisson) %>% select(year, variable, value),
+  bau_rf_df %>% mutate(variable = "bau_rf", value = bau_rf) %>% select(year, variable, value),
+  setback_rf_df %>% mutate(variable = "setback_rf", value = setback_rf) %>% select(year, variable, value),
+  plot_data
+) %>% 
+  mutate(variable = recode(variable,
+                           "bau_poisson" = "poisson",
+                           "bau_rf" = "random_forest"))
+```
+
+```{r}
+# color_linetype_df <- data.frame(
+#   variable = c("actual", "poisson", "random_forest", "bau_poisson", "setback_poisson", "bau_rf", "setback_rf"),
+#   color = c("black", "red", "blue", "red", "red", "blue", "blue"),
+#   linetype = c("solid", "solid", "solid", "dotted", "solid", "dotted", "solid")
+# )
+# 
+# # Print the color_linetype_df to check the assignments
+# print(color_linetype_df)
+
+# Create the plot
+plot <- ggplot(combined_df, aes(x = year, y = value, color = variable, linetype = variable)) +
+  geom_line(size = 1) +
+  scale_color_manual(values = c("actual" = "black", 
+                                "poisson" = "orange", 
+                                "random_forest" = "blue",
+                                "bau_poisson" = "orange",
+                                "setback_poisson" = "orange",
+                                "bau_rf" = "blue",
+                                "setback_rf" = "blue"),
+                     labels = c("Actual", "Poisson (Historical)", "Random Forest (Historical)",
+                                "BAU Poisson", "Setback Poisson", "BAU RF", "Setback RF")) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid",
+                                   "random_forest" = "solid",
+                                   "bau_poisson" = "solid",
+                                   "setback_poisson" = "dotten",
+                                   "bau_rf" = "solid",
+                                   "setback_rf" = "dotted"),
+                        labels = c("Actual", "Poisson (Historical)", "Random Forest (Historical)",
+                                   "BAU Poisson", "Setback Poisson", "BAU RF", "Setback RF")) +
+  labs(title = "Comparison of New Wells (Historical and Projected)",
+       x = "Year",
+       y = "Number of New Wells",
+       color = "Model",
+       linetype = "Model") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid.major = element_line(color = "gray90"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 0.5))
+```
+
+
+
+```{r}
+
+plot <- ggplot(combined_df, aes(x = year, y = value, color = variable, linetype = variable)) +
+  geom_line(size = 1) +
+  geom_vline(xintercept = 2019.5, color = "black", linetype = "dashed", size = 1) +
+  scale_x_continuous(limits = c(1977, 2045), breaks = seq(1975, 2045, by = 10)) +
+  scale_y_continuous(limits = c(0, 3500), breaks = seq(0, 3500, by = 500)) +
+  scale_color_manual(values = c("actual" = "black", 
+                                "poisson" = "orange", 
+                                "random_forest" = "blue",
+                                "setback_poisson" = "orange",
+                                "setback_rf" = "blue"),
+                     guide = FALSE) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid",
+                                   "random_forest" = "solid",
+                                   "setback_poisson" = "dashed",
+                                   "setback_rf" = "dashed"),
+                        guide = FALSE) +
+  labs(title = "Comparison of New Wells (Historical and Projected)",
+       x = "Year",
+       y = "Number of New Wells") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        panel.grid.major = element_line(color = "gray90"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 0.5))
+
+# Create a data frame for the custom legend
+legend_data <- data.frame(
+  Model = c("Actual", "Random Forest", "Poisson", "3200 foot setback", "No setback"),
+  color = c("black", "blue", "orange", "black", "black"),
+  linetype = c("solid", "solid", "solid", "dashed", "solid"),
+  stringsAsFactors = FALSE
+)
+
+# Create the custom legend
+custom_legend <- guide_legend(
+  title = "Model",
+  title.theme = element_text(size = 16),
+  label.theme = element_text(size = 14),
+  override.aes = list(
+    color = legend_data$color,
+    linetype = legend_data$linetype
+  ),
+  keywidth = unit(2, "cm"),
+  keyheight = unit(0.5, "cm"),
+  nrow = 3,
+  ncol = 2
+)
+
+# Add the custom legend to the plot
+plot <- plot +
+  guides(color = custom_legend, linetype = custom_legend) +
+  scale_color_manual(values = c("actual" = "black",
+                                "poisson" = "orange",
+                                "random_forest" = "blue",
+                                "setback_poisson" = "orange",
+                                "setback_rf" = "blue"),
+                     labels = legend_data$Model) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid",
+                                   "random_forest" = "solid",
+                                   "setback_poisson" = "dashed",
+                                   "setback_rf" = "dashed"),
+                        labels = legend_data$Model) +
+  theme(legend.position = "bottom")
+
+# Display the plot
+ggsave("outputs/new_wells.png", plot, width = 12, height = 8, units = "in", dpi = 300)
+```
+
+```{r}
+plot2 <- ggplot(combined_df, aes(x = year, y = value, color = variable, linetype = variable)) +
+  geom_line(data = combined_df[combined_df$variable == "actual", ], size = 1, na.rm = TRUE) +
+  geom_vline(xintercept = 2019, color = "black", linetype = "dashed", size = 1) +
+  scale_x_continuous(limits = c(1977, 2045), breaks = seq(1975, 2045, by = 10)) +
+  scale_y_continuous(limits = c(0, 3500), breaks = seq(0, 3500, by = 500)) +
+  scale_color_manual(values = c("actual" = "black"),
+                     guide = FALSE) +
+  scale_linetype_manual(values = c("actual" = "solid"),
+                        guide = FALSE) +
+  labs(title = "Actual Number of New Wells To 2019",
+       x = "Year",
+       y = "Number of New Wells") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        panel.grid.major = element_line(color = "gray90"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 0.5))
+
+# Create a data frame for the custom legend
+legend_data <- data.frame(
+  Model = "Actual",
+  color = "black",
+  linetype = "solid",
+  stringsAsFactors = FALSE
+)
+
+# Create the custom legend
+custom_legend <- guide_legend(
+  title = "Model",
+  title.theme = element_text(size = 16),
+  label.theme = element_text(size = 14),
+  override.aes = list(
+    color = legend_data$color,
+    linetype = legend_data$linetype
+  ),
+  keywidth = unit(2, "cm"),
+  keyheight = unit(0.5, "cm"),
+  nrow = 1,
+  ncol = 1
+)
+
+# Add the custom legend to the plot
+plot2 <- plot2 +
+  guides(color = custom_legend, linetype = custom_legend) +
+  scale_color_manual(values = c("actual" = "black"),
+                     labels = legend_data$Model) +
+  scale_linetype_manual(values = c("actual" = "solid"),
+                        labels = legend_data$Model) +
+  theme(legend.position = "bottom")
+
+ggsave("outputs/new_wells2.png", plot2, width = 12, height = 8, units = "in", dpi = 300)
+```
+
+```{r}
+plot3 <- ggplot(combined_df, aes(x = year, y = value, color = variable, linetype = variable)) +
+  geom_line(data = combined_df[combined_df$variable == "actual", ], size = 1) +
+  geom_line(data = combined_df[combined_df$variable == "poisson" & combined_df$year <= 2019, ], size = 1) +
+  geom_vline(xintercept = 2019, color = "black", linetype = "dashed", size = 1) +
+  scale_x_continuous(limits = c(1977, 2045), breaks = seq(1975, 2045, by = 5)) +
+  scale_y_continuous(limits = c(0, max(combined_df$value) * 1.1), breaks = seq(0, max(combined_df$value) * 1.1, by = 500)) +
+  scale_color_manual(values = c("actual" = "black",
+                                "poisson" = "orange"),
+                     guide = FALSE) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid"),
+                        guide = FALSE) +
+  labs(title = "Comparison of New Wells (Historical Period)",
+       x = "Year",
+       y = "Number of New Wells") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        panel.grid.major = element_line(color = "gray90"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 0.5))
+
+# Create a data frame for the custom legend
+legend_data <- data.frame(
+  Model = c("Actual", "Poisson"),
+  color = c("black", "orange"),
+  linetype = c("solid", "solid"),
+  stringsAsFactors = FALSE
+)
+
+# Create the custom legend
+custom_legend <- guide_legend(
+  title = "Model",
+  title.theme = element_text(size = 16),
+  label.theme = element_text(size = 14),
+  override.aes = list(
+    color = legend_data$color,
+    linetype = legend_data$linetype
+  ),
+  keywidth = unit(2, "cm"),
+  keyheight = unit(0.5, "cm"),
+  nrow = 2,
+  ncol = 1
+)
+
+# Add the custom legend to the plot
+plot3 <- plot3 +
+  guides(color = custom_legend, linetype = custom_legend) +
+  scale_color_manual(values = c("actual" = "black",
+                                "poisson" = "orange"),
+                     labels = legend_data$Model) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid"),
+                        labels = legend_data$Model) +
+  theme(legend.position = "bottom")
+ggsave("outputs/new_wells3.png", plot3, width = 12, height = 8, units = "in", dpi = 300)
+```
+
+```{r}
+plot4 <- ggplot(combined_df, aes(x = year, y = value, color = variable, linetype = variable)) +
+  geom_line(data = combined_df[combined_df$variable == "actual" & combined_df$year <= 2019, ], size = 1, na.rm = TRUE) +
+  geom_line(data = combined_df[combined_df$variable == "poisson" & combined_df$year <= 2019, ], size = 1, na.rm = TRUE) +
+  geom_line(data = combined_df[combined_df$variable == "random_forest" & combined_df$year <= 2019, ], size = 1, na.rm = TRUE) +
+  geom_vline(xintercept = 2019, color = "black", linetype = "dashed", size = 1) +
+  scale_x_continuous(limits = c(1977, 2045), breaks = seq(1975, 2045, by = 10)) +
+  scale_y_continuous(limits = c(0, 3500), breaks = seq(0, 3500, by = 500)) +
+  scale_color_manual(values = c("actual" = "black",
+                                "poisson" = "orange",
+                                "random_forest" = "blue"),
+                     guide = FALSE) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid",
+                                   "random_forest" = "solid"),
+                        guide = FALSE) +
+  labs(title = "Comparison of New Wells (Historical Period)",
+       x = "Year",
+       y = "Number of New Wells") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        panel.grid.major = element_line(color = "gray90"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 0.5))
+
+# Create a data frame for the custom legend
+legend_data <- data.frame(
+  Model = c("Actual", "Poisson", "Random Forest"),
+  color = c("black", "orange", "blue"),
+  linetype = c("solid", "solid", "solid"),
+  stringsAsFactors = FALSE
+)
+
+# Create the custom legend
+custom_legend <- guide_legend(
+  title = "Model",
+  title.theme = element_text(size = 14),
+  label.theme = element_text(size = 12),
+  override.aes = list(
+    color = legend_data$color,
+    linetype = legend_data$linetype
+  ),
+  keywidth = unit(2, "cm"),
+  keyheight = unit(0.5, "cm"),
+  nrow = 1,
+  ncol = 3
+)
+
+# Add the custom legend to the plot
+plot4 <- plot4 +
+  guides(color = custom_legend, linetype = custom_legend) +
+  scale_color_manual(values = c("actual" = "black",
+                                "poisson" = "orange",
+                                "random_forest" = "blue"),
+                     labels = legend_data$Model) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid",
+                                   "random_forest" = "solid"),
+                        labels = legend_data$Model) +
+  theme(legend.position = "bottom")
+
+ggsave("outputs/new_wells4.png", plot4, width = 12, height = 8, units = "in", dpi = 300)
+```
+
+```{r}
+plot5 <- ggplot(combined_df, aes(x = year, y = value, color = variable, linetype = variable)) +
+  geom_line(data = combined_df[combined_df$variable %in% c("actual", "poisson", "random_forest", "bau_poisson", "setback_poisson"), ], size = 1, na.rm = TRUE) +
+  geom_vline(xintercept = 2019, color = "black", linetype = "dotted", size = 1) +
+  scale_x_continuous(limits = c(1977, 2045), breaks = seq(1975, 2045, by = 10)) +
+  scale_y_continuous(limits = c(0, 3500), breaks = seq(0, 3500, by = 500)) +
+  scale_color_manual(values = c("actual" = "black",
+                                "poisson" = "orange",
+                                "random_forest" = "blue",
+                                "bau_poisson" = "orange",
+                                "setback_poisson" = "orange"),
+                     guide = FALSE) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid",
+                                   "random_forest" = "solid",
+                                   "bau_poisson" = "dashed",
+                                   "setback_poisson" = "dotted"),
+                        guide = FALSE) +
+  labs(title = "Comparison of New Wells (Historical and Projected)",
+       x = "Year",
+       y = "Number of New Wells") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        panel.grid.major = element_line(color = "gray90"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 0.5))
+
+# Create a data frame for the custom legend
+legend_data <- data.frame(
+  Model = c("Actual", "Poisson", "Random Forest", "BAU Poisson", "Setback Poisson"),
+  color = c("black", "orange", "blue", "orange", "orange"),
+  linetype = c("solid", "solid", "solid", "dashed", "dotted"),
+  stringsAsFactors = FALSE
+)
+
+# Create the custom legend
+custom_legend <- guide_legend(
+  title = "Model",
+  title.theme = element_text(size = 14),
+  label.theme = element_text(size = 12),
+  override.aes = list(
+    color = legend_data$color,
+    linetype = legend_data$linetype
+  ),
+  keywidth = unit(2, "cm"),
+  keyheight = unit(0.5, "cm"),
+  nrow = 2,
+  ncol = 3
+)
+
+# Add the custom legend to the plot
+plot5 <- plot5 +
+  guides(color = custom_legend, linetype = custom_legend) +
+  scale_color_manual(values = c("actual" = "black",
+                                "poisson" = "orange",
+                                "random_forest" = "blue",
+                                "bau_poisson" = "orange",
+                                "setback_poisson" = "orange"),
+                     labels = legend_data$Model) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid",
+                                   "random_forest" = "solid",
+                                   "bau_poisson" = "dashed",
+                                   "setback_poisson" = "dotted"),
+                        labels = legend_data$Model) +
+  theme(legend.position = "bottom")
+
+ggsave("outputs/new_wells5.png", plot5, width = 12, height = 8, units = "in", dpi = 300)
+```
+
+
+
+```{r}
+plot5 <- ggplot(combined_df, aes(x = year, y = value, color = variable, linetype = variable)) +
+  geom_line(data = combined_df[combined_df$variable == "actual" & combined_df$year <= 2019, ], size = 1, na.rm = TRUE) +
+  geom_line(data = combined_df[combined_df$variable == "poisson", ], size = 1, na.rm = TRUE) +
+  geom_line(data = combined_df[combined_df$variable == "setback_poisson", ], size = 1, na.rm = TRUE) +
+  geom_line(data = combined_df[combined_df$variable == "random_forest" & combined_df$year <= 2019, ], size = 1, na.rm = TRUE) +
+  geom_vline(xintercept = 2019.5, color = "black", linetype = "dashed", size = 1) +
+  scale_x_continuous(limits = c(1977, 2045), breaks = seq(1975, 2045, by = 10)) +
+  scale_y_continuous(limits = c(0, 3500), breaks = seq(0, 3500, by = 500)) +
+  scale_color_manual(values = c("actual" = "black",
+                                "poisson" = "orange",
+                                "random_forest" = "blue",
+                                "setback_poisson" = "orange"),
+                     guide = FALSE) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid",
+                                   "random_forest" = "solid",
+                                   "setback_poisson" = "dashed"),
+                        guide = FALSE) +
+  labs(title = "Comparison of New Wells (Historical and Projected)",
+       x = "Year",
+       y = "Number of New Wells") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 12),
+        panel.grid.major = element_line(color = "gray90"),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(color = "black", fill = NA, size = 0.5))
+
+# Create a data frame for the custom legend
+legend_data <- data.frame(
+  Model = c("Actual", "Random Forest", "Poisson", "3200 foot setback"),
+  color = c("black", "blue", "orange", "black"),
+  linetype = c("solid", "solid", "solid", "dashed"),
+  stringsAsFactors = FALSE
+)
+
+# Create the custom legend
+custom_legend <- guide_legend(
+  title = "Model",
+  title.theme = element_text(size = 16),
+  label.theme = element_text(size = 14),
+  override.aes = list(
+    color = legend_data$color,
+    linetype = legend_data$linetype
+  ),
+  keywidth = unit(2, "cm"),
+  keyheight = unit(0.5, "cm"),
+  nrow = 3,
+  ncol = 2
+)
+
+# Add the custom legend to the plot
+plot5 <- plot5 +
+  guides(color = custom_legend, linetype = custom_legend) +
+  scale_color_manual(values = c("actual" = "black",
+                                "poisson" = "orange",
+                                "random_forest" = "blue",
+                                "setback_poisson" = "orange",
+                                "poisson" = "orange"),
+                     labels = legend_data$Model) +
+  scale_linetype_manual(values = c("actual" = "solid",
+                                   "poisson" = "solid",
+                                   "random_forest" = "solid",
+                                   "setback_poisson" = "dashed",
+                                   "poisson" = "solid"),
+                        labels = legend_data$Model) +
+  theme(legend.position = "bottom")
+
+ggsave("outputs/new_wells5.png", plot5, width = 12, height = 8, units = "in", dpi = 300)
+```
+
+## 
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+library(randomForest)
+library(data.table)
+library(dplyr)
+library(ggplot2)
+library(Metrics)
+
+# Load and prepare the entry data
+entry_df <- read_csv("../data/processed/entry_df_final_revised.csv")
+entry_df$doc_field_code <- as.numeric(entry_df$doc_field_code)
+entry_df$doc_field_code <- as.character(entry_df$doc_field_code)
+
+entry_df <- entry_df %>%
+  mutate(oil_price_usd_per_bbl = brent) %>% 
+  mutate(depl = m_cumsum_div_my_prod) %>% 
+  na.omit()
+
+entry_df <- as.data.table(entry_df)
+
+# Prepare training data for entry model
+x_train_entry <- as.matrix(entry_df[, .(oil_price_usd_per_bbl, wm_capex_imputed, wm_opex_imputed, depl, doc_field_code)])
+y_train_entry <- entry_df$n_new_wells
+
+# Train Random Forest model for entry
+rf_model_entry <- randomForest(x = x_train_entry, y = y_train_entry, ntree = 500, mtry = 4, importance = TRUE)
+
+# Predict entry model on the training data
+entry_predictions <- predict(rf_model_entry, x_train_entry)
+
+# Calculate RMSE for entry model
+rmse_entry <- rmse(y_train_entry, entry_predictions)
+cat("RMSE for entry model: ", rmse_entry, "\n")
+
+# Load and prepare the exit data
+exit_df <- read_csv("data/processed/well_exits_pred.csv")
+setDT(exit_df)
+exit_df[, doc_field_code := as.character(doc_field_code)]
+
+entry_df <- merge(entry_df, exit_df[, .(doc_field_code, year, well_exits, well_exits_pred)], 
+                  by = c("doc_field_code", "year"), 
+                  all.x = TRUE)
+
+entry_df <- entry_df %>% 
+  mutate(m_opex_imputed = opex_imputed)
+
+entry_df <- entry_df[!is.na(well_exits)]
+
+# Prepare training data for exit model
+x_train_exit <- as.matrix(entry_df[, .(oil_price_usd_per_bbl, m_opex_imputed, depl, doc_field_code)])
+y_train_exit <- entry_df$well_exits
+
+# Train Random Forest model for exit
+rf_model_exit <- randomForest(x = x_train_exit, y = y_train_exit, ntree = 500, mtry = 3, importance = TRUE)
+
+# Predict exit model on the training data
+exit_predictions <- predict(rf_model_exit, x_train_exit)
+
+# Calculate RMSE for exit model
+rmse_exit <- rmse(y_train_exit, exit_predictions)
+cat("RMSE for exit model: ", rmse_exit, "\n")
+
+# Generate summary statistics
+summary_stats <- entry_df %>%
+  summarize(mean_oil_price = mean(oil_price_usd_per_bbl),
+            mean_capex = mean(wm_capex_imputed),
+            mean_opex = mean(wm_opex_imputed),
+            mean_depl = mean(depl),
+            mean_n_new_wells = mean(n_new_wells),
+            mean_well_exits = mean(well_exits, na.rm = TRUE))
+
+print(summary_stats)
+
+# Generate plots
+# Plot for Entry Model
+ggplot(data.frame(True = y_train_entry, Predicted = entry_predictions), aes(x = True, y = Predicted)) +
+  geom_point(alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Entry Model: True vs Predicted", x = "True Values", y = "Predicted Values") +
+  theme_minimal()
+
+# Plot for Exit Model
+ggplot(data.frame(True = y_train_exit, Predicted = exit_predictions), aes(x = True, y = Predicted)) +
+  geom_point(alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Exit Model: True vs Predicted", x = "True Values", y = "Predicted Values") +
+  theme_minimal()
+```
+
+```{r}
+importance_entry <- importance(rf_model_entry)
+importance_entry_df <- data.frame(Feature = rownames(importance_entry), Importance = importance_entry[, "IncNodePurity"])
+
+# Plot feature importance for entry model
+ggplot(importance_entry_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Feature Importance for Entry Model", x = "Feature", y = "Importance") +
+  theme_minimal()
+
+# Generate feature importance for exit model
+importance_exit <- importance(rf_model_exit)
+importance_exit_df <- data.frame(Feature = rownames(importance_exit), Importance = importance_exit[, "IncNodePurity"])
+
+# Plot feature importance for exit model
+ggplot(importance_exit_df, aes(x = reorder(Feature, Importance), y = Importance)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Feature Importance for Exit Model", x = "Feature", y = "Importance") +
+  theme_minimal()
+```
+```{r}
+# Load and prepare the entry data
+entry_df <- read_csv("../data/processed/entry_df_final_revised.csv")
+entry_df$doc_field_code <- as.numeric(entry_df$doc_field_code)
+entry_df$doc_field_code <- as.character(entry_df$doc_field_code)
+
+entry_df <- entry_df %>%
+  mutate(oil_price_usd_per_bbl = brent) %>% 
+  mutate(depl = m_cumsum_div_my_prod) %>% 
+  na.omit()
+
+entry_df <- as.data.table(entry_df)
+
+entry_stats <- entry_df %>%
+  group_by(year) %>%
+  summarize(mean_capex = mean(wm_capex_imputed),
+            sd_capex = sd(wm_capex_imputed),
+            mean_opex = mean(wm_opex_imputed),
+            sd_opex = sd(wm_opex_imputed)) %>%
+  mutate(period = "Historical")
+
+ggplot(entry_stats, aes(x = year)) +
+  geom_line(aes(y = mean_capex, color = "Capex")) +
+  geom_errorbar(aes(ymin = mean_capex - sd_capex, ymax = mean_capex + sd_capex, color = "Capex"), width = 0.2) +
+  geom_line(aes(y = mean_opex, color = "Opex")) +
+  geom_errorbar(aes(ymin = mean_opex - sd_opex, ymax = mean_opex + sd_opex, color = "Opex"), width = 0.2) +
+  labs(title = "Historical Mean Capex and Opex with Standard Deviation",
+       x = "Year",
+       y = "Values",
+       color = "Legend") +
+  theme_minimal()
+```
+
+```{r}
+vars_stats <- vars_dt %>%
+  group_by(year) %>%
+  summarise(mean_capex = mean(wm_capex_imputed, na.rm = TRUE),
+            sd_capex = sd(wm_capex_imputed, na.rm = TRUE),
+            mean_opex = mean(wm_opex_imputed, na.rm = TRUE),
+            sd_opex = sd(wm_opex_imputed, na.rm = TRUE)) %>%
+  mutate(period = "Forecasted")
+```
+
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+combined_stats <- bind_rows(entry_stats, vars_stats)
+
+# Convert period to a factor to ensure it's treated as a categorical variable
+combined_stats$period <- factor(combined_stats$period, levels = c("Historical", "Forecasted"))
+
+# Plot mean capex and opex with shaded areas for standard deviation
+capex_opex <- ggplot(combined_stats, aes(x = year)) +
+  geom_line(aes(y = mean_capex, color = "Capex", linetype = period, group = period)) +
+  geom_ribbon(aes(ymin = mean_capex - sd_capex, ymax = mean_capex + sd_capex, fill = "Capex", group = period), alpha = 0.2) +
+  geom_line(aes(y = mean_opex, color = "Opex", linetype = period, group = period)) +
+  geom_ribbon(aes(ymin = mean_opex - sd_opex, ymax = mean_opex + sd_opex, fill = "Opex", group = period), alpha = 0.2) +
+  labs(title = "Historical and Forecasted Mean Capex and Opex with Standard Deviation",
+       x = "Year",
+       y = "Dollars (USD per unit)",
+       color = "Legend",
+       fill = "Legend") +
+  scale_fill_manual(values = c("Capex" = "lightblue", "Opex" = "lightgreen")) +
+  scale_x_continuous(breaks = seq(1980, 2045, by = 10), limits = c(1980, 2045)) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.box = "vertical",
+        plot.title = element_text(size = 14, face = "bold"),
+        title = element_text(size = 14),
+        axis.title = element_text(size = 14),
+        axis.text = element_text(size = 14)
+        )
+
+ggsave("outputs/capex_opex.png", capex_opex, width = 12, height = 8)
+```
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+
+historical_prices <- entry_df %>%
+  group_by(year) %>%
+  summarise(oil_price_usd_per_bbl = mean(oil_price_usd_per_bbl, na.rm = TRUE)) %>%
+  mutate(period = "Historical")
+
+forecasted_prices <- oilpx_scens %>%
+  filter(oil_price_scenario == "reference case") %>%
+  select(year, oil_price_usd_per_bbl) %>%
+  mutate(period = "Forecasted")
+
+combined_prices <- bind_rows(historical_prices, forecasted_prices)
+
+# Convert period to a factor to ensure it's treated as a categorical variable
+combined_prices$period <- factor(combined_prices$period, levels = c("Historical", "Forecasted"))
+
+# Plot the historical and forecasted oil prices
+oil <- ggplot(combined_prices, aes(x = year, y = oil_price_usd_per_bbl, color = period, linetype = period)) +
+  geom_line(size = 1) +
+  labs(title = "Historical and Forecasted Oil Prices (Reference Case)",
+       x = "Year",
+       y = "Oil Price (USD per Barrel)",
+       color = "Period",
+       linetype = "Period") +
+  scale_x_continuous(breaks = seq(1980, 2045, by = 10), limits = c(1980, 2045)) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.box = "vertical",
+        plot.title = element_text(size = 14, face = "bold"),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 12))
+
+ggsave("outputs/oil.png", oil, width = 12, height = 8)
+```
+
+# Plotting with GB Model for Historical Period
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+# Load the necessary data
+new_wells_pred_revised <- read_csv("data/intermediate-zenodo/new_wells_pred_revised.csv") %>%
+  rename(new_wells_poisson = new_wells_pred)
+
+# Merge all the predictions into a single dataframe
+predictions <- entry_df %>%
+  select(doc_field_code, year, n_new_wells) %>%
+  rename(actual_new_wells = n_new_wells) %>%
+  mutate(
+    rf_pred = predict(rf_model_entry, newdata = x_train),
+    gbm_pred = predict(gbm_model_entry, newdata = x_train_gb, n.trees = gbm_model_entry_tuned$bestTune$n.trees)
+  ) %>%
+  left_join(new_wells_pred_revised, by = c("doc_field_code", "year"))
+
+# Calculate performance metrics
+metrics <- predictions %>%
+  group_by(model = "Random Forest") %>%
+  summarise(
+    rmse = sqrt(mean((actual_new_wells - rf_pred)^2, na.rm = TRUE)),
+    mae = mean(abs(actual_new_wells - rf_pred), na.rm = TRUE)
+  ) %>%
+  bind_rows(
+    predictions %>%
+      group_by(model = "Gradient Boosted") %>%
+      summarise(
+        rmse = sqrt(mean((actual_new_wells - gbm_pred)^2, na.rm = TRUE)),
+        mae = mean(abs(actual_new_wells - gbm_pred), na.rm = TRUE)
+      )
+  ) %>%
+  bind_rows(
+    predictions %>%
+      group_by(model = "Poisson") %>%
+      summarise(
+        rmse = sqrt(mean((actual_new_wells - new_wells_poisson)^2, na.rm = TRUE)),
+        mae = mean(abs(actual_new_wells - new_wells_poisson), na.rm = TRUE)
+      )
+  )
+
+# Print performance metrics
+print(metrics)
+
+# Plot actual vs predicted values
+library(ggplot2)
+
+ggplot(predictions, aes(x = year)) +
+  geom_line(aes(y = actual_new_wells, color = "Actual"), size = 1) +
+  geom_line(aes(y = rf_pred, color = "Random Forest"), size = 1) +
+  geom_line(aes(y = gbm_pred, color = "Gradient Boosted"), size = 1) +
+  geom_line(aes(y = new_wells_poisson, color = "Poisson"), size = 1) +
+  labs(x = "Year", y = "Number of New Wells", color = "Model") +
+  theme_bw()
+```
+
+# Adding GB
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone/')
+
+
+poisson_bau <- readRDS("data/processed/extraction_2024-05-13/revision-setbacks/state-out/reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-0_state.rds")
+
+
+poisson_3200ft <- readRDS("data/processed/extraction_2024-05-13/revision-setbacks/state-out/reference case-setback_3200ft-no quota-price floor-no ccs-low innovation-no tax-0_state.rds")
+
+rf_3200ft <- readRDS("data/processed/extraction_2024-06-05_rf/revision-setbacks/state-out/reference case-setback_3200ft-no quota-price floor-no ccs-low innovation-no tax-0_state.rds")
+
+rf_bau <- readRDS("data/processed/extraction_2024-06-05_rf/revision-setbacks/state-out/reference case-no_setback-no quota-price floor-no ccs-low innovation-no tax-0_state.rds")
+```
+
+```{r}
+all_data <- rbind(
+  rf_3200ft %>% select(year, new_wells) %>% mutate(model = "Random Forest", scenario = "3200 foot setback"),
+  rf_bau %>% select(year, new_wells) %>% mutate(model = "Random Forest", scenario = "No setback"),
+  poisson_3200ft %>% select(year, new_wells) %>% mutate(model = "Poisson", scenario = "3200 foot setback"),
+  poisson_bau %>% select(year, new_wells) %>% mutate(model = "Poisson", scenario = "No setback")
+)
+
+# Plot the new_wells for each data set
+new_wells_forecast <- ggplot(all_data, aes(x = year, y = new_wells, linetype = scenario, color = model)) +
+  geom_line(size = 1) +
+  scale_linetype_manual(values = c("No setback" = "solid", "3200 foot setback" = "dashed"), name = "Scenario") +
+  scale_color_manual(values = c("orange", "forestgreen"), name = "Model") +
+  labs(x = "Year", y = "Number of New Wells") +
+  theme_bw() +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 14),
+    legend.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+  ) +
+  ggtitle("New Well Model Comparison for Forecasted Period")
+
+ggsave("outputs/new_wells_forecast.png", new_wells_forecast, width = 12, height = 8)
+```
+
+
+```{r}
+all_data_exit <- rbind(
+  rf_bau %>% select(year, n_wells_exit) %>% mutate(model = "Random Forest"),
+  poisson_bau %>% select(year, n_wells_exit) %>% mutate(model = "Poisson")
+)
+
+# Plot the n_wells_exit for each data set (No setback scenario)
+exit_wells_plot <- ggplot(all_data_exit, aes(x = year, y = n_wells_exit, color = model)) +
+  geom_line(size = 1) +
+  scale_color_manual(values = c("orange", "forestgreen"), name = "Model") +
+  labs(x = "Year", y = "Number of Well Exits") +
+  theme_bw() +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    legend.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+  ) +
+  ggtitle("Well Exits Model Comparison for Forecasted Period")
+
+ggsave("outputs/exit_wells_forecast.png", exit_wells_plot, width = 12, height = 8)
+```
+
+```{r}
+library(scales)
+
+all_data_prod <- rbind(
+  rf_3200ft %>% select(year, total_prod_bbl) %>% mutate(model = "Random Forest", scenario = "3200 foot setback"),
+  rf_bau %>% select(year, total_prod_bbl) %>% mutate(model = "Random Forest", scenario = "No setback"),
+  poisson_3200ft %>% select(year, total_prod_bbl) %>% mutate(model = "Poisson", scenario = "3200 foot setback"),
+  poisson_bau %>% select(year, total_prod_bbl) %>% mutate(model = "Poisson", scenario = "No setback")
+)
+
+total_prod_plot <- ggplot(all_data_prod, aes(x = year, y = total_prod_bbl / 1e6, linetype = scenario, color = model)) +
+  geom_line(size = 1) +
+  scale_linetype_manual(values = c("No setback" = "solid", "3200 foot setback" = "dashed"), name = "Scenario") +
+  scale_color_manual(values = c("orange", "forestgreen"), name = "Model") +
+  labs(x = "Year", y = "Total Production (Million bbl)") +
+  theme_bw() +
+  theme(
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    legend.text = element_text(size = 12),
+    legend.title = element_text(size = 14),
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14)
+  ) +
+  ggtitle("Total Oil Production Model Comparison for Forecasted Period") +
+  scale_y_continuous(labels = comma)
+
+ggsave("outputs/total_prod_plot.png", total_prod_plot, width = 12, height = 8)
+```
+

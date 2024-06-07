@@ -1,0 +1,681 @@
+---
+title: "Testing"
+author: "FreshCAir"
+date: 2024-04-25
+---
+
+```{r}
+# Read in libraries
+library(here)
+library(tidyverse)
+library(dplyr)
+library(arsenal)
+library(sf)
+```
+
+The purpose of this script is to compare values from the Zenodo intermediate folder to check the validity of the recreated results and 3200ft scenario.
+
+Intermediate data from Zenodo we can use to test includes:
+
+-   crude_prod_x\_field_revised.csv → from crude_prod_x\_field.R
+
+```{r, message=FALSE}
+# Read in the data
+crude_prod_x_field_revised_fc <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/processed/crude_prod_x_field_revised.csv')
+crude_prod_x_field_revised_z <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/extraction-model/crude_prod_x_field_revised.csv')
+
+arsenal::comparedf(crude_prod_x_field_revised_fc, crude_prod_x_field_revised_z)
+
+```
+
+-   emission_reduction_90.csv → from emissions-target-90.R
+
+```{r}
+emission_reduction_90_fc <- read_csv('../data/processed/emission_reduction_90.csv')
+emission_reduction_90_z <- read_csv('../data/intermediate-zenodo/intermediate/extraction-model/emission_reduction_90.csv')
+
+arsenal::comparedf(emission_reduction_90_fc, emission_reduction_90_z)
+```
+
+-   entry_df_final_revised.csv → from create_entry_input.R
+
+CHECK CHECK
+
+```{r}
+entry_df_final_revised_fc <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/processed/entry_df_final_revised.csv')
+entry_df_final_revised_z <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/extraction-model/entry_df_final_revised-z.csv')
+
+arsenal::comparedf(entry_df_final_revised_fc, entry_df_final_revised_z)
+
+sum(entry_df_final_revised_z$doc_prod)
+sum(entry_df_final_revised_fc$doc_prod)
+```
+
+
+-   excise_tax_non_target_scens.csv → from prep-excise-non-target.R
+
+```{r}
+excise_tax_non_target_scens_fc <- read_csv('../data/processed/excise_tax_non_target_scens.csv')
+excise_tax_non_target_scens_z <- read_csv('../data/intermediate-zenodo/intermediate/extraction-model/excise_tax_non_target_scens.csv')
+
+arsenal::comparedf(excise_tax_non_target_scens_fc, excise_tax_non_target_scens_z)
+```
+
+-   field_capex_opex_forecast_revised.csv → from create_entry_input.R
+
+```{r}
+field_capex_opex_forecast_revised_fc <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/processed/field_capex_opex_forecast_revised.csv')
+field_capex_opex_forecast_revised_z <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/extraction-model/field_capex_opex_forecast_revised.csv')
+
+arsenal::comparedf(field_capex_opex_forecast_revised_fc, field_capex_opex_forecast_revised_z)
+```
+
+-   field_resource_revised.csv → from depl.do
+
+```{r}
+# Need to recreate the depl.do code in R
+field_resource_revised_fc <- read_csv('../data/processed/field_resource_revised.csv')
+field_resource_revised_z <- read_csv('../data/intermediate-zenodo/intermediate/extraction-model/field_resource_revised.csv')
+
+arsenal::comparedf(field_resource_revised_fc, field_resource_revised_z)
+```
+
+-   field-year_peak-production_yearly.csv → from prep_data_field_year.R
+
+```{r}
+field_year_peak_production_yearly_fc <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/processed/field-year_peak-production_yearly.csv')
+field_year_peak_production_yearly_z <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/extraction-model/field-year_peak-production_yearly.csv')
+
+arsenal::comparedf(field_year_peak_production_yearly_fc, field_year_peak_production_yearly_z)
+```
+
+-   forecasted_decline_parameters_2020_2045.csv → from analyze-parameters.R
+
+```{r}
+forecasted_decline_parameters_2020_2045_fc <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/processed/forecasted_decline_parameters_2020_2045.csv')
+forecasted_decline_parameters_2020_2045_z <- read_csv('/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/extraction-model/forecasted_decline_parameters_2020_2045.csv')
+
+comp1 <- arsenal::comparedf(x = forecasted_decline_parameters_2020_2045_fc, 
+                                        y = forecasted_decline_parameters_2020_2045_z)
+print(comp1)
+
+# Conduct additional testing to see differences
+```
+
+-   ghg_emissions_x\_field_2018-2045.csv → from forecast_ghg_emissions_factors.R
+
+```{r}
+ghg_emissions_x_field_2018_20145_fc <- read_csv("../data/processed/ghg_emissions_x_field_2018-2045.csv")
+ghg_emissions_x_field_2018_20145_z <- read_csv("../data/intermediate-zenodo/intermediate/extraction-model/ghg_emissions_x_field_2018-2045.csv")
+
+arsenal::comparedf(ghg_emissions_x_field_2018_20145_fc, ghg_emissions_x_field_2018_20145_z)
+```
+
+-   n_wells_area.csv → from predict_existing_production.R
+
+```{r}
+n_wells_area_z <- read_csv("/capstone/freshcair/meds-freshcair-capstone/data/intermediate-zenodo/intermediate/extraction-model/n_wells_area.csv")
+n_wells_area_fc <- read_csv("/capstone/freshcair/meds-freshcair-capstone/data/processed/n_wells_area.csv")
+
+print(nrow(n_wells_area_fc) / nrow(n_wells_area_z))
+
+# Adding difference in number of adjusted wells
+n_wells_area_z <- n_wells_area_z %>%
+  left_join(n_wells_area_fc %>% select(setback_scenario, doc_field_code, adj_no_wells_fc = adj_no_wells),
+            by = c("setback_scenario", "doc_field_code")) %>%
+  mutate(adj_no_wells_diff = adj_no_wells - adj_no_wells_fc)
+```
+
+-   pred_prod_no_exit_2020-2045_field_start_year_revised.csv → from extraction_fields.R
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+pred_prod_fc <- read_csv("./data/processed/pred_prod_no_exit_2020-2045_field_start_year_revised.csv")
+pred_prod_z <- read_csv("./data/intermediate-zenodo/intermediate/extraction-model/pred_prod_no_exit_2020-2045_field_start_year_revised-z.csv")
+
+arsenal::comparedf(pred_prod_no_exit_2020_2045_field_start_year_revised_fc, pred_prod_no_exit_2020_2045_field_start_year_revised_z)
+
+# Rows in fc that are not in z
+diff_rows_fc_predprod <- anti_join(pred_prod_no_exit_2020_2045_field_start_year_revised_fc, pred_prod_no_exit_2020_2045_field_start_year_revised_z)
+
+# Rows in z that are not in fc
+diff_rows_z_predprod <- anti_join(pred_prod_no_exit_2020_2045_field_start_year_revised_z, pred_prod_no_exit_2020_2045_field_start_year_revised_fc)
+
+# Grouping by ear
+pred_prod_fc_grouped <- pred_prod_fc %>% 
+  filter(setback_scenario == "setback_2500") %>% 
+  dplyr::group_by(year) %>% 
+  dplyr::summarize(adj_total_wells = sum(adj_no_wells, na.rm=TRUE))
+
+pred_prod_z_grouped <- pred_prod_z %>% 
+  filter(setback_scenario == "setback_2500") %>% 
+  dplyr::group_by(year) %>% 
+  dplyr::summarize(total_prod_year_z = sum(production_bbl),
+                   adj_total_wells_z = sum(adj_no_wells))
+
+pred_prod_diff <- left_join(pred_prod_z_grouped, pred_prod_fc_grouped, by = "year")
+
+```
+
+-   scenario_id_list_targets.csv → from scenario-list-targets.R
+
+```{r}
+scenario_id_list_targets_z <- read_csv("../data/intermediate-zenodo/intermediate/extraction-model/scenario_id_list_targets-z.csv")
+
+scenario_id_list_taregts_fc <- read_csv("../data/processed/scenario_id_list_targets_v3.csv")
+
+# confirming length is 1.25x with new setback scenario
+print(nrow(scenario_id_list_taregts_fc)/nrow(scenario_id_list_targets_z))
+```
+
+-   setback_coverage_R.csv → from gen_well_setback_status.R
+
+```{r}
+setback_coverage_R_fc_og <- read_csv("../data/processed/setback_coverage_R.csv")
+setback_coverage_R_fc <- read_csv('../data/processed/setback-cov/setback_coverage_R.csv') %>% 
+  mutate(rel_coverage_fc = rel_coverage)
+setback_coverage_R_z <- read_csv('../data/intermediate-zenodo/intermediate/extraction-model/setback_coverage_R.csv') %>% mutate(rel_coverage_z = rel_coverage)
+
+# Checking that all 3200ft setbacks added
+diff_rows_scR <- nrow(setback_coverage_R_fc) / nrow(setback_coverage_R_z)
+
+print(diff_rows_scR)
+
+# Removing 3200ft from new data to compare values
+setback_coverage_R_fc_no3200 <- setback_coverage_R_fc %>% 
+  filter(setback_scenario != "setback_3200")
+
+setback_coverage_R_fc_og_no2300 <- 
+
+setback_coverage_diff <- setback_coverage_R_z %>%
+  left_join(setback_coverage_R_fc_no3200, by = c("doc_field_code", "setback_scenario")) %>% 
+  mutate(rel_cov_diff = rel_coverage_z - rel_coverage_fc,
+         rel_cov_diff_formatted = format(rel_cov_diff, scientific = FALSE)) %>% 
+  select(doc_field_code, setback_scenario, rel_cov_diff, rel_cov_diff_formatted)
+
+setback_coverage_diff
+```
+
+ccs_extraction_scenarios_revised.csv --\>
+
+```{r}
+ccs_extraction_scenarios_revised_processed <- read_csv('../data/processed/ccs_extraction_scenarios_revised.csv')
+ccs_extraction_scenarios_revised_inputs <- read_csv('../data/inputs/scenarios/ccs_extraction_scenarios_revised.csv')
+
+arsenal::comparedf(ccs_extraction_scenarios_revised_processed, ccs_extraction_scenarios_revised_inputs)
+```
+
+```{r}
+excise_tax_non_target_scens_fc <- read_csv("../data/processed/excise_tax_non_target_scens.csv")
+excise_tax_non_targets_scens_z <- read_csv("../data/intermediate-zenodo/intermediate/extraction-model/excise_tax_non_target_scens.csv")
+
+arsenal::comparedf(excise_tax_non_target_scens_fc, excise_tax_non_targets_scens_z)
+```
+
+growth_rates.csv
+
+```{r}
+growth_rates_fc <- read_csv("../data/inputs/health/growth_rates.csv")
+growth_rates_z <- read_csv("../data/outputs-zenodo/fig-and-results-out/growth_rates.csv")
+
+arsenal::comparedf(growth_rates_fc, growth_rates_z)
+```
+
+ct_inc_45.csv --\> from health_data.R
+
+```{r}
+ct_inc_45_fc <- read_csv("../data/processed/ct_inc_45.csv")
+ct_inc_45_z <- read_csv("../data/outputs-zenodo/fig-and-results-out/ct_inc_45.csv")\
+
+arsenal::comparedf(ct_inc_45_fc, ct_inc_45_z)
+
+ct_inc_45_fc <- ct_inc_45_fc %>%
+  mutate(incidence_diff = incidence_2015 - ct_inc_45_z$incidence_2015)
+```
+
+indust_emissions_2000-2019.csv --\> from stocks_flows.R
+
+```{r}
+indust_emissions_fc <- read_csv("../data/processed/indust_emissions_2000-2019.csv")
+indust_emissions_z <- read_csv("../data/outputs-zenodo/fig-and-results-out/indust_emissions_2000-2019.csv")
+
+arsenal::comparedf(indust_emissions_fc, indust_emissions_z)
+
+```
+
+## Comparing buffer shapefiles
+
+```{r}
+ca_crs <- 3488
+ca <- st_as_sf(maps::map("state", plot = FALSE, fill = TRUE)) %>%
+  filter(ID == "california") %>%
+  st_transform(ca_crs)
+
+# Reading in our results
+buffer_1000_fc <- st_read('./data/proprietery-data/setback-buffers/buffer_1000ft.shp')
+buffer_2500_fc <- st_read(here('data/proprietery-data/setback-buffers/buffer_2500ft.shp'))
+buffer_3200_fc <- st_read('/capstone/freshcair/meds-freshcair-capstone/data/proprietery-data/setback-buffers/buffer_3200ft.shp') 
+buffer_5280_fc <- st_read("/capstone/freshcair/meds-freshcair-capstone/data/proprietery-data/setback-buffers/buffer_5280ft.shp")
+```
+
+```{r}
+setwd('/capstone/freshcair/meds-freshcair-capstone')
+buffer_5280_z <- sf::st_read("data/intermediate-zenodo/fracktracker-sr/buffer_5280ft.shp")
+buffer_5280_fc <- sf::st_read("data/proprietery-data/setback-buffers/test_buffer_5280ft.shp")
+
+diff_5280 <- st_difference(buffer_5280_z, buffer_5280_fc)
+
+mapview(diff_5280)
+
+# Check the CRS of buffer_5280_z
+crs_buffer_5280_z <- st_crs(buffer_5280_z)
+print(crs_buffer_5280_z)
+
+# Check the CRS of buffer_5280_fc
+crs_buffer_5280_fc <- st_crs(buffer_5280_fc)
+print(crs_buffer_5280_fc)
+```
+
+```{r}
+total_diff_area <- sum(st_area(diff_5280))
+print(total_diff_area)
+total_area = sum(st_area(buffer_3200_fc))
+paste0("Total area covered with 3200ft: ", total_area)
+paste0("Total area covered in original data but not in recreated data: ", total_diff_area)
+paste0("Amount of area missing: ", (total_diff_area/total_area) * 100, "%")
+```
+
+```{r}
+library(leaflet)
+
+# Assuming buffer_5280_z and buffer_5280_fc are your sf objects
+
+# Transform the sf layers to the WGS84 CRS
+buffer_5280_z_wgs84 <- st_transform(buffer_5280_z, crs = 4326)
+buffer_5280_fc_wgs84 <- st_transform(buffer_5280_fc, crs = 4326)
+
+# Create a color palette for the polygons
+pal <- colorFactor(c("red", "black"), c("buffer_5280_z", "buffer_5280_fc"))
+
+# Create an interactive map centered on California
+map <- leaflet() %>%
+  setView(lng = -119.4179, lat = 36.7783, zoom = 6) %>%  # Set the center and zoom level for California
+  addTiles() %>%
+  addPolygons(data = buffer_5280_fc_wgs84, color = pal("buffer_5280_fc"), fillOpacity = 0.5) %>%
+  addPolygons(data = buffer_5280_z_wgs84, color = pal("buffer_5280_z"), fillOpacity = 0.5) %>%
+  addLegend(position = "bottomright", pal = pal, values = c("buffer_5280_z", "buffer_5280_fc"),
+            title = "Buffer Type", opacity = 1)
+
+# Display the interactive map
+map
+```
+
+```{r}
+state_results_z <- read_csv("../data/outputs-zenodo/model-out/subset_state_results.csv") %>% 
+  filter(oil_price_scenario == "reference case") %>% 
+  filter(innovation_scenario == "low innovation") %>% 
+  filter(carbon_price_scenario == "price floor") %>% 
+  filter(ccs_scenario == "no ccs") %>% 
+  filter(setback_scenario == "no_setback") %>% 
+  filter(excise_tax_scenario == "no tax") %>% 
+  filter(setback_existing == "1")
+```
+
+## Testing input data
+
+```{r}
+prod_1990_1994_3 <- read_csv("../data/inputs-zenodo/extraction/monthly-prod-inj-wells-3/CSV_2000_2004/CaliforniaOilAndGasWellMonthlyProduction.csv")
+prod_1990_1994_1 <- read_csv("../data/inputs-zenodo/extraction/monthly-prod-inj-wells/CSV_1990_1994/CaliforniaOilAndGasWellMonthlyProduction.csv")
+prod_1990_1994_fc <- read_csv("../data/inputs/extraction/monthly-prod-inj-wells/CSV_1990_1994/CaliforniaOilAndGasWellMonthlyProduction.csv")
+
+dim_fc <- dim(prod_1990_1994_fc)
+dim_v1 <- dim(prod_1990_1994_1)
+dim_v3 <- dim(prod_1990_1994_3)
+paste0("Rows in fc: ", dim_fc[1])
+paste0("Rows in v1: ", dim_v1[1])
+paste0("Rows in v3: ", dim_v3[1])
+
+prod_1990_v3_prod_grouped_api <- prod_1990_1994_3 %>% 
+  group_by(APINumber) %>% 
+  summarise(total_prod = sum(OilorCondensateProduced))
+
+prod_1990_v1_prod_grouped_api <- prod_1990_1994_1 %>% 
+  group_by(APINumber) %>% 
+  summarise(total_prod = sum(OilorCondensateProduced))
+
+prod_1990_1994_total <- full_join(prod_1990_v3_prod_grouped_api, prod_1990_v1_prod_grouped_api, by = "APINumber") %>%
+  mutate(
+    total_prod_v3 = ifelse(is.na(total_prod.x), 0, total_prod.x),
+    total_prod_v1 = ifelse(is.na(total_prod.y), 0, total_prod.y),
+    total_prod = total_prod_v3 + total_prod_v1
+  ) %>%
+  select(APINumber, total_prod, total_prod_v3, total_prod_v1)
+
+total_prod_1990_1994_v1 <- prod_v1_prod_grouped_api %>% 
+  summarise(total_prod_v1 = sum(total_prod))
+
+total_prod_1990_1994_v3 <- prod_v3_prod_grouped_api %>% 
+  summarise(total_prod_v3 = sum(total_prod))
+
+paste0("Amount of production amount missing: ", (total_prod_1990_1994_v1$total_prod_v1)/(total_prod_1990_1994_v1$total_prod_v1 + total_prod_1990_1994_v3$total_prod_v3))
+
+```
+
+*Subsets in each time period*:
+1977-1985: v2
+1986-1989: v1
+1990-1994: v1, v3 -- different
+1995-1999: v1, v3 -- same
+2000-2004: v1, v3 -- same
+2005-2009: v1, v3 -- differemt
+2010-2014: v1
+2015: v1
+2016: v1
+2017: v1
+2018: v1
+2019: v1
+
+```{r}
+prod_1995_1999_v1 <- read_csv("../data/inputs-zenodo/extraction/monthly-prod-inj-wells/CSV_1995_1999/CaliforniaOilAndGasWellMonthlyProduction.csv")
+prod_1995_1999_v3 <- read_csv("../data/inputs-zenodo/extraction/monthly-prod-inj-wells-3/CSV_1995_1999/CaliforniaOilAndGasWellMonthlyProduction.csv")
+```
+
+```{r}
+dim_1995_v1 <- dim(prod_1995_1999_v1)
+dim_1995_v3 <- dim(prod_1995_1999_v3)
+
+paste0("Rows in v1: ", dim_1995_v1[1])
+paste0("Rows in v3: ", dim_1995_v3[1])
+
+arsenal::comparedf(prod_1995_1999_v1, prod_1995_1999_v3)
+```
+
+```{r}
+prod_2000_2004_v1 <- read_csv("../data/inputs-zenodo/extraction/monthly-prod-inj-wells/CSV_2000_2004/CaliforniaOilAndGasWellMonthlyProduction.csv")
+prod_2000_2004_v3 <- read_csv("../data/inputs-zenodo/extraction/monthly-prod-inj-wells-3/CSV_2000_2004/CaliforniaOilAndGasWellMonthlyProduction.csv")
+```
+
+```{r}
+dim_2000_v1 <- dim(prod_2000_2004_v1)
+dim_2000_v3 <- dim(prod_2000_2004_v3)
+
+paste0("Rows in v1: ", dim_2000_v1[1])
+paste0("Rows in v3: ", dim_2000_v3[1])
+```
+
+
+
+```{r}
+prod_2005_2009_v1 <- read_csv("../data/inputs-zenodo/extraction/monthly-prod-inj-wells/CSV_2005_2009/CaliforniaOilAndGasWellMonthlyProduction.csv") 
+prod_2005_2009_v3 <- read_csv("../data/inputs-zenodo/extraction/monthly-prod-inj-wells-3/CSV_2005_2009/CaliforniaOilAndGasWellMonthlyProduction.csv") 
+prod_2005_2009_fc <- read_csv("../data/inputs/extraction/monthly-prod-inj-wells/CSV_2005_2009/CaliforniaOilAndGasWellMonthlyProduction.csv") 
+```
+
+```{r}
+dim_2005_v1 <- dim(prod_2005_2009_v1)
+dim_2005_v3 <- dim(prod_2005_2009_v3)
+dim_2005_fc <- dim(prod_2005_2009_fc)
+
+paste0("Rows in v1: ", dim_2005_v1[1])
+paste0("Rows in v3: ", dim_2005_v3[1])
+paste0("Rows in fc: ", dim_2005_fc[1])
+```
+
+```{r}
+prod_2005_v3_prod_grouped_api <- prod_2005_2009_v3 %>% 
+  group_by(APINumber) %>% 
+  summarise(total_prod = sum(OilorCondensateProduced))
+
+prod_2005_v1_prod_grouped_api <- prod_2005_2009_v1 %>% 
+  group_by(APINumber) %>% 
+  summarise(total_prod = sum(OilorCondensateProduced))
+
+prod_2005_2009_total <- full_join(prod_2005_v3_prod_grouped_api, prod_2005_v1_prod_grouped_api, by = "APINumber") %>%
+  mutate(
+    total_prod_v3 = ifelse(is.na(total_prod.x), 0, total_prod.x),
+    total_prod_v1 = ifelse(is.na(total_prod.y), 0, total_prod.y),
+    total_prod = total_prod_v3 + total_prod_v1
+  ) %>%
+  select(APINumber, total_prod, total_prod_v3, total_prod_v1)
+
+different_rows <- prod_2005_2009_total[prod_2005_2009_total$total_prod_v1 != prod_2005_2009_total$total_prod_v3, ]
+
+prod_2005_2009_total_diff <- full_join(prod_2005_v3_prod_grouped_api, prod_2005_v1_prod_grouped_api, by = "APINumber") %>%
+  mutate(
+    total_prod_v3 = ifelse(is.na(total_prod.x), 0, total_prod.x),
+    total_prod_v1 = ifelse(is.na(total_prod.y), 0, total_prod.y)
+  ) %>%
+  summarise(
+    total_prod_v3 = sum(total_prod_v3),
+    total_prod_v1 = sum(total_prod_v1)
+  )
+
+print(prod_2005_2009_total_diff)
+
+total_prod_2005_2009_v1 <- prod_2005_v1_prod_grouped_api %>% 
+  summarise(total_prod_v1 = sum(total_prod))
+
+total_prod_2005_2009_v3 <- prod_2005_v3_prod_grouped_api %>%
+  summarise(total_prod_v3 = sum(total_prod))
+
+paste0("Amount of production amount missing: ", (total_prod_2005_2009_v1$total_prod_v1)/(total_prod_2005_2009_v1$total_prod_v1 + total_prod_2005_2009_v3$total_prod_v3))
+
+total_prod_all_2005_v3 <- prod_2005_v3_prod_grouped_api %>%
+  summarise(total_prod_v3 = sum(total_prod, na.rm = TRUE))
+
+total_prod_all_2005_v1 <- prod_2005_v1_prod_grouped_api %>%
+  summarise(total_prod_v1 = sum(total_prod, na.rm = TRUE))
+
+# Print the results
+print(total_prod_all_2005_v3)
+print(total_prod_all_2005_v1)
+```
+
+## For Tracey
+
+### testing inputs 
+
+```{r}
+oil_price_proj_fc <- read_excel(path = "../data/inputs/extraction/oil_price_projections_revised.xlsx", 
+                               sheet = 'nominal', 
+                               col_names = TRUE, 
+                               col_types = 'numeric')
+oil_price_proj_z <- read_excel(path = "../data/inputs-zenodo/extraction/oil_price_projections_revised.xlsx", 
+                               sheet = 'nominal', 
+                               col_names = TRUE, 
+                               col_types = 'numeric')
+
+dim(oil_price_proj_fc)
+dim(oil_price_proj_z)
+```
+
+What is this data doing?
+
+```{r}
+innov_scens_fc_v1 <- read_csv("../data/inputs/scenarios/innovation_scenarios.csv")
+innov_scens_fc_v2 <- read_csv("../data-str/public/inputs/scenarios/innovation_scenarios.csv")
+innov_scens_z <- read_csv("../data/inputs-zenodo/scenarios/innovation_scenarios.csv")
+```
+```{r}
+carbon_prices_fc_v1 <- read_csv("../data/inputs/scenarios/carbon_prices_revised.csv")
+carbon_prices_fc_v2 <- read_csv("../data-str/public/inputs/scenarios/carbon_prices_revised.csv")
+carbon_prices_z <- read_csv("../data/inputs-zenodo/scenarios/carbon_prices_revised.csv")
+```
+```{r}
+ccs_lcfs_fc_v1 <- read_xlsx("../data/inputs/scenarios/CCS_LCFS_45Q.xlsx")
+ccs_lcfs_fc_v2 <- read_xlsx("../data-str/public/inputs/scenarios/CCS_LCFS_45Q.xlsx")
+ccs_lcfs_z <- read_xlsx("../data/inputs-zenodo/scenarios/CCS_LCFS_45Q.xlsx")
+```
+
+```{r}
+ccs_extr_scens_fc_v1 <- read_csv("../data/inputs/scenarios/ccs_extraction_scenarios_revised.csv")
+ccs_extr_scens_fc_v2 <- read_csv("../data/processed/ccs_extraction_scenarios_revised.csv")
+ccs_extr_scens_fc_v3 <- read_csv("../data-str/public/inputs/scenarios/ccs_extraction_scenarios_revised.csv")
+ccs_extr_scens_z <- read_csv("../data/inputs-zenodo/scenarios/ccs_extraction_scenarios_revised.csv")
+```
+
+## chemicalz
+
+```{r}
+pm25_field3_ct_fc <- read_csv("../data/processed/extraction/census-tract/pm25/srm_pm25_field3.csv")
+pm25_field3_county_fc <- read_csv("../data/processed/extraction/county/pm25/srm_pm25_field3.csv")
+pm25_field3_z <- read_csv("../data/intermediate-zenodo/intermediate/inmap-processed-srm-extraction/pm25/srm_pm25_field3.csv")
+```
+
+
+
+```{r}
+well_prod = readRDS("../data/processed/well_prod_m.rds")
+# print(unique(well_prod$year))
+
+# get total production YoY
+well_prod_yoy <- well_prod %>% 
+  group_by(year) %>% 
+  summarise(prod_year = sum(OilorCondensateProduced, na.rm = TRUE))
+```
+
+```{r}
+well_prod_m_processed_fc <- read_csv("../data/processed/well_prod_m_processed.csv")
+well_prod_n_processed_z <- read_csv("../data/outputs-zenodo/fig-and-results-out/well_prod_m_processed.csv")
+```
+
+```{r}
+dim(well_prod_m_processed_fc)
+dim(well_prod_n_processed_z)
+
+total_oil_fc <- sum(well_prod_m_processed_fc$OilorCondensateProduced, na.rm = TRUE)
+
+total_oil_z <- sum(well_prod_n_processed_z$OilorCondensateProduced, na.rm = TRUE)
+```
+
+```{r}
+ces3_fc <- read_csv("../data/inputs/health/ces3_data.csv")
+ces3_z <- read_csv("../data/inputs-zenodo/health/ces3_data.csv")
+
+comparedf(ces3_fc, ces3_z)
+```
+
+```{r}
+extraction_cluster_fc <- read_csv("../data/outputs/extraction_cluster_affectedpop.csv")
+extraction_cluster_z <- read_csv("../data/outputs-zenodo/fig-and-results-out/extraction_cluster_affectedpop.csv")
+```
+
+
+Where well_prod_m_processed is used after it is created in process-monthly-prod.R:
+
+- rystad_processing.R
+oil_asset_opex_capex_govtt_clean.csv --> rystad_entry_variables.csv
+ca_oil_production.csv --> match_fields_assets.R
+economically_recoverable_resources_scenarios_wide.csv --> economically_recoverable_resources
+capex_bbl_reserves.csv --> create_entry_econ_variables.R
+rystad_asset_apis.csv
+field_rystad_match_apis_revised.csv
+rystad_capex_bbl_nom_clean.csv
+rystad_opex_bbl_nom_clean.csv
+
+- zero_prod.R
+no_prod_wells_out.csv
+
+
+- gen_well_setback_status.R
+wells_in_setbacks_revised.csv
+
+
+setback_coverage_R.csv
+
+
+- init_yr_prod.R
+well_start_prod_api10_revised.csv
+
+
+- match_fields_assets.R
+well_doc_asset_match_revised.csv
+asset_latlon_adj.csv
+fieldsAssets_adj_revised.csv
+field_x_field_match_revised.csv
+field_asset_matches_revised.csv
+
+
+- create_entry_input.R
+field_capex_opex_forecast_revised.csv
+docfield_asset_crosswalk_entrydf_revised.csv
+entry_df_final_revised.csv
+
+
+- crude_prod_x_field.R
+crude_prod_x_field_revised.csv
+
+
+- field_county_production.R
+annual_field_county_production_proportion_revised.csv
+annual_final_year_field_county_production_proportion_revised.csv
+
+
+- county-setback.R
+county_level_setback_coverage.csv
+
+
+- well_exits.R
+well_exit_volume_x_field_v1_revised.csv
+
+
+- prep_data_field_year.R
+field-year_peak-production_yearly.csv
+production_field-year_yearly_entry.csv
+production_api10_yearly_start_year.csv
+adj_val_field-year_pred_prod.csv
+
+
+- field-vintage-exit.R
+well_exits.csv
+
+
+- prep_data_field_vintage.R
+field-vintage_peak-production_yearly_revised.csv
+production_field-vintange_yearly_entry_revised.csv
+production_api10_monthly_revised.csv
+
+
+- compile_extraction_outputs_full.R
+XX_state_results.rds (where XX represents a scenario id)
+XX_ct_results.rds (where XX represents a scenario id)
+XX_county_results.rds (where XX represents a scenario id)
+
+
+
+## compiling extraction outputs full:
+
+## subsetted outputs
+
+```{r}
+county_hs_results <- read_csv("../data/processed/extraction_2024-05-02/health-county-results/subset_county_hs_results.csv")
+```
+```{r}
+county_results <- read_csv("../data/processed/extraction_2024-05-08/county-results/subset_county_results.csv")
+
+county_results_scen <- county_results %>% 
+  filter(oil_price_scenario == "reference case") %>% 
+  filter(innovation_scenario == "low innovation") %>% 
+  filter(carbon_price_scenario == "price floor") %>% 
+  filter(ccs_scenario == "no ccs") %>% 
+  filter(setback_scenario == "no_setback") %>% 
+  filter(setback_existing == "1") %>% 
+  filter(prod_quota_scenario == "no quota") %>% 
+  filter(excise_tax_scenario == "no tax") %>% 
+  filter(target == "no_target") %>% 
+  filter(target_policy == "no_target_policy")
+
+county_prod <- county_results_scen %>% 
+  group_by(county) %>% 
+  summarise(total_prod = sum(total_county_bbl, na.rm=T))
+```
+
+## predict_existing_production.R
+
+```{r}
+wells_in_setback_fc <- read_csv("../data/processed/wells_in_setbacks_revised.csv")
+wells_in_
+```
+
+
+
