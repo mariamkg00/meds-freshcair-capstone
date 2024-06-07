@@ -1,6 +1,6 @@
 # Assessing the Social and Environmental Impacts of Supply Side Oil Policies in California
 
-Group members: Haejin Kim (haejin_kim@ucsb.edu), Maxwell Patterson (maxwellpatterson@ucsb.edu), and Mariam Garcia (mkgarcia@ucsb.edu)
+Group members from UCSB MEDS FreshCAir team: Haejin Kim (haejin_kim@ucsb.edu), Maxwell Patterson (maxwellpatterson@ucsb.edu), and Mariam Garcia (mkgarcia@ucsb.edu)
 
 Clients: The 2035 Initiative (lucasboyd@iee.ucsb.edu), and emLab ( tmangin@ucsb.edu)
 
@@ -11,6 +11,23 @@ GitHub repository author and manager: Tracey Mangin (emLab, tmangin@ucsb.edu)
 Zenodo repository manager: Tracey Mangin (emLab, tmangin@ucsb.edu)
 
 Link to original repository: https://github.com/emlab-ucsb/ca-transport-supply-decarb
+
+This project has been completed as a part of the Master of Environmental Data Science program at the Bren School of UC Santa Barbara. [Read more](https://ucsb-meds.github.io/)
+
+## Introduction
+California has set an ambitious target to reduce greenhouse gas (GHG) emissions by 90% by 2045 compared to 1990 levels. To achieve this goal, the state is implementing various supply-side policies aimed at curbing emissions from the oil and gas industry. One such policy is Senate Bill 1137 (SB 1137), which prohibits the construction of new oil and gas wells within 3,200 feet of sensitive areas such as schools, hospitals, and residential neighborhoods. This bill marks a significant step towards prioritizing environmental sustainability and public health.
+In 2023, a study led by Dr. Ranjit Deshmukh and Dr. Paige Weber from the University of California, Santa Barbara, developed a model to assess the impacts of different setback distances on oil production, GHG emissions, employment, and public health in California. The study, titled "Equitable Low-Carbon Transition Pathways for California's Oil Extraction," utilized a comprehensive modeling framework that integrated data on oil well locations, production levels, emissions, and demographic information [Deshmukh et al](https://www.nature.com/articles/s41560-023-01259-y). The model simulated the effects of setback distances of 1,000 feet, 2,500 feet, and 5,280 feet on various environmental and socioeconomic indicators.
+To accurately gauge the impact of SB 1137, which introduces a 3,200-foot setback distance, it is necessary to adapt the existing model developed by Deshmukh and Weber. This capstone project, undertaken by the Master of Environmental Data Science (MEDS) program at the Bren School of Environmental Science & Management, aims to bridge this gap by updating the model to incorporate the 3,200-foot setback scenario and creating accessible educational materials for the public. 
+
+The primary objectives of this project are threefold:
+1. Update the existing model to calculate the effects of the 3,200-foot setback distance on GHG emissions, employment, and public health from 2020 to 2045.
+2. Predict the number and location of new and idle wells through 2045 using machine learning techniques, specifically Random Forest models, to improve upon the original Poisson regression approach.
+3. Develop a public-facing interactive web application using R Shiny to present the findings and implications of SB 1137 in an accessible manner, empowering Californians to make informed decisions in the upcoming referendum vote.
+
+By investigating the impacts of the 3,200-foot setback distance on key environmental and socioeconomic indicators, this project contributes valuable evidence to support the implementation of SB 1137. The updated model and interactive web application will provide policymakers, stakeholders, and the general public with crucial insights into the potential benefits and trade-offs associated with this supply-side policy.
+
+## Purpose
+The purpose of this Github repository is to maintain a clear and effective history of working progress in the capstone project. This repository contains parts of the data and scripts used to update the well setback distance reflected by the upcoming Senate Bill 1137. 
 
 #### Data Collection
 
@@ -23,13 +40,6 @@ Oil well production and location data is from the California state region.
 #### Funding
 
 No additional funding was required for this project. Proprietary data was handed off from emLab and while the original acqusition of proprietary required compensation to data providers, no additional data was needed for this project.
-
-
-## Intro
-California's ambitious goal to slash GHG emissions by 90% by 2045 marks a significant shift towards sustainability. Supply-side policies, such as Senate Bill 1137, which bans new oil and gas wells within 3,200 feet of sensitive areas, signal a commitment to environmental and public health protection. To gauge SB 1137's impact accurately, the existing model must be adapted to incorporate this setback distance. This capstone project aims to bridge this gap by updating the model and creating accessible educational materials for Californians. Objectives include updating the model, predicting well locations and oil extraction using machine learning, and developing a public online app with R Shiny. The MEDS capstone group will investigate the effects of the 3,200-foot setback distance on emissions, employment, and health, contributing to the evidence supporting SB 1137.
-
-## Purpose
-The purpose of this Github repository is to maintain a clear and effective history of working progress in the capstone project. This repository contains parts of the data and scripts used to update the well setback distance reflected by the upcoming Senate Bill 1137. 
 
 
 ## Data structure
@@ -311,9 +321,32 @@ Output data is all data generated from the final extraction model and all subseq
 * Contains detailed monthly production data for individual oil and gas wells in California from 1984 to 2019. Used to measure the production trends over the time period.
 
 
+
 ## Code Scripts
 This section contains a summary of the scripts in the project workflow, along with the input and output data associated with each script. The headings below represent folder names and paths.
 
+
+### new-scripts/
+`eda.R`
+Performs exploratory analysis and visualization on oil production data. Processes and analyzes data on well activity, production volumes, and geographic distribution of wells across counties and census tracts. Examines the coverage of different setback scenarios and creates interactive maps to visualize the distribution of wells and their characteristics.
+
+`fr_viz.R`
+Used to create figures for the faculty review presentation.
+
+`ml-analysis.R`
+Trains random forest models to predict the number of new and exit wells based on oil price, capital expenditures, operational expenditures, and depletion rate. Generates visualizations to compare the performance of the random forest models with historical data and the Poisson model. Explores the historical and forecasted trends in capex, opex and oil prices
+
+`output_review.R`
+Generates plots and summary statistics to compare the effects of different setback scenarios. Wrangles census tract, county, and state-level data.
+
+`pred-dev.R`
+Code used in the development of the new and exit well predictive models. Note that the models are implemented in the load_input_info_fc.R script.
+
+`rel-coverage.R`
+Calculates the total area covered by each setback scenario, summarizes the relative coverage statistics, and creates plots to show the relationship between setback distance and coverage. Fits a linear model to the setback distance and coverage data, plotting the best-fit line and displaying the equation. These plots are used in the Testing section of this document.
+
+`testing.Rmd`
+This code performs data comparisons and checks across numerous datasets related to oil and gas production, emissions, policy scenarios, and environmental justice metrics. It uses the comparedf function from the arsenal package to verify consistency in dimensions, variable names, row counts, and attributes between different versions or sources of data frames to confirm the validity of the data being used for the final model. Data generated by the clients is compared to the new data to ensure consistency in the new outputs. The datasets being checked include crude oil production, greenhouse gas emissions from oil fields, carbon pricing and excise tax scenarios, emission reduction targets, county-level health incidence rates, industrial emissions, disadvantaged community shares, and projected impacts of policy interventions on production, emissions, and health outcomes.
 
 ### health/
 `scripts/health_data.R`
