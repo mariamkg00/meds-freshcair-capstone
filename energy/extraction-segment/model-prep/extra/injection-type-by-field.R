@@ -36,7 +36,7 @@ well_inj <- fread("data-str/private/injection/well_inj_m_processed.csv", colClas
 # well_inj = setDT(well_inj)
 # well_inj = well_inj[ WellTypeCode %in% c('WF', 'SC', 'SF')]
 
-well_type = fread("data-str/public/inputs/well_type_df.csv")
+well_type = fread("data-str/public/inputs/extraction/well_type_df.csv")
 
 # well_info = fread(paste0(data_dir, info_file), colClasses = c('character', rep(NA, 22))) # info on wells, operators, location, etc
 # well_field = well_info[, c('API', 'FieldName')]
@@ -149,7 +149,7 @@ bar_top10inj = ggplot(type_field_yr[ year %in% c(2015,2018) & doc_fieldname %in%
 # bar_top10inj
 
 ggsave(bar_top10inj,
-       filename = paste0('data-str/private/injection/injection-by-well-type_top10inj_2015-vs-2018_revised.png'),
+       filename = paste0('data-str/public/outputs/results-out/injection-by-well-type_top10inj_2015-vs-2018_revised.png'), # add new data directory HK
        width = 16,
        height = 9,
        dpi = 400)
@@ -171,14 +171,14 @@ bar_top10prod = ggplot(type_field_yr[ year %in% c(2015,2018) & doc_fieldname %in
 # bar_top10prod
 
 ggsave(bar_top10prod,
-       filename = paste0('data/outputs/injection-by-well-type_top10prod_2015-vs-2018_revised.png'),
+       filename = paste0('data-str/public/outputs/results-out/injection-by-well-type_top10prod_2015-vs-2018_revised.png'), # add new data directory HK
        width = 16,
        height = 9,
        dpi = 400)
 
 
-# export to csv files ----
+# export to csv files ---- # add new data directory HK
 
-fwrite(type_field, 'data/processed/injection-by-well-type-per-field_1977-2018_revised.csv', row.names = F)
-fwrite(type_field_yr, 'data/processed/injection-by-well-type-per-field-per-year_1977-2018_revised.csv', row.names = F)
+fwrite(type_field, 'data-str/private/well-fields/injection-by-well-type-per-field_1977-2018_revised.csv', row.names = F)
+fwrite(type_field_yr, 'data-str/private/well-fields/injection-by-well-type-per-field-per-year_1977-2018_revised.csv', row.names = F)
   

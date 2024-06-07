@@ -5,17 +5,17 @@
 
 # inputs ------
 
-setwd('/capstone/freshcair/meds-freshcair-capstone') # Sets directory based on Taylor structure
+setwd('/capstone/freshcair/meds-freshcair-capstone/') # Sets directory based on Taylor structure
 getwd()
 
 # Updated - MP
-fv_year_file    = 'data/processed/production_field-year_yearly_entry.csv'
-peak_file       = 'data/processed/field-year_peak-production_yearly.csv'
-entry_file      = 'data/processed/entry_df_final_revised.csv'
+fv_year_file    = 'data-str/private/production/production_field-year_yearly_entry.csv'
+peak_file       = 'data-str/public/intermediate/energy/production/field-year_peak-production_yearly.csv'
+entry_file      = 'data-str/public/intermediate/energy/production/entry_df_final_revised.csv'
 
 # outputs -------
 # Updated - MP
-save_path       = 'data/processed/'
+save_path       = 'data-str/private/well-fields/'
 save_file       = 'fitted-parameters_field-start-year_yearly_entry.csv'
 
 # load libraries -------- 
